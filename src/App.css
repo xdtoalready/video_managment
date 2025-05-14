@@ -1,284 +1,362 @@
 /* Общие стили */
+:root {
+  --primary-color: #D3544A;
+  --primary-hover: #d64550;
+  --secondary-color: rgba(211, 84, 74, 0.7);
+  --text-color: #333;
+  --light-bg: #F2F3F7;
+  --white: #ffffff;
+  --color-main2: #4175D4;
+  --gray2-color: #A4A0A0;
+  --sidebar-width: 280px;
+  --main-padding: 2px 8px;
+  --border-radius: 10px;
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  --transition: all 0.2s ease-in-out;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  color: #333;
-  background-color: #f5f5f5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: var(--text-color);
+  background-color: var(--light-bg);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 #root {
   width: 100%;
 }
 
-/* Стили для макета */
+/* Макет */
 .layout {
   display: flex;
-  flex-direction: column;
   min-height: 100vh;
-}
-
-.layout-container {
-  display: flex;
-  flex: 1;
+  background-color: #f5f5f5;
 }
 
 .layout-content {
   flex: 1;
-  padding: 1rem;
+  margin: 10px;
   overflow-y: auto;
 }
 
-/* Стили для заголовка */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #282c34;
-  color: white;
-  padding: 0.5rem 1rem;
-}
-
-.header-date {
+/* Сайдбар */
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--white);
+  margin: 10px;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  font-size: 0.9rem;
+  box-shadow: var(--card-shadow);
 }
 
-.header-label {
-  opacity: 0.7;
-}
-
-.header-title {
-  font-size: 1.5rem;
-  margin: 0;
-}
-
-.view-mode-toggle {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.view-mode-btn {
+.sidebar-date {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-  cursor: pointer;
+  margin-bottom: 0.5rem;
+  color: #777;
 }
 
-.view-mode-btn.active {
-  background-color: #646cff;
+.sidebar-date-label {
+  margin-right: 0.5rem;
 }
 
-.view-mode-label {
-  font-size: 0.8rem;
-  opacity: 0.7;
-  margin-left: 0.25rem;
-}
-
-/* Стили для боковой панели */
-.sidebar {
-  width: 240px;
-  background-color: white;
-  border-right: 1px solid #e0e0e0;
-  padding: 1rem 0;
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: baseline;
-  padding: 0 1rem;
-  margin-bottom: 1rem;
+.sidebar-date-value {
+  font-weight: 500;
+  color: var(--color-main2);
+  background-color: var(--light-bg);
+  padding: var(--main-padding);
+  border-radius: 100px;
 }
 
 .sidebar-title {
-  font-size: 1.2rem;
+  font-size: 18px;
+  margin: 0.5rem 0 2rem 0;
   font-weight: 500;
+  color: #333;
 }
 
-.sidebar-label {
-  font-size: 0.8rem;
-  color: #646cff;
-  margin-left: 0.5rem;
+.sidebar-section {
+  margin-bottom: 1.5rem;
 }
 
-.location-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.sidebar-menu-item {
+  margin-bottom: 0.75rem;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
 }
 
-.location-item {
-  width: 100%;
+.sidebar-menu-item.active {
+  background-color: var(--primary-color);
+  color: var(--white);
 }
 
-.location-btn {
+.sidebar-checkbox-container {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  width: 100%;
-  text-align: left;
-  padding: 0.75rem 1rem;
-  border: none;
-  background-color: transparent;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
   cursor: pointer;
-  transition: background-color 0.2s;
+  width: 100%;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
 }
 
-.location-btn:hover {
-  background-color: #f5f5f5;
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-grow: 1;
 }
 
-.location-btn.active {
-  background-color: #e6e6ff;
-  color: #646cff;
-  font-weight: 500;
+.custom-checkbox {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
 }
 
-.camera-count {
+.sidebar-menu-item.active .custom-checkbox,
+.location-checkbox-container.active .custom-checkbox {
+  background-color: var(--white);
+  border-color: var(--white);
+}
+
+.custom-checkbox-icon {
+  opacity: 0;
+  color: var(--primary-color);
+  font-weight: bold;
+  transition: var(--transition);
+}
+
+.sidebar-menu-item.active .custom-checkbox-icon,
+.location-checkbox-container.active .custom-checkbox-icon {
+  opacity: 1;
+}
+
+.sidebar-checkbox-container input,
+.location-checkbox-container input {
+  display: none;
+}
+
+.checkbox-text {
+  flex-grow: 1;
+}
+
+.checkbox-label {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--white);
+  background-color: rgba(255, 255, 255, 0.3);
   padding: 0.2rem 0.5rem;
-  background-color: #f0f0f0;
   border-radius: 10px;
 }
 
-/* Стили для сетки камер */
-.camera-grid-container {
+.expand-button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.camera-grid-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
 }
 
-.breadcrumbs {
+/* Список локаций */
+.location-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0;
+}
+
+.location-item {
+  margin-bottom: 0.5rem;
+}
+
+.location-checkbox-container {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  width: 100%;
+  border-radius: var(--border-radius);
+  background-color: #f0f0f0;
+  transition: var(--transition);
+}
+
+.location-checkbox-container.active {
+  background-color: var(--secondary-color);
+  color: var(--white);
+}
+
+/* Хлебные крошки */
+.breadcrumb-navigation {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #666;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.breadcrumb-navigation .breadcrumb-item:not(:first-child) {
+  background-color: var(--light-bg);
+  color: var(--gray2-color);
+}
+
+.breadcrumb-item {
+  font-size: 12px;
+  color: var(--gray2-color);
+  padding: 4px 8px;
+  border-radius: 20px;
+  background-color: var(--white);
+  transition: var(--transition);
+}
+
+.breadcrumb-item:hover {
+  background-color: #f0f0f0;
 }
 
 .breadcrumb-separator {
   color: #999;
 }
 
-.camera-count-indicator {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.camera-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.camera-grid-empty {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 300px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Сохраняем существующие стили для отдельной камеры и элементов управления */
-
-.app {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.app-header {
-  background-color: #282c34;
-  padding: 1rem;
-  color: white;
-}
-
-.app-content {
-  flex: 1;
-  padding: 1rem;
-}
-
-.app-footer {
-  background-color: #282c34;
-  padding: 1rem;
-  color: white;
-  text-align: center;
+.camera-count {
+  font-size: 18px;
+  color: var(--gray2-color);
+  margin-left: auto;
 }
 
 /* Сетка камер */
+.camera-grid-container {
+  padding: 1.5rem;
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+}
+
 .camera-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
+  margin-top: 1rem;
 }
 
 .camera-grid-empty {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
+  min-height: 200px;
+  color: #888;
+  font-style: italic;
 }
 
-/* Отдельная камера */
+/* Карточка камеры */
+.camera-card {
+  max-width: 456px;
+  max-height: 456px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: var(--transition);
+  background-color: var(--white);
+}
+
+.camera-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.camera-card-header {
+  z-index: 9999;
+  width: 100%;
+  position: absolute;
+  background-color: transparent !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px;
+  /* border-bottom: 1px solid #f0f0f0; */
+}
+
+.camera-card-title {
+  font-weight: 500;
+  color: #333333;
+  padding: 2px 6px;
+  background-color: #F2F3F7;
+  border-radius: 10px;
+}
+
+.camera-menu-button {
+  gap: 4px;
+  border-radius: 10px;
+  border: none;
+  background-color: var(--light-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.camera-card-header span.menu-button-circle {
+  width: 5px;
+  height: 5px;
+  background-color: var(--white);
+  border-radius: 50%;
+}
+
+.camera-menu-button:hover {
+  background-color: #f0f0f0;
+}
+
 .camera-view {
   position: relative;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
+  aspect-ratio: 9/16;
+  background-color: #000;
+  box-shadow: none;
 }
 
-.camera-view:hover {
-  transform: scale(1.02);
+.camera-card:hover {
+  outline: 1px solid var(--primary-color);
 }
 
 .camera-view.active {
-  border: 2px solid #646cff;
-}
-
-.camera-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.camera-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 0.5rem;
-  font-size: 0.9rem;
+  border: 2px solid var(--primary-color);
 }
 
 /* Режим одной камеры */
 .camera-single-view {
   height: 70vh;
   position: relative;
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  padding: 1rem;
+  margin: 1rem;
 }
 
 .camera-single-view .camera-view {
   height: 100%;
   cursor: default;
+  border-radius: var(--border-radius);
+  overflow: hidden;
 }
 
 .back-to-grid {
@@ -286,46 +364,20 @@ body {
   top: 1rem;
   right: 1rem;
   z-index: 10;
-  background-color: #646cff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--white);
   border: none;
   border-radius: 4px;
   padding: 0.5rem 1rem;
   cursor: pointer;
+  transition: var(--transition);
 }
 
-/* Элементы управления */
-.camera-controls {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
+.back-to-grid:hover {
+  background-color: var(--primary-hover);
 }
 
-.camera-controls-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.camera-controls button {
-  width: 40px;
-  height: 40px;
-  font-size: 1.2rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #646cff;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.camera-controls button:hover {
-  background-color: #535bf2;
-}
-
-/* Стили для видеоплеера */
+/* Видеоплеер */
 .video-player-container {
   position: relative;
   width: 100%;
@@ -353,7 +405,7 @@ body {
   justify-content: center;
   align-items: center;
   background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  color: var(--white);
   z-index: 2;
 }
 
@@ -362,20 +414,30 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Улучшенные стили для элементов управления */
+/* Элементы управления */
 .camera-controls-wrapper {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  padding: 1.5rem;
+  margin: 1rem;
 }
 
 .controls-toggle-btn {
   display: block;
   margin: 0 auto 1rem;
   padding: 0.5rem 1rem;
-  background-color: #646cff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--white);
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: var(--transition);
+}
+
+.controls-toggle-btn:hover {
+  background-color: var(--primary-hover);
 }
 
 .camera-controls {
@@ -384,7 +446,12 @@ body {
   gap: 2rem;
   padding: 1rem;
   background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
+  border-radius: var(--border-radius);
+}
+
+.camera-controls-group {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .control-btn {
@@ -394,16 +461,16 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #646cff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--white);
   border: none;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.1s, background-color 0.2s;
+  transition: var(--transition);
 }
 
 .control-btn:hover {
-  background-color: #535bf2;
+  background-color: var(--primary-hover);
   transform: scale(1.05);
 }
 
@@ -411,32 +478,28 @@ body {
   transform: scale(0.95);
 }
 
-/* Индикатор соединения */
-.connection-status {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  z-index: 10;
-}
-
-.connection-status.online {
-  background-color: #4caf50;
-}
-
-.connection-status.offline {
-  background-color: #f44336;
-}
-
-.connection-status.loading {
-  background-color: #ffc107;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 1; }
-  100% { opacity: 0.4; }
+/* Адаптивность */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: auto;
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .layout-content {
+    padding: 0.5rem;
+  }
+  
+  .camera-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .camera-controls {
+    flex-direction: column;
+    align-items: center;
+  }
 }

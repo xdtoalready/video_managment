@@ -21,8 +21,10 @@ const CameraGrid: React.FC = () => {
   // Если нет камер, показываем сообщение
   if (filteredCameras.length === 0) {
     return (
-      <div className="camera-grid-empty">
-        <p>Нет доступных камер{selectedLocation ? ` в категории: ${locationNames[selectedLocation]}` : ''}.</p>
+      <div className="camera-grid-container">
+        <div className="camera-grid-empty">
+          <p>Нет доступных камер{selectedLocation ? ` в категории: ${locationNames[selectedLocation]}` : ''}.</p>
+        </div>
       </div>
     );
   }

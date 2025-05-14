@@ -22,23 +22,29 @@ const CameraView: React.FC<CameraViewProps> = ({
   };
 
   return (
-    <div 
-      className={`camera-view ${isActive ? 'active' : ''}`} 
-      onClick={onClick}
-    >
-      {error ? (
-        <div className="camera-error">
-          <div className="camera-error-icon">⚠️</div>
-          <div className="camera-error-message">Ошибка подключения</div>
-        </div>
-      ) : (
-        <VideoPlayer 
-          streamUrl={streamUrl}
-          onError={handleVideoError}
-          className="camera-video"
-        />
-      )}
-      <div className="camera-name">{cameraName}</div>
+    <div className="camera-card" onClick={onClick}>
+      <div className="camera-card-header">
+        <span className="camera-card-title">{cameraName}</span>
+        <button className="camera-menu-button">
+          <span class="menu-button-circle"></span>
+          <span class="menu-button-circle"></span>
+          <span class="menu-button-circle"></span>
+        </button>
+      </div>
+      <div className={`camera-view ${isActive ? 'active' : ''}`}>
+        {error ? (
+          <div className="camera-error">
+            <div className="camera-error-icon">⚠️</div>
+            <div className="camera-error-message">Ошибка подключения</div>
+          </div>
+        ) : (
+          <VideoPlayer 
+            streamUrl={streamUrl}
+            onError={handleVideoError}
+            className="camera-video"
+          />
+        )}
+      </div>
     </div>
   );
 };

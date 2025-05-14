@@ -34,7 +34,7 @@ const Sidebar: React.FC = () => {
   
   return (
     <aside className="sidebar">
-      {/* Дата и заголовок (перенесено из Header) */}
+      {/* Дата и заголовок */}
       <div className="sidebar-date">
         <span className="sidebar-date-label">Сегодня</span>
         <span className="sidebar-date-value">{getCurrentDate()}</span>
@@ -44,13 +44,18 @@ const Sidebar: React.FC = () => {
       <div className="sidebar-section">
         <div className={`sidebar-menu-item ${viewMode === 'online' ? 'active' : ''}`}>
           <label className="sidebar-checkbox-container">
-            <input 
-              type="radio" 
-              name="viewMode" 
-              checked={viewMode === 'online'} 
-              onChange={() => setViewMode('online')}
-            />
-            <span className="checkbox-text">Наблюдение</span>
+            <div className="checkbox-wrapper">
+              <input 
+                type="radio" 
+                name="viewMode" 
+                checked={viewMode === 'online'} 
+                onChange={() => setViewMode('online')}
+              />
+              <div className="custom-checkbox">
+                <div className="custom-checkbox-icon">✓</div>
+              </div>
+              <span className="checkbox-text">Наблюдение</span>
+            </div>
             <span className="checkbox-label">онлайн</span>
             <button 
               className="expand-button"
@@ -66,12 +71,17 @@ const Sidebar: React.FC = () => {
             {availableLocations.map(location => (
               <li key={location} className="location-item">
                 <label className={`location-checkbox-container ${selectedLocation === location ? 'active' : ''}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedLocation === location} 
-                    onChange={() => setSelectedLocation(location === selectedLocation ? null : location)}
-                  />
-                  <span className="checkbox-text">{locationNames[location]}</span>
+                  <div className="checkbox-wrapper">
+                    <input 
+                      type="checkbox" 
+                      checked={selectedLocation === location} 
+                      onChange={() => setSelectedLocation(location === selectedLocation ? null : location)}
+                    />
+                    <div className="custom-checkbox">
+                      <div className="custom-checkbox-icon">✓</div>
+                    </div>
+                    <span className="checkbox-text">{locationNames[location]}</span>
+                  </div>
                 </label>
               </li>
             ))}
@@ -80,13 +90,18 @@ const Sidebar: React.FC = () => {
         
         <div className={`sidebar-menu-item ${viewMode === 'archive' ? 'active' : ''}`}>
           <label className="sidebar-checkbox-container">
-            <input 
-              type="radio" 
-              name="viewMode" 
-              checked={viewMode === 'archive'} 
-              onChange={() => setViewMode('archive')}
-            />
-            <span className="checkbox-text">Видео архив</span>
+            <div className="checkbox-wrapper">
+              <input 
+                type="radio" 
+                name="viewMode" 
+                checked={viewMode === 'archive'} 
+                onChange={() => setViewMode('archive')}
+              />
+              <div className="custom-checkbox">
+                <div className="custom-checkbox-icon">✓</div>
+              </div>
+              <span className="checkbox-text">Видео архив</span>
+            </div>
             <button 
               className="expand-button"
               onClick={() => setIsArchiveExpanded(!isArchiveExpanded)}
