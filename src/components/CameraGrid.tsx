@@ -31,7 +31,7 @@ const CameraGrid: React.FC = () => {
   if (!isGridView && activeCamera) {
     return (
       <div className="camera-single-view">
-        <div className="breadcrumbs">
+        <div className="breadcrumb-navigation">
           <span className="breadcrumb-item">Видеонаблюдение</span>
           <span className="breadcrumb-separator">&gt;</span>
           <span className="breadcrumb-item">{locationNames[activeCamera.location]}</span>
@@ -54,20 +54,15 @@ const CameraGrid: React.FC = () => {
   // Режим сетки
   return (
     <div className="camera-grid-container">
-      <div className="camera-grid-header">
-        <div className="breadcrumbs">
-          <span className="breadcrumb-item">Видеонаблюдение</span>
-          {selectedLocation && (
-            <>
-              <span className="breadcrumb-separator">&gt;</span>
-              <span className="breadcrumb-item">{locationNames[selectedLocation]}</span>
-            </>
-          )}
-        </div>
-        
-        <div className="camera-count-indicator">
-          {filteredCameras.length}/{cameras.length}
-        </div>
+      <div className="breadcrumb-navigation">
+        <span className="breadcrumb-item">Видеонаблюдение</span>
+        {selectedLocation && (
+          <>
+            <span className="breadcrumb-separator">&gt;</span>
+            <span className="breadcrumb-item">{locationNames[selectedLocation]}</span>
+          </>
+        )}
+        <span className="camera-count">{filteredCameras.length}/{cameras.length}</span>
       </div>
       
       <div className="camera-grid">

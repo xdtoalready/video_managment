@@ -1,9 +1,6 @@
 import React from 'react';
-import { useStore } from '../../store/useStore';
 
 const Header: React.FC = () => {
-  const { viewMode, setViewMode } = useStore();
-  
   // Получаем текущую дату в формате "ДД месяц ГГГГ"
   const getCurrentDate = () => {
     const months = [
@@ -27,25 +24,6 @@ const Header: React.FC = () => {
       </div>
       
       <h1 className="header-title">Видеонаблюдение</h1>
-      
-      <div className="view-mode-toggle">
-        <button 
-          className={`view-mode-btn ${viewMode === 'online' ? 'active' : ''}`}
-          onClick={() => setViewMode('online')}
-        >
-          <span className="view-mode-icon">👁️</span>
-          <span className="view-mode-text">Наблюдение</span>
-          <span className="view-mode-label">онлайн</span>
-        </button>
-        
-        <button 
-          className={`view-mode-btn ${viewMode === 'archive' ? 'active' : ''}`}
-          onClick={() => setViewMode('archive')}
-        >
-          <span className="view-mode-icon">🗄️</span>
-          <span className="view-mode-text">Видео архив</span>
-        </button>
-      </div>
     </header>
   );
 };
