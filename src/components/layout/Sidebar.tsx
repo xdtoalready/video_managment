@@ -13,17 +13,34 @@ const Sidebar: React.FC = () => {
   // Получаем список всех локаций с камерами
   const availableLocations = Object.keys(locationNames) as LocationType[];
   
-  // Считаем количество камер по локациям
-  const getCameraCountByLocation = (location: LocationType) => {
-    return cameras.filter(camera => camera.location === location).length;
-  };
-  
   // Стейт для управления раскрытием разделов меню
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(true);
   const [isArchiveExpanded, setIsArchiveExpanded] = useState(false);
   
+  // Получаем текущую дату в формате "ДД месяц ГГГГ"
+  const getCurrentDate = () => {
+    const months = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+    
+    const date = new Date();
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    
+    return `${day} ${month} ${year}`;
+  };
+  
   return (
     <aside className="sidebar">
+      {/* Дата и заголовок (перенесено из Header) */}
+      <div className="sidebar-date">
+        <span className="sidebar-date-label">Сегодня</span>
+        <span className="sidebar-date-value">{getCurrentDate()}</span>
+      </div>
+      <h1 className="sidebar-title">Видеонаблюдение</h1>
+      
       <div className="sidebar-section">
         <div className={`sidebar-menu-item ${viewMode === 'online' ? 'active' : ''}`}>
           <label className="sidebar-checkbox-container">
