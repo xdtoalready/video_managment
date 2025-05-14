@@ -1,29 +1,63 @@
 import { create } from 'zustand';
 
-// Определение типов для камеры и хранилища
-interface Camera {
+// Типы локаций камер
+export type LocationType = 
+  | 'street'       // Улица
+  | 'house'        // Дом
+  | 'elevator'     // Лифт 
+  | 'utility'      // Бытовка
+  | 'security'     // Комната охранника
+  | 'playground'   // Детская площадка
+  | 'parking';     // Парковка
+
+// Тип режима просмотра
+export type ViewMode = 'online' | 'archive';
+
+// Тип камеры
+export interface Camera {
   id: string;
   name: string;
   url: string;
+  location: LocationType;
   isActive: boolean;
 }
 
+// Тип состояния приложения
 interface AppState {
+  // Данные
   cameras: Camera[];
   activeCamera: Camera | null;
+  selectedLocation: LocationType | null;
+  viewMode: ViewMode;
   isGridView: boolean;
+  
   // Методы для изменения состояния
   setActiveCamera: (cameraId: string) => void;
   toggleGridView: () => void;
+  setViewMode: (mode: ViewMode) => void;
+  setSelectedLocation: (location: LocationType | null) => void;
   addCamera: (camera: Omit<Camera, 'isActive'>) => void;
   removeCamera: (cameraId: string) => void;
   loadCameras: () => Promise<void>;
 }
 
+// Соответствие локаций и их русских названий
+export const locationNames: Record<LocationType, string> = {
+  street: 'Улица',
+  house: 'Дом',
+  elevator: 'Лифт',
+  utility: 'Бытовка',
+  security: 'Комната охранника',
+  playground: 'Детская площадка',
+  parking: 'Парковка'
+};
+
 // Создание хранилища
 export const useStore = create<AppState>((set, get) => ({
   cameras: [],
   activeCamera: null,
+  selectedLocation: null,
+  viewMode: 'online',
   isGridView: true,
   
   // Установка активной камеры
@@ -42,6 +76,16 @@ export const useStore = create<AppState>((set, get) => ({
     set(state => ({ isGridView: !state.isGridView }));
   },
   
+  // Установка режима просмотра (онлайн/архив)
+  setViewMode: (mode: ViewMode) => {
+    set({ viewMode: mode });
+  },
+  
+  // Установка выбранной локации
+  setSelectedLocation: (location: LocationType | null) => {
+    set({ selectedLocation: location });
+  },
+  
   // Добавление новой камеры
   addCamera: (camera) => {
     const newCamera = { ...camera, isActive: false };
@@ -58,16 +102,37 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
   
-  // Загрузка списка камер с SentryShot API
+  // Загрузка списка камер с API
   loadCameras: async () => {
     try {
-      // Тут будет запрос к API SentryShot для получения списка камер
-      // Пока используем заглушку для тестирования
-      const dummyCameras = [
+      // В будущем заменим на реальный API вызов
+      const dummyCameras: Camera[] = [
         {
           id: '1',
           name: 'Камера 1',
           url: 'rtsp://rtsp-server:8554/stream',
+          location: 'street',
+          isActive: false
+        },
+        {
+          id: '2',
+          name: 'Камера 2',
+          url: 'rtsp://rtsp-server:8554/stream',
+          location: 'house',
+          isActive: false
+        },
+        {
+          id: '3',
+          name: 'Камера 3',
+          url: 'rtsp://rtsp-server:8554/stream',
+          location: 'playground',
+          isActive: false
+        },
+        {
+          id: '4',
+          name: 'Камера 4',
+          url: 'rtsp://rtsp-server:8554/stream',
+          location: 'playground',
           isActive: false
         }
       ];

@@ -2,10 +2,11 @@ import { useEffect } from 'react'
 import './App.css'
 import CameraGrid from './components/CameraGrid'
 import Controls from './components/Controls'
+import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
 
 function App() {
-  const { loadCameras, isGridView } = useStore();
+  const { loadCameras, viewMode, isGridView } = useStore();
 
   // Загрузка камер при монтировании компонента
   useEffect(() => {
@@ -13,21 +14,20 @@ function App() {
   }, [loadCameras]);
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Система видеонаблюдения</h1>
-      </header>
-      
-      <main className="app-content">
-        <CameraGrid />
-        {!isGridView && <Controls />}
-      </main>
-      
-      <footer className="app-footer">
-        <p>© 2025 Система видеонаблюдения</p>
-      </footer>
-    </div>
-  )
+    <Layout>
+      {viewMode === 'online' ? (
+        <>
+          <CameraGrid />
+          {!isGridView && <Controls />}
+        </>
+      ) : (
+        <div className="archive-container">
+          <h2>Видео архив</h2>
+          <p>Функциональность архива будет реализована позже.</p>
+        </div>
+      )}
+    </Layout>
+  );
 }
 
 export default App
