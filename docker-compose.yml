@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  # Наше React-приложение
+  react-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - sentryshot
+    networks:
+      - app-network
+
+  # SentryShot для обработки видеопотоков
+  sentryshot:
+    image: ghcr.io/sentryshot/sentryshot:latest
+    volumes:
+      - sentryshot-config:/config
+      - sentryshot-recordings:/recordings
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  # Симуляция камеры (v4l2 loop device)
+  dummy-camera:
+    image: jrottenberg/ffmpeg:4.4-ubuntu
+    command: >
+      -re -f lavfi -i testsrc=size=1280x720:rate=30 -c:v libx264 -f v4l2 /dev/video0
+    privileged: true
+    devices:
+      - /dev/video0:/dev/video0
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  sentryshot-config:
+  sentryshot-recordings:

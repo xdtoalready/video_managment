@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  # SentryShot для обработки видеопотоков
+  sentryshot:
+    image: codeberg.org/sentryshot/sentryshot:latest
+    volumes:
+      - sentryshot-config:/config
+      - sentryshot-recordings:/recordings
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  # Симуляция камеры с помощью FFmpeg
+  dummy-camera:
+    image: jrottenberg/ffmpeg:4.4-ubuntu
+    command: >
+      -re -f lavfi -i testsrc=size=1280x720:rate=30 -f mpegts udp://sentryshot:8554
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  sentryshot-config:
+  sentryshot-recordings:
