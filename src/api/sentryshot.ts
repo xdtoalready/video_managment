@@ -24,12 +24,29 @@ export const sentryshotAPI = {
     }
   },
 
-  // Получение URL видеопотока для конкретной камеры
-  getStreamUrl(cameraId: string): string {
+  // Получение URL видеопотока в HLS формате
+  getStreamUrl(cameraId: string, useHls = true): string {
+    if (useHls) {
+      // Для HLS потока (работает лучше в браузерах)
+      return `${API_URL}/stream/${cameraId}/index.m3u8`;
+    }
+    // Для обычного потока
     return `${API_URL}/stream/${cameraId}`;
   },
 
-  // Дополнительно: управление камерой (пан, наклон, зум и т.д.)
+  // Преобразование RTSP URL в совместимый формат
+  formatStreamUrl(url: string): string {
+    // Для тестирования используем тестовый поток
+    if (url.includes('rtsp-server:8554')) {
+      return 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
+    }
+    
+    // Для реальных RTSP потоков нужно преобразование через прокси
+    const encodedUrl = encodeURIComponent(url);
+    return `${API_URL}/proxy/stream?url=${encodedUrl}`;
+  },
+
+  // Управление камерой
   async controlCamera(cameraId: string, command: string): Promise<boolean> {
     try {
       const response = await fetch(`${API_URL}/camera/${cameraId}/control`, {

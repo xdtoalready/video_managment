@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import VideoPlayer from './video/VideoPlayer';
 
 interface CameraViewProps {
   streamUrl: string;
@@ -13,39 +14,30 @@ const CameraView: React.FC<CameraViewProps> = ({
   isActive = false, 
   onClick 
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    // Настройка видеоплеера при монтировании компонента
-    const videoElement = videoRef.current;
-    if (videoElement) {
-      videoElement.src = streamUrl;
-      videoElement.onerror = () => {
-        console.error(`Ошибка при загрузке видеопотока для камеры: ${cameraName}`);
-      };
-    }
-
-    return () => {
-      // Очистка при размонтировании
-      if (videoElement) {
-        videoElement.pause();
-        videoElement.src = '';
-      }
-    };
-  }, [streamUrl, cameraName]);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Обработчик ошибок видеоплеера
+  const handleVideoError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   return (
     <div 
       className={`camera-view ${isActive ? 'active' : ''}`} 
       onClick={onClick}
     >
-      <video 
-        ref={videoRef} 
-        autoPlay 
-        playsInline
-        muted
-        className="camera-video"
-      />
+      {error ? (
+        <div className="camera-error">
+          <div className="camera-error-icon">⚠️</div>
+          <div className="camera-error-message">Ошибка подключения</div>
+        </div>
+      ) : (
+        <VideoPlayer 
+          streamUrl={streamUrl}
+          onError={handleVideoError}
+          className="camera-video"
+        />
+      )}
       <div className="camera-name">{cameraName}</div>
     </div>
   );

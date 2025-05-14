@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { sentryshotAPI } from '../api/sentryshot';
 
 const Controls: React.FC = () => {
   const { activeCamera } = useStore();
-
+  const [isControlsVisible, setIsControlsVisible] = useState(true);
+  
   // Если нет активной камеры, не показываем элементы управления
   if (!activeCamera) {
     return null;
@@ -28,23 +29,74 @@ const Controls: React.FC = () => {
       sentryshotAPI.controlCamera(activeCamera.id, `zoom_${direction}`);
     }
   };
+  
+  const toggleControlsVisibility = () => {
+    setIsControlsVisible(!isControlsVisible);
+  };
 
   return (
-    <div className="camera-controls">
-      <div className="camera-controls-group">
-        <button onClick={() => handlePan('left')}>←</button>
-        <button onClick={() => handlePan('right')}>→</button>
-      </div>
+    <div className="camera-controls-wrapper">
+      <button 
+        className="controls-toggle-btn"
+        onClick={toggleControlsVisibility}
+      >
+        {isControlsVisible ? 'Скрыть управление' : 'Показать управление'}
+      </button>
       
-      <div className="camera-controls-group">
-        <button onClick={() => handleTilt('up')}>↑</button>
-        <button onClick={() => handleTilt('down')}>↓</button>
-      </div>
-      
-      <div className="camera-controls-group">
-        <button onClick={() => handleZoom('in')}>+</button>
-        <button onClick={() => handleZoom('out')}>-</button>
-      </div>
+      {isControlsVisible && (
+        <div className="camera-controls">
+          <div className="camera-controls-group">
+            <button 
+              className="control-btn" 
+              onClick={() => handlePan('left')}
+              title="Повернуть влево"
+            >
+              ←
+            </button>
+            <button 
+              className="control-btn" 
+              onClick={() => handlePan('right')}
+              title="Повернуть вправо"
+            >
+              →
+            </button>
+          </div>
+          
+          <div className="camera-controls-group">
+            <button 
+              className="control-btn" 
+              onClick={() => handleTilt('up')}
+              title="Наклонить вверх"
+            >
+              ↑
+            </button>
+            <button 
+              className="control-btn" 
+              onClick={() => handleTilt('down')}
+              title="Наклонить вниз"
+            >
+              ↓
+            </button>
+          </div>
+          
+          <div className="camera-controls-group">
+            <button 
+              className="control-btn" 
+              onClick={() => handleZoom('in')}
+              title="Приблизить"
+            >
+              +
+            </button>
+            <button 
+              className="control-btn" 
+              onClick={() => handleZoom('out')}
+              title="Отдалить"
+            >
+              -
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

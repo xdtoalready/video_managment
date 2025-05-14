@@ -103,46 +103,49 @@ export const useStore = create<AppState>((set, get) => ({
   },
   
   // Загрузка списка камер с API
-  loadCameras: async () => {
-    try {
-      // В будущем заменим на реальный API вызов
-      const dummyCameras: Camera[] = [
-        {
-          id: '1',
-          name: 'Камера 1',
-          url: 'rtsp://rtsp-server:8554/stream',
-          location: 'street',
-          isActive: false
-        },
-        {
-          id: '2',
-          name: 'Камера 2',
-          url: 'rtsp://rtsp-server:8554/stream',
-          location: 'house',
-          isActive: false
-        },
-        {
-          id: '3',
-          name: 'Камера 3',
-          url: 'rtsp://rtsp-server:8554/stream',
-          location: 'playground',
-          isActive: false
-        },
-        {
-          id: '4',
-          name: 'Камера 4',
-          url: 'rtsp://rtsp-server:8554/stream',
-          location: 'playground',
-          isActive: false
-        }
-      ];
-      
-      set({ 
-        cameras: dummyCameras,
-        activeCamera: dummyCameras.length > 0 ? dummyCameras[0] : null
-      });
-    } catch (error) {
-      console.error('Ошибка при загрузке камер:', error);
-    }
+  // Загрузка списка камер с API
+loadCameras: async () => {
+  try {
+    // В будущем заменим на реальный API вызов
+    const dummyCameras: Camera[] = [
+      {
+        id: '1',
+        name: 'Камера 1',
+        // Используем тестовый HLS поток для демонстрации
+        url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+        location: 'street',
+        isActive: false
+      },
+      {
+        id: '2',
+        name: 'Камера 2',
+        // Другой тестовый поток
+        url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+        location: 'house',
+        isActive: false
+      },
+      {
+        id: '3',
+        name: 'Камера 3',
+        url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
+        location: 'playground',
+        isActive: false
+      },
+      {
+        id: '4',
+        name: 'Камера 4',
+        url: 'https://moctobpanel.vrvm.com/hls/live/2013375/test/master.m3u8',
+        location: 'playground',
+        isActive: false
+      }
+    ];
+    
+    set({ 
+      cameras: dummyCameras,
+      activeCamera: dummyCameras.length > 0 ? dummyCameras[0] : null
+    });
+  } catch (error) {
+    console.error('Ошибка при загрузке камер:', error);
   }
+}
 }));
