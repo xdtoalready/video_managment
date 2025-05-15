@@ -7,13 +7,15 @@ interface VideoPlayerProps {
   onError?: (error: string) => void;
   className?: string;
   isFullscreen?: boolean;
+  isArchiveMode?: boolean;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
   streamUrl, 
   onError,
   className = '',
-  isFullscreen = false
+  isFullscreen = false,
+  isArchiveMode = false
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -23,12 +25,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0); // 0 = muted
-  const [showControls, setShowControls] = useState(true);
-  const [isSeeking, setIsSeeking] = useState(false);
-  
-  // Автоматически скрываем элементы управления после бездействия
+  const [showControls, setShowControls] = useState(isArchiveMode);
+
+  // Автоматически скрываем элементы управления после бездействия (только для архивного режима)
   useEffect(() => {
-    if (!isFullscreen) return;
+    if (!isArchiveMode) return;
     
     let controlsTimer: NodeJS.Timeout;
     
@@ -37,7 +38,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setShowControls(true);
       
       controlsTimer = setTimeout(() => {
-        if (!isSeeking) setShowControls(false);
+        setShowControls(false);
       }, 3000);
     };
     
@@ -50,36 +51,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       clearTimeout(controlsTimer);
       playerContainerRef.current?.removeEventListener('mousemove', handleMouseMove);
     };
-  }, [isFullscreen, isSeeking]);
-  
-  // Создаем обработчик нажатия клавиш
-  useEffect(() => {
-    if (!isFullscreen) return;
-    
-    const handleKeyPress = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case ' ':
-          togglePlay();
-          break;
-        case 'f':
-          toggleFullscreen();
-          break;
-        case 'ArrowRight':
-          skip(10);
-          break;
-        case 'ArrowLeft':
-          skip(-10);
-          break;
-        case 'm':
-          toggleMute();
-          break;
-      }
-    };
-    
-    document.addEventListener('keydown', handleKeyPress);
-    
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [isFullscreen]);
+  }, [isArchiveMode]);
   
   // Основная логика стримера
   useEffect(() => {
@@ -194,7 +166,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, [streamUrl, onError]);
   
   // Функции управления
-  const togglePlay = () => {
+  const togglePlay = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation(); // Предотвращаем всплытие клика
+    }
+    
     const video = videoRef.current;
     if (!video) return;
     
@@ -205,7 +182,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   };
   
-  const toggleMute = () => {
+  const toggleMute = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const video = videoRef.current;
     if (!video) return;
     
@@ -227,21 +207,24 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.currentTime = time;
   };
   
-  const skip = (seconds: number) => {
+  const skip = (seconds: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     const video = videoRef.current;
     if (!video) return;
     
     video.currentTime += seconds;
   };
   
-  const toggleFullscreen = () => {
-    const container = playerContainerRef.current;
-    if (!container) return;
-    
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
+  // Обработчик клика на видео
+  const handleVideoClick = (e: React.MouseEvent) => {
+    if (isArchiveMode) {
+      togglePlay(e);
     } else {
-      container.requestFullscreen();
+      // Для обычного режима просто предотвращаем всплытие клика,
+      // чтобы не закрывать видео при клике на нем
+      e.stopPropagation();
     }
   };
   
@@ -259,6 +242,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <div 
       ref={playerContainerRef}
       className={`video-player-container ${className} ${isFullscreen ? 'fullscreen' : ''}`}
+      onClick={(e) => e.stopPropagation()} // Предотвращаем всплытие события
     >
       {isLoading && <div className="video-loading">Загрузка...</div>}
       {hasError && <div className="video-error">Ошибка загрузки видео</div>}
@@ -269,11 +253,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         playsInline
         muted
         className="video-element"
-        onClick={togglePlay}
+        onClick={handleVideoClick}
       />
       
-      {/* Управление плеером */}
-      {isFullscreen && (
+      {/* Управление плеером - только для архивного режима */}
+      {isArchiveMode && (
         <div className={`video-controls ${showControls ? 'visible' : ''}`}>
           {/* Ползунок прогресса */}
           <div className="progress-container">
@@ -284,10 +268,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               max={duration || 100}
               value={currentTime}
               onChange={(e) => seek(Number(e.target.value))}
-              onMouseDown={() => setIsSeeking(true)}
-              onMouseUp={() => setIsSeeking(false)}
-              onTouchStart={() => setIsSeeking(true)}
-              onTouchEnd={() => setIsSeeking(false)}
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
           
@@ -307,13 +288,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 )}
               </button>
               
-              <button className="control-button" onClick={() => skip(-10)}>
+              <button className="control-button" onClick={(e) => skip(-10, e)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M11.99 5V1L7 6L11.99 11V7C15.31 7 17.99 9.68 17.99 13C17.99 16.32 15.31 19 11.99 19C8.67 19 5.99 16.32 5.99 13H3.99C3.99 17.42 7.57 21 11.99 21C16.41 21 19.99 17.42 19.99 13C19.99 8.58 16.41 5 11.99 5Z" fill="white"/>
                 </svg>
               </button>
               
-              <button className="control-button" onClick={() => skip(10)}>
+              <button className="control-button" onClick={(e) => skip(10, e)}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M18.01 13C18.01 16.32 15.33 19 12.01 19C8.69 19 6.01 16.32 6.01 13C6.01 9.68 8.69 7 12.01 7V11L17 6L12.01 1V5C7.59 5 4.01 8.58 4.01 13C4.01 17.42 7.59 21 12.01 21C16.43 21 20.01 17.42 20.01 13H18.01Z" fill="white"/>
                 </svg>
@@ -346,15 +327,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   max="100"
                   value={volume}
                   onChange={(e) => setPlayerVolume(Number(e.target.value))}
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
-              
-              {/* Полноэкранный режим */}
-              <button className="control-button" onClick={toggleFullscreen}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 14H5V19H10V17H7V14ZM5 10H7V7H10V5H5V10ZM17 17H14V19H19V14H17V17ZM14 5V7H17V10H19V5H14Z" fill="white"/>
-                </svg>
-              </button>
             </div>
           </div>
         </div>

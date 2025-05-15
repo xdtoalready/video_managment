@@ -284,8 +284,7 @@ body {
 
 /* Карточка камеры */
 .camera-card {
-  max-width: 456px;
-  max-height: 456px;
+  width: 100%;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -295,6 +294,21 @@ body {
   cursor: pointer;
   transition: var(--transition);
   background-color: var(--white);
+}
+
+/* Активная карточка камеры (не полноэкранная) */
+.camera-card.camera-active {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: none;
+  border-radius: var(--border-radius);
+  cursor: default;
+}
+
+.camera-card:hover:not(.camera-active) {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 /* Полноэкранная карточка камеры */
@@ -326,7 +340,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 5px;
+  padding: 10px;
+}
+
+.camera-active .camera-card-header {
+  padding: 15px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
 }
 
 .fullscreen-camera .camera-card-header {
@@ -337,9 +356,16 @@ body {
 .camera-card-title {
   font-weight: 500;
   color: #333333;
-  padding: 2px 6px;
+  padding: 4px 8px;
   background-color: #F2F3F7;
   border-radius: 10px;
+}
+
+.camera-active .camera-card-title {
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  font-size: 16px;
 }
 
 .fullscreen-camera .camera-card-title {
@@ -372,12 +398,20 @@ body {
   border-radius: 50%;
 }
 
+.camera-active .camera-menu-button .menu-button-circle {
+  background-color: white;
+}
+
 .fullscreen-camera .camera-menu-button .menu-button-circle {
   background-color: white;
 }
 
 .camera-menu-button:hover {
   background-color: #f0f0f0;
+}
+
+.camera-active .camera-menu-button:hover {
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .fullscreen-camera .camera-menu-button:hover {
@@ -393,6 +427,12 @@ body {
   box-shadow: none;
 }
 
+.camera-active .camera-view {
+  height: calc(100vh - 150px); /* Высота окна минус отступы */
+  border-radius: var(--border-radius);
+}
+
+
 .fullscreen-camera .camera-view {
   height: 100vh;
   border-radius: 0;
@@ -401,6 +441,10 @@ body {
 
 .camera-view.active {
   border: 2px solid var(--primary-color);
+}
+
+.camera-active .camera-view.active {
+  border: none;
 }
 
 .fullscreen-camera .camera-view.active {
@@ -427,8 +471,8 @@ body {
 
 .back-to-grid {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 15px;
+  right: 15px;
   z-index: 10;
   background-color: var(--primary-color);
   color: var(--white);
@@ -472,6 +516,10 @@ body {
   padding: 8px 15px;
   cursor: pointer;
   z-index: 5;
+}
+
+.camera-active .exit-archive-mode {
+  bottom: 100px;
 }
 
 .fullscreen-camera .exit-archive-mode {
@@ -533,15 +581,19 @@ body {
 }
 
 .camera-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
   border-radius: 10px;
   border: none;
   background-color: var(--light-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
   padding: 8px;
+  cursor: pointer;
+}
+
+.camera-active .camera-menu-button {
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .camera-card-header span.menu-button-circle {

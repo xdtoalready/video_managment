@@ -62,11 +62,17 @@ const CameraView: React.FC<CameraViewProps> = ({
     return `${streamUrl}?start=${camera.archiveStartDate.getTime()}&end=${camera.archiveEndDate?.getTime()}`;
   };
 
-  // Определение, показывать ли камеру в полноэкранном режиме
-  const isFullscreenView = isActive && !isGridView;
+  // Определение, показывать ли камеру в активном режиме
+  const isActiveView = isActive && !isGridView;
+  
+  // Определение архивного режима
+  const isArchiveMode = camera?.isArchiveMode || false;
 
   return (
-    <div className={`camera-card ${isFullscreenView ? 'fullscreen-camera' : ''}`} onClick={camera?.isArchiveMode ? undefined : onClick}>
+    <div 
+      className={`camera-card ${isActiveView ? 'camera-active' : ''}`} 
+      onClick={onClick}
+    >
       <div className="camera-card-header">
         <span className="camera-card-title">{cameraName}</span>
         <button className="camera-menu-button" onClick={handleOpenCalendar}>
@@ -86,7 +92,8 @@ const CameraView: React.FC<CameraViewProps> = ({
             streamUrl={camera?.isArchiveMode ? getArchiveUrl() : streamUrl}
             onError={handleVideoError}
             className="camera-video"
-            isFullscreen={isFullscreenView}
+            isFullscreen={isActiveView}
+            isArchiveMode={isArchiveMode}
           />
         )}
         
