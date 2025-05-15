@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Calendar.css';
 
 interface CalendarProps {
@@ -9,6 +9,8 @@ interface CalendarProps {
 const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [isYearSelectOpen, setIsYearSelectOpen] = useState<boolean>(false);
   
   // Форматированное отображение даты и времени
   const [startDateTime, setStartDateTime] = useState<string>(formatDateTime(new Date()));
@@ -24,6 +26,13 @@ const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
   
   // Дни недели на русском
   const weekdays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+  
+  // Обновляем год при его изменении
+  useEffect(() => {
+    const newDate = new Date(currentDate);
+    newDate.setFullYear(selectedYear);
+    setCurrentDate(newDate);
+  }, [selectedYear]);
   
   // Форматирование даты и времени в строку дд.мм.гггг чч:мм
   function formatDateTime(date: Date): string {
@@ -56,7 +65,7 @@ const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
     return day === 0 ? 6 : day - 1; // Преобразуем из воскресенье=0 в понедельник=0
   };
   
-  // Перейти к предыдущему месяцу
+  // Перейти к предыдущему месяцу (кнопка вниз)
   const prevMonth = () => {
     setCurrentDate(prevDate => {
       const newDate = new Date(prevDate);
@@ -65,13 +74,23 @@ const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
     });
   };
   
-  // Перейти к следующему месяцу
+  // Перейти к следующему месяцу (кнопка вверх)
   const nextMonth = () => {
     setCurrentDate(prevDate => {
       const newDate = new Date(prevDate);
       newDate.setMonth(prevDate.getMonth() + 1);
       return newDate;
     });
+  };
+  
+  // Генерация лет для селектора
+  const generateYearOptions = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear - 10; year <= currentYear + 2; year++) {
+      years.push(year);
+    }
+    return years;
   };
   
   // Выбор даты
@@ -98,6 +117,7 @@ const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
     const now = new Date();
     setSelectedDate(now);
     setCurrentDate(now);
+    setSelectedYear(now.getFullYear());
     
     const startDate = new Date(now);
     startDate.setMinutes(0);
@@ -133,6 +153,12 @@ const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
     } else {
       setEndDateTime(value);
     }
+  };
+  
+  // Обработка изменения года
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year);
+    setIsYearSelectOpen(false);
   };
   
   // Генерация сетки календаря
@@ -203,19 +229,46 @@ const Calendar: React.FC<CalendarProps> = ({ onClose, onDateTimeSelect }) => {
       <div className="calendar-container">
         <div className="calendar-header">
           <div className="month-selector">
-            <button className="month-nav-btn" onClick={prevMonth}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            <div className="current-month">
-              {`${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`}
+            {/* Год и месяц слева */}
+            <div 
+              className="current-date-selector"
+              onClick={() => setIsYearSelectOpen(!isYearSelectOpen)}
+            >
+              {months[currentDate.getMonth()]} {selectedYear} <span className="dropdown-arrow">
+					<svg width="14" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M13 1L7 7L1 1" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</span>
             </div>
-            <button className="month-nav-btn" onClick={nextMonth}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
+            
+            {/* Dropdown для выбора года */}
+            {isYearSelectOpen && (
+              <div className="year-dropdown">
+                {generateYearOptions().map(year => (
+                  <div 
+                    key={year} 
+                    className={`year-option ${year === selectedYear ? 'selected' : ''}`}
+                    onClick={() => handleYearChange(year)}
+                  >
+                    {year}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Стрелки вверх и вниз для навигации по месяцам */}
+            <div className="month-navigation-buttons">
+              <button className="month-nav-btn up" onClick={nextMonth}>
+				<svg width="14" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M1 7L7 1L13 7" stroke="white" stroke-linecap="round" stroke-linejoin="round"></path>
+				</svg>
+              </button>
+              <button className="month-nav-btn down" onClick={prevMonth}>
+				<svg width="14" height="8" viewBox="0 0 14 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M13 1L7 7L1 1" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+				</svg>
+              </button>
+            </div>
           </div>
         </div>
         
