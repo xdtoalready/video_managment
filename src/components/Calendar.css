@@ -45,6 +45,10 @@
   align-items: center;
 }
 
+.current-date-selector {
+	background-color(--color-main2);
+}
+
 .dropdown-arrow {
   font-size: 12px;
   margin-left: 10px;
@@ -71,7 +75,7 @@
 }
 
 .month-nav-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--color-main2);
 }
 
 .year-dropdown {
@@ -131,7 +135,7 @@
 }
 
 .calendar-day:hover:not(.inactive) {
-  background-color: #f0f0f0;
+  outline: 1px solid var(--primary-color);
 }
 
 .calendar-day.inactive {
@@ -204,9 +208,17 @@
   outline: 1px solid #D1CDCD;
 }
 
+.calendar-btn.reset:hover {
+	background-color: var(--white);
+}
+
 .calendar-btn.apply {
   background-color: var(--secondary-color);
   color: var(--white);
+}
+
+.calendar-btn.apply:hover {
+	background-color: var(--primary-color);
 }
 
 .calendar-btn.reset:hover {
