@@ -43,16 +43,25 @@ body {
   overflow-y: auto;
 }
 
+.border-linebrake {
+  width: 100%;
+  height: 1px;
+  background-color: var(--light-bg);
+}
+
 /* Сайдбар */
 .sidebar {
   width: var(--sidebar-width);
   background-color: var(--white);
   margin: 10px;
   border-radius: var(--border-radius);
-  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   box-shadow: var(--card-shadow);
+}
+
+.sidebar-header {
+	padding: 17px 0px 0px 10px;
 }
 
 .sidebar-date {
@@ -66,7 +75,7 @@ body {
   margin-right: 0.5rem;
 }
 
-.sidebar-date-value {
+.badge-blue {
   font-weight: 500;
   color: var(--color-main2);
   background-color: var(--light-bg);
@@ -74,15 +83,25 @@ body {
   border-radius: 100px;
 }
 
+.sidebar-date-value {
+	font-size: 14px;
+}
+
+.sidebar-menu-item .checkbox-label {
+	font-size: 16px;
+}
+
 .sidebar-title {
   font-size: 18px;
-  margin: 0.5rem 0 2rem 0;
+  margin-top: 12.5px;
+  margin-bottom: 7.5px;
   font-weight: 500;
   color: #333;
 }
 
 .sidebar-section {
   margin-bottom: 1.5rem;
+  margin-top: 10px;
 }
 
 .sidebar-menu-item {
@@ -100,7 +119,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
+  padding: 12.5px 10px;
   cursor: pointer;
   width: 100%;
   border-radius: var(--border-radius);
@@ -152,14 +171,6 @@ body {
   flex-grow: 1;
 }
 
-.checkbox-label {
-  font-size: 0.8rem;
-  color: var(--white);
-  background-color: rgba(255, 255, 255, 0.3);
-  padding: 0.2rem 0.5rem;
-  border-radius: 10px;
-}
-
 .expand-button {
   background: none;
   border: none;
@@ -191,12 +202,20 @@ body {
   cursor: pointer;
   width: 100%;
   border-radius: var(--border-radius);
-  background-color: #f0f0f0;
   transition: var(--transition);
+  color: var(--gray2-color);
+}
+
+.location-checkbox-container:hover {
+	background-color: var(--secondary-color);
+}
+
+.location-checkbox-container:hover .checkbox-text {
+	color: var(--white);
 }
 
 .location-checkbox-container.active {
-  background-color: var(--secondary-color);
+  background-color: var(--primary-color);
   color: var(--white);
 }
 

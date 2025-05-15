@@ -35,11 +35,15 @@ const Sidebar: React.FC = () => {
   return (
     <aside className="sidebar">
       {/* Дата и заголовок */}
-      <div className="sidebar-date">
-        <span className="sidebar-date-label">Сегодня</span>
-        <span className="sidebar-date-value">{getCurrentDate()}</span>
+      <div className="sidebar-header">
+      	<div className="sidebar-date">
+          <span className="sidebar-date-label">Сегодня</span>
+          <span className="sidebar-date-value badge-blue">{getCurrentDate()}</span>
+         </div>
+         <h1 className="sidebar-title">Видеонаблюдение</h1>
       </div>
-      <h1 className="sidebar-title">Видеонаблюдение</h1>
+
+      <span className="border-linebrake"></span>
       
       <div className="sidebar-section">
         <div className={`sidebar-menu-item ${viewMode === 'online' ? 'active' : ''}`}>
@@ -52,11 +56,15 @@ const Sidebar: React.FC = () => {
                 onChange={() => setViewMode('online')}
               />
               <div className="custom-checkbox">
-                <div className="custom-checkbox-icon">✓</div>
+                <div className="custom-checkbox-icon">
+					<svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</div>
               </div>
               <span className="checkbox-text">Наблюдение</span>
             </div>
-            <span className="checkbox-label">онлайн</span>
+            <span className="checkbox-label badge-blue">онлайн</span>
             <button 
               className="expand-button"
               onClick={() => setIsOnlineExpanded(!isOnlineExpanded)}
@@ -78,7 +86,11 @@ const Sidebar: React.FC = () => {
                       onChange={() => setSelectedLocation(location === selectedLocation ? null : location)}
                     />
                     <div className="custom-checkbox">
-                      <div className="custom-checkbox-icon">✓</div>
+                      <div className="custom-checkbox-icon">
+							<svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+							<path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
                     </div>
                     <span className="checkbox-text">{locationNames[location]}</span>
                   </div>
