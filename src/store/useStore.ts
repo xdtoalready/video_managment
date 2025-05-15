@@ -48,6 +48,8 @@ interface AppState {
   // Методы для изменения состояния
   setActiveCamera: (cameraId: string) => void;
   toggleGridView: () => void;
+  showSingleCamera: (cameraId: string) => void; // Новый метод
+  showGridView: () => void; // Новый метод
   setViewMode: (mode: ViewMode) => void;
   toggleLocationSelection: (location: LocationType) => void;
   clearLocationSelections: () => void;
@@ -92,18 +94,38 @@ export const useStore = create<AppState>((set, get) => ({
   
   // Установка активной камеры
   setActiveCamera: (cameraId: string) => {
-    set(state => ({
-      cameras: state.cameras.map(camera => ({
+    set(state => {
+      const updatedCameras = state.cameras.map(camera => ({
         ...camera,
         isActive: camera.id === cameraId
-      })),
-      activeCamera: state.cameras.find(camera => camera.id === cameraId) || null
-    }));
+      }));
+      
+      const newActiveCamera = updatedCameras.find(camera => camera.id === cameraId) || null;
+      
+      return {
+        cameras: updatedCameras,
+        activeCamera: newActiveCamera
+      };
+    });
   },
   
   // Переключение между сеткой и одной камерой
   toggleGridView: () => {
-    set(state => ({ isGridView: !state.isGridView }));
+    set(state => ({
+      isGridView: !state.isGridView
+    }));
+  },
+  
+  // Новый метод: показать одну камеру
+  showSingleCamera: (cameraId: string) => {
+    const setActiveCam = get().setActiveCamera;
+    setActiveCam(cameraId);
+    set({ isGridView: false });
+  },
+  
+  // Новый метод: показать сетку камер
+  showGridView: () => {
+    set({ isGridView: true });
   },
   
   // Установка режима просмотра (онлайн/архив)

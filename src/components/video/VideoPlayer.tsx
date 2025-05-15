@@ -8,6 +8,7 @@ interface VideoPlayerProps {
   className?: string;
   isFullscreen?: boolean;
   isArchiveMode?: boolean;
+  onVideoClick?: () => void; // Добавляем обработчик клика
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
@@ -15,7 +16,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onError,
   className = '',
   isFullscreen = false,
-  isArchiveMode = false
+  isArchiveMode = false,
+  onVideoClick // Новый проп
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -219,10 +221,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   
   // Обработчик клика на видео
   const handleVideoClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Обязательно останавливаем всплытие
-
     if (isArchiveMode) {
+      // В архивном режиме клик будет переключать воспроизведение
+      e.stopPropagation();
       togglePlay(e);
+    } else if (onVideoClick) {
+      // В обычном режиме - вызываем переданный обработчик
+      onVideoClick();
     }
   };
   
@@ -240,7 +245,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <div 
       ref={playerContainerRef}
       className={`video-player-container ${className} ${isFullscreen ? 'fullscreen' : ''}`}
-      onClick={(e) => e.stopPropagation()} // Предотвращаем всплытие события
+      onClick={(e) => {
+        // Если клик был на контейнере, а не на видео
+        if (onVideoClick) {
+          onVideoClick();
+        }
+      }}
     >
       {isLoading && <div className="video-loading">Загрузка...</div>}
       {hasError && <div className="video-error">Ошибка загрузки видео</div>}
@@ -252,6 +262,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         muted
         className="video-element"
         onClick={handleVideoClick}
+        style={{ cursor: isArchiveMode ? 'default' : 'pointer' }}
       />
       
       {/* Управление плеером - только для архивного режима */}

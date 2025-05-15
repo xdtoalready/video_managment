@@ -8,8 +8,8 @@ const CameraGrid: React.FC = () => {
     cameras, 
     isGridView, 
     activeCamera, 
-    setActiveCamera, 
-    toggleGridView,
+    showSingleCamera, // Используем новый метод
+    showGridView,     // Используем новый метод
     selectedLocations 
   } = useStore();
   
@@ -45,7 +45,7 @@ const CameraGrid: React.FC = () => {
           isActive={true}
         />
         
-        <button className="back-to-grid" onClick={toggleGridView}>
+        <button className="back-to-grid" onClick={showGridView}>
           Вернуться к сетке
         </button>
       </div>
@@ -81,10 +81,7 @@ const CameraGrid: React.FC = () => {
             streamUrl={camera.url}
             cameraName={camera.name}
             isActive={camera.isActive}
-            onClick={() => {
-              setActiveCamera(camera.id);
-              toggleGridView(); // Переключение в режим одной камеры
-            }}
+            onClick={() => showSingleCamera(camera.id)}
           />
         ))}
       </div>

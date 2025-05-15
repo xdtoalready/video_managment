@@ -1,0 +1,168 @@
+/* Стили для режимов просмотра камер */
+
+/* Сетка камер */
+.camera-grid-container {
+  padding: 1.5rem;
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  height: calc(100vh - 40px);
+  overflow: auto;
+}
+
+.camera-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.camera-grid-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  color: #888;
+  font-style: italic;
+}
+
+/* Карточка камеры в сетке */
+.camera-card {
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  cursor: pointer;
+  transition: var(--transition);
+  background-color: var(--white);
+}
+
+.camera-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  outline: 2px solid var(--primary-color);
+}
+
+/* Активная камера в режиме просмотра одной камеры */
+.camera-card.camera-active {
+  cursor: default;
+  transform: none;
+  height: calc(100vh - 100px);
+  max-width: 100%;
+  box-shadow: none;
+  outline: none;
+}
+
+.camera-card.camera-active:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Заголовок камеры */
+.camera-card-header {
+  z-index: 50;
+  width: 100%;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+/* Стили для заголовка в активном режиме */
+.camera-active .camera-card-header {
+  padding: 15px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+}
+
+.camera-card-title {
+  font-weight: 500;
+  color: #333333;
+  padding: 4px 8px;
+  background-color: #F2F3F7;
+  border-radius: 10px;
+}
+
+.camera-active .camera-card-title {
+  color: white;
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  font-size: 16px;
+}
+
+/* Кнопка меню */
+.camera-menu-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 10px;
+  border: none;
+  background-color: var(--light-bg);
+  padding: 8px;
+  cursor: pointer;
+}
+
+.camera-active .camera-menu-button {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.menu-button-circle {
+  width: 5px;
+  height: 5px;
+  background-color: #333;
+  border-radius: 50%;
+}
+
+.camera-active .menu-button-circle {
+  background-color: white;
+}
+
+/* Контейнер видео */
+.camera-view {
+  position: relative;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  aspect-ratio: 16/9;
+  background-color: #000;
+  box-shadow: none;
+}
+
+.camera-active .camera-view {
+  border-radius: var(--border-radius);
+  aspect-ratio: unset;
+  height: 100%;
+}
+
+/* Контейнер для режима одной камеры */
+.camera-single-view-container {
+  position: relative;
+  height: calc(100vh - 40px);
+  width: 100%;
+  background-color: var(--white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+/* Кнопка возврата к сетке */
+.back-to-grid {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 60;
+  background-color: var(--primary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.back-to-grid:hover {
+  background-color: var(--primary-hover);
+}

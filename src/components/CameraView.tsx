@@ -31,7 +31,7 @@ const CameraView: React.FC<CameraViewProps> = ({
 
   // Открыть календарь
   const handleOpenCalendar = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Предотвращаем всплытие события клика
+    e.stopPropagation(); 
     openCalendar(cameraId);
   };
 
@@ -41,9 +41,15 @@ const CameraView: React.FC<CameraViewProps> = ({
     exitArchiveMode(cameraId);
   };
 
-  // Обработчик клика для предотвращения закрытия при клике на видео
+  // Обработчик клика для карточки камеры
   const handleCardClick = (e: React.MouseEvent) => {
-    // Если есть onClick и это не архивный режим, вызываем onClick
+    if (onClick && !camera?.isArchiveMode) {
+      onClick();
+    }
+  };
+
+  // Обработчик клика на видео
+  const handleVideoClick = () => {
     if (onClick && !camera?.isArchiveMode) {
       onClick();
     }
@@ -75,13 +81,22 @@ const CameraView: React.FC<CameraViewProps> = ({
   // Определение архивного режима
   const isArchiveMode = camera?.isArchiveMode || false;
 
-  // Класс для карточки камеры
-  const cardClass = isGridView 
-    ? 'camera-card' 
-    : (isActive ? 'camera-card single-view' : 'camera-card');
+  // Определяем правильные классы для разных режимов
+  let cardClass = 'camera-card';
+  if (!isGridView && isActive) {
+    // В режиме одной камеры
+    cardClass = 'camera-card camera-active';
+  } else if (isGridView) {
+    // В режиме сетки
+    cardClass = 'camera-card';
+  }
 
   return (
-    <div className={cardClass} onClick={handleCardClick}>
+    <div 
+      className={cardClass} 
+      onClick={handleCardClick} 
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
+    >
       <div className="camera-card-header">
         <span className="camera-card-title">{cameraName}</span>
         <button className="camera-menu-button" onClick={handleOpenCalendar}>
@@ -103,6 +118,7 @@ const CameraView: React.FC<CameraViewProps> = ({
             className="camera-video"
             isFullscreen={isActiveView}
             isArchiveMode={isArchiveMode}
+            onVideoClick={handleVideoClick} // Передаем обработчик клика
           />
         )}
         
