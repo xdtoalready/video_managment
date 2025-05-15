@@ -27,7 +27,7 @@ interface AppState {
   // Данные
   cameras: Camera[];
   activeCamera: Camera | null;
-  selectedLocation: LocationType | null;
+  selectedLocations: LocationType[]; // Изменено на массив для множественного выбора
   viewMode: ViewMode;
   isGridView: boolean;
   
@@ -35,7 +35,8 @@ interface AppState {
   setActiveCamera: (cameraId: string) => void;
   toggleGridView: () => void;
   setViewMode: (mode: ViewMode) => void;
-  setSelectedLocation: (location: LocationType | null) => void;
+  toggleLocationSelection: (location: LocationType) => void; // Новый метод для переключения выбора локации
+  clearLocationSelections: () => void; // Новый метод для очистки всех выбранных локаций
   addCamera: (camera: Omit<Camera, 'isActive'>) => void;
   removeCamera: (cameraId: string) => void;
   loadCameras: () => Promise<void>;
@@ -56,7 +57,7 @@ export const locationNames: Record<LocationType, string> = {
 export const useStore = create<AppState>((set, get) => ({
   cameras: [],
   activeCamera: null,
-  selectedLocation: null,
+  selectedLocations: [], // Начальное значение - пустой массив
   viewMode: 'online',
   isGridView: true,
   
@@ -81,9 +82,29 @@ export const useStore = create<AppState>((set, get) => ({
     set({ viewMode: mode });
   },
   
-  // Установка выбранной локации
-  setSelectedLocation: (location: LocationType | null) => {
-    set({ selectedLocation: location });
+  // Переключение выбора локации (добавление/удаление из списка)
+  toggleLocationSelection: (location: LocationType) => {
+    set(state => {
+      // Проверяем, выбрана ли уже эта локация
+      const isSelected = state.selectedLocations.includes(location);
+      
+      if (isSelected) {
+        // Если локация уже выбрана, удаляем её из списка
+        return { 
+          selectedLocations: state.selectedLocations.filter(loc => loc !== location) 
+        };
+      } else {
+        // Если локация не выбрана, добавляем её в список
+        return { 
+          selectedLocations: [...state.selectedLocations, location] 
+        };
+      }
+    });
+  },
+  
+  // Очистка всех выбранных локаций
+  clearLocationSelections: () => {
+    set({ selectedLocations: [] });
   },
   
   // Добавление новой камеры
@@ -103,49 +124,55 @@ export const useStore = create<AppState>((set, get) => ({
   },
   
   // Загрузка списка камер с API
-  // Загрузка списка камер с API
-loadCameras: async () => {
-  try {
-    // В будущем заменим на реальный API вызов
-    const dummyCameras: Camera[] = [
-      {
-        id: '1',
-        name: 'Камера 1',
-        // Используем тестовый HLS поток для демонстрации
-        url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-        location: 'street',
-        isActive: false
-      },
-      {
-        id: '2',
-        name: 'Камера 2',
-        // Другой тестовый поток
-        url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
-        location: 'house',
-        isActive: false
-      },
-      {
-        id: '3',
-        name: 'Камера 3',
-        url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
-        location: 'playground',
-        isActive: false
-      },
-      {
-        id: '4',
-        name: 'Камера 4',
-        url: 'https://moctobpanel.vrvm.com/hls/live/2013375/test/master.m3u8',
-        location: 'playground',
-        isActive: false
-      }
-    ];
-    
-    set({ 
-      cameras: dummyCameras,
-      activeCamera: dummyCameras.length > 0 ? dummyCameras[0] : null
-    });
-  } catch (error) {
-    console.error('Ошибка при загрузке камер:', error);
+  loadCameras: async () => {
+    try {
+      // В будущем заменим на реальный API вызов
+      const dummyCameras: Camera[] = [
+        {
+          id: '1',
+          name: 'Камера 1',
+          // Используем тестовый HLS поток для демонстрации
+          url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+          location: 'street',
+          isActive: false
+        },
+        {
+          id: '2',
+          name: 'Камера 2',
+          // Другой тестовый поток
+          url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+          location: 'house',
+          isActive: false
+        },
+        {
+          id: '3',
+          name: 'Камера 3',
+          url: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
+          location: 'playground',
+          isActive: false
+        },
+        {
+          id: '4',
+          name: 'Камера 4',
+          url: 'https://moctobpanel.vrvm.com/hls/live/2013375/test/master.m3u8',
+          location: 'house',
+          isActive: false
+        },
+        {
+          id: '5',
+          name: 'Камера 5',
+          url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+          location: 'house',
+          isActive: false
+        }
+      ];
+      
+      set({ 
+        cameras: dummyCameras,
+        activeCamera: dummyCameras.length > 0 ? dummyCameras[0] : null
+      });
+    } catch (error) {
+      console.error('Ошибка при загрузке камер:', error);
+    }
   }
-}
 }));
