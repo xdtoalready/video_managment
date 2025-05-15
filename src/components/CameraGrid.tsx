@@ -36,14 +36,13 @@ const CameraGrid: React.FC = () => {
   // Если включен режим одной камеры и есть активная камера
   if (!isGridView && activeCamera) {
     return (
-      <div className="camera-grid-container" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="camera-single-view-container">
         <CameraView 
           key={activeCamera.id}
           cameraId={activeCamera.id}
           streamUrl={activeCamera.url}
           cameraName={activeCamera.name}
           isActive={true}
-          onClick={toggleGridView} // Переключение обратно в режим сетки
         />
         
         <button className="back-to-grid" onClick={toggleGridView}>

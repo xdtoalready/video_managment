@@ -219,12 +219,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   
   // Обработчик клика на видео
   const handleVideoClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Обязательно останавливаем всплытие
+
     if (isArchiveMode) {
       togglePlay(e);
-    } else {
-      // Для обычного режима просто предотвращаем всплытие клика,
-      // чтобы не закрывать видео при клике на нем
-      e.stopPropagation();
     }
   };
   

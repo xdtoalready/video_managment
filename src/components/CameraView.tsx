@@ -17,11 +17,10 @@ const CameraView: React.FC<CameraViewProps> = ({
   isActive = false, 
   onClick 
 }) => {
-  const { openCalendar, exitArchiveMode } = useStore();
+  const { openCalendar, exitArchiveMode, isGridView } = useStore();
   
   // Получаем данные о камере из хранилища
   const camera = useStore(state => state.cameras.find(cam => cam.id === cameraId));
-  const isGridView = useStore(state => state.isGridView);
   
   const [error, setError] = useState<string | null>(null);
   
@@ -40,6 +39,14 @@ const CameraView: React.FC<CameraViewProps> = ({
   const handleExitArchiveMode = (e: React.MouseEvent) => {
     e.stopPropagation();
     exitArchiveMode(cameraId);
+  };
+
+  // Обработчик клика для предотвращения закрытия при клике на видео
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Если есть onClick и это не архивный режим, вызываем onClick
+    if (onClick && !camera?.isArchiveMode) {
+      onClick();
+    }
   };
 
   // Форматирование даты для отображения
@@ -68,11 +75,13 @@ const CameraView: React.FC<CameraViewProps> = ({
   // Определение архивного режима
   const isArchiveMode = camera?.isArchiveMode || false;
 
+  // Класс для карточки камеры
+  const cardClass = isGridView 
+    ? 'camera-card' 
+    : (isActive ? 'camera-card single-view' : 'camera-card');
+
   return (
-    <div 
-      className={`camera-card ${isActiveView ? 'camera-active' : ''}`} 
-      onClick={onClick}
-    >
+    <div className={cardClass} onClick={handleCardClick}>
       <div className="camera-card-header">
         <span className="camera-card-title">{cameraName}</span>
         <button className="camera-menu-button" onClick={handleOpenCalendar}>
