@@ -21,6 +21,7 @@ const CameraView: React.FC<CameraViewProps> = ({
   
   // Получаем данные о камере из хранилища
   const camera = useStore(state => state.cameras.find(cam => cam.id === cameraId));
+  const isGridView = useStore(state => state.isGridView);
   
   const [error, setError] = useState<string | null>(null);
   
@@ -61,8 +62,11 @@ const CameraView: React.FC<CameraViewProps> = ({
     return `${streamUrl}?start=${camera.archiveStartDate.getTime()}&end=${camera.archiveEndDate?.getTime()}`;
   };
 
+  // Определение, показывать ли камеру в полноэкранном режиме
+  const isFullscreenView = isActive && !isGridView;
+
   return (
-    <div className="camera-card" onClick={camera?.isArchiveMode ? undefined : onClick}>
+    <div className={`camera-card ${isFullscreenView ? 'fullscreen-camera' : ''}`} onClick={camera?.isArchiveMode ? undefined : onClick}>
       <div className="camera-card-header">
         <span className="camera-card-title">{cameraName}</span>
         <button className="camera-menu-button" onClick={handleOpenCalendar}>
@@ -82,6 +86,7 @@ const CameraView: React.FC<CameraViewProps> = ({
             streamUrl={camera?.isArchiveMode ? getArchiveUrl() : streamUrl}
             onError={handleVideoError}
             className="camera-video"
+            isFullscreen={isFullscreenView}
           />
         )}
         

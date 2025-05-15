@@ -36,14 +36,9 @@ const CameraGrid: React.FC = () => {
   // Если включен режим одной камеры и есть активная камера
   if (!isGridView && activeCamera) {
     return (
-      <div className="camera-single-view">
-        <div className="breadcrumb-navigation">
-          <span className="breadcrumb-item">Видеонаблюдение</span>
-          <span className="breadcrumb-separator">&gt;</span>
-          <span className="breadcrumb-item">{locationNames[activeCamera.location]}</span>
-        </div>
-        
+      <div className="camera-grid-container" style={{ padding: 0, overflow: 'hidden' }}>
         <CameraView 
+          key={activeCamera.id}
           cameraId={activeCamera.id}
           streamUrl={activeCamera.url}
           cameraName={activeCamera.name}
