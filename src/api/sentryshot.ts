@@ -8,6 +8,15 @@ export interface Camera {
   url: string;
 }
 
+export interface RecordingInfo {
+  id: string;
+  cameraId: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  url: string;
+}
+
 // Методы API
 export const sentryshotAPI = {
   // Получение списка камер
@@ -32,6 +41,38 @@ export const sentryshotAPI = {
     }
     // Для обычного потока
     return `${API_URL}/stream/${cameraId}`;
+  },
+
+  // Получение архивных записей для камеры по дате
+  async getRecordings(cameraId: string, date: Date): Promise<RecordingInfo[]> {
+    try {
+      // Форматируем дату в строку YYYY-MM-DD
+      const formattedDate = date.toISOString().split('T')[0];
+      
+      const response = await fetch(`${API_URL}/recordings/${cameraId}?date=${formattedDate}`);
+      if (!response.ok) {
+        throw new Error(`Ошибка при получении записей: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Ошибка при получении архивных записей:', error);
+      return [];
+    }
+  },
+  
+  // Получение URL архивной записи
+  getRecordingUrl(recordingId: string): string {
+    return `${API_URL}/recording/${recordingId}/index.m3u8`;
+  },
+  
+  // Получение URL архивной записи по камере, дате и времени
+  getArchiveUrl(cameraId: string, datetime: Date): string {
+    // Форматируем дату и время в Unix timestamp (миллисекунды)
+    const timestamp = datetime.getTime();
+    
+    // Для совместимости с SentryShot API
+    return `${API_URL}/archive/${cameraId}?timestamp=${timestamp}`;
   },
 
   // Преобразование RTSP URL в совместимый формат
