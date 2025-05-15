@@ -20,6 +20,17 @@ export interface Camera {
   url: string;
   location: LocationType;
   isActive: boolean;
+  isArchiveMode?: boolean;
+  archiveStartDate?: Date | null;
+  archiveEndDate?: Date | null;
+}
+
+// Тип состояния для календаря
+interface CalendarState {
+  isOpen: boolean;
+  activeCameraId: string | null;
+  startDate: Date | null;
+  endDate: Date | null;
 }
 
 // Тип состояния приложения
@@ -27,19 +38,29 @@ interface AppState {
   // Данные
   cameras: Camera[];
   activeCamera: Camera | null;
-  selectedLocations: LocationType[]; // Изменено на массив для множественного выбора
+  selectedLocations: LocationType[]; // Массив для множественного выбора
   viewMode: ViewMode;
   isGridView: boolean;
+  
+  // Состояние календаря
+  calendar: CalendarState;
   
   // Методы для изменения состояния
   setActiveCamera: (cameraId: string) => void;
   toggleGridView: () => void;
   setViewMode: (mode: ViewMode) => void;
-  toggleLocationSelection: (location: LocationType) => void; // Новый метод для переключения выбора локации
-  clearLocationSelections: () => void; // Новый метод для очистки всех выбранных локаций
+  toggleLocationSelection: (location: LocationType) => void;
+  clearLocationSelections: () => void;
   addCamera: (camera: Omit<Camera, 'isActive'>) => void;
   removeCamera: (cameraId: string) => void;
   loadCameras: () => Promise<void>;
+  
+  // Методы для управления календарем
+  openCalendar: (cameraId: string) => void;
+  closeCalendar: () => void;
+  setCalendarDates: (startDate: Date, endDate: Date) => void;
+  applyArchiveMode: () => void;
+  exitArchiveMode: (cameraId: string) => void;
 }
 
 // Соответствие локаций и их русских названий
@@ -57,9 +78,17 @@ export const locationNames: Record<LocationType, string> = {
 export const useStore = create<AppState>((set, get) => ({
   cameras: [],
   activeCamera: null,
-  selectedLocations: [], // Начальное значение - пустой массив
+  selectedLocations: [],
   viewMode: 'online',
   isGridView: true,
+  
+  // Инициализация состояния календаря
+  calendar: {
+    isOpen: false,
+    activeCameraId: null,
+    startDate: null,
+    endDate: null
+  },
   
   // Установка активной камеры
   setActiveCamera: (cameraId: string) => {
@@ -85,16 +114,13 @@ export const useStore = create<AppState>((set, get) => ({
   // Переключение выбора локации (добавление/удаление из списка)
   toggleLocationSelection: (location: LocationType) => {
     set(state => {
-      // Проверяем, выбрана ли уже эта локация
       const isSelected = state.selectedLocations.includes(location);
       
       if (isSelected) {
-        // Если локация уже выбрана, удаляем её из списка
         return { 
           selectedLocations: state.selectedLocations.filter(loc => loc !== location) 
         };
       } else {
-        // Если локация не выбрана, добавляем её в список
         return { 
           selectedLocations: [...state.selectedLocations, location] 
         };
@@ -123,6 +149,75 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
   
+  // Открытие календаря для конкретной камеры
+  openCalendar: (cameraId: string) => {
+    set(state => ({
+      calendar: {
+        ...state.calendar,
+        isOpen: true,
+        activeCameraId: cameraId,
+        startDate: new Date(),
+        endDate: new Date(new Date().getTime() + 3600000) // +1 час
+      }
+    }));
+  },
+  
+  // Закрытие календаря
+  closeCalendar: () => {
+    set(state => ({
+      calendar: {
+        ...state.calendar,
+        isOpen: false
+      }
+    }));
+  },
+  
+  // Установка дат календаря
+  setCalendarDates: (startDate: Date, endDate: Date) => {
+    set(state => ({
+      calendar: {
+        ...state.calendar,
+        startDate,
+        endDate
+      }
+    }));
+  },
+  
+  // Применение режима архива для активной камеры
+  applyArchiveMode: () => {
+    const { calendar } = get();
+    if (!calendar.activeCameraId || !calendar.startDate || !calendar.endDate) return;
+    
+    set(state => ({
+      cameras: state.cameras.map(camera => 
+        camera.id === calendar.activeCameraId ? {
+          ...camera,
+          isArchiveMode: true,
+          archiveStartDate: calendar.startDate,
+          archiveEndDate: calendar.endDate
+        } : camera
+      ),
+      calendar: {
+        ...state.calendar,
+        isOpen: false
+      }
+    }));
+  },
+  
+  // Выход из режима архива для конкретной камеры
+  exitArchiveMode: (cameraId: string) => {
+    set(state => ({
+      cameras: state.cameras.map(camera => 
+        camera.id === cameraId ? {
+          ...camera,
+          isArchiveMode: false,
+          archiveStartDate: null,
+          archiveEndDate: null
+        } : camera
+      )
+    }));
+  },
+  
   // Загрузка списка камер с API
   loadCameras: async () => {
     try {
@@ -131,7 +226,6 @@ export const useStore = create<AppState>((set, get) => ({
         {
           id: '1',
           name: 'Камера 1',
-          // Используем тестовый HLS поток для демонстрации
           url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
           location: 'street',
           isActive: false
@@ -139,7 +233,6 @@ export const useStore = create<AppState>((set, get) => ({
         {
           id: '2',
           name: 'Камера 2',
-          // Другой тестовый поток
           url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
           location: 'house',
           isActive: false

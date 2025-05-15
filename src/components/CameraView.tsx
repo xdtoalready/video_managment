@@ -1,25 +1,28 @@
 import React, { useState } from 'react';
 import VideoPlayer from './video/VideoPlayer';
-import Calendar from './Calendar';
+import { useStore } from '../store/useStore';
 
 interface CameraViewProps {
   streamUrl: string;
   cameraName: string;
+  cameraId: string;
   isActive?: boolean;
   onClick?: () => void;
 }
 
 const CameraView: React.FC<CameraViewProps> = ({ 
   streamUrl, 
-  cameraName, 
+  cameraName,
+  cameraId,
   isActive = false, 
   onClick 
 }) => {
+  const { openCalendar, exitArchiveMode } = useStore();
+  
+  // Получаем данные о камере из хранилища
+  const camera = useStore(state => state.cameras.find(cam => cam.id === cameraId));
+  
   const [error, setError] = useState<string | null>(null);
-  const [showCalendar, setShowCalendar] = useState<boolean>(false);
-  const [isArchiveMode, setIsArchiveMode] = useState<boolean>(false);
-  const [archiveStartDate, setArchiveStartDate] = useState<Date | null>(null);
-  const [archiveEndDate, setArchiveEndDate] = useState<Date | null>(null);
   
   // Обработчик ошибок видеоплеера
   const handleVideoError = (errorMessage: string) => {
@@ -27,29 +30,20 @@ const CameraView: React.FC<CameraViewProps> = ({
   };
 
   // Открыть календарь
-  const openCalendar = (e: React.MouseEvent) => {
+  const handleOpenCalendar = (e: React.MouseEvent) => {
     e.stopPropagation(); // Предотвращаем всплытие события клика
-    setShowCalendar(true);
+    openCalendar(cameraId);
   };
 
-  // Закрыть календарь
-  const closeCalendar = () => {
-    setShowCalendar(false);
-  };
-
-  // Обработка выбора даты и времени
-  const handleDateTimeSelect = (startDate: Date, endDate: Date) => {
-    setArchiveStartDate(startDate);
-    setArchiveEndDate(endDate);
-    setIsArchiveMode(true);
-    setShowCalendar(false);
-    
-    // Здесь в будущем будет вызов API для получения архивного видео
-    console.log(`Requesting archive for ${cameraName} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
+  // Выйти из режима архива
+  const handleExitArchiveMode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    exitArchiveMode(cameraId);
   };
 
   // Форматирование даты для отображения
-  const formatDate = (date: Date): string => {
+  const formatDate = (date: Date | null | undefined): string => {
+    if (!date) return '';
     return date.toLocaleDateString('ru-RU', { 
       day: '2-digit', 
       month: '2-digit', 
@@ -59,19 +53,19 @@ const CameraView: React.FC<CameraViewProps> = ({
     });
   };
 
-  // Формирование URL для архивного видео (заглушка)
-  const getArchiveUrl = () => {
-    if (!archiveStartDate) return streamUrl;
+  // Формирование URL для архивного видео
+  const getArchiveUrl = (): string => {
+    if (!camera?.isArchiveMode || !camera.archiveStartDate) return streamUrl;
     
     // В реальном приложении здесь должен быть запрос к API SentryShot
-    return `${streamUrl}?start=${archiveStartDate.getTime()}&end=${archiveEndDate?.getTime()}`;
+    return `${streamUrl}?start=${camera.archiveStartDate.getTime()}&end=${camera.archiveEndDate?.getTime()}`;
   };
 
   return (
-    <div className="camera-card" onClick={isArchiveMode ? undefined : onClick}>
+    <div className="camera-card" onClick={camera?.isArchiveMode ? undefined : onClick}>
       <div className="camera-card-header">
         <span className="camera-card-title">{cameraName}</span>
-        <button className="camera-menu-button" onClick={openCalendar}>
+        <button className="camera-menu-button" onClick={handleOpenCalendar}>
           <span className="menu-button-circle"></span>
           <span className="menu-button-circle"></span>
           <span className="menu-button-circle"></span>
@@ -85,40 +79,28 @@ const CameraView: React.FC<CameraViewProps> = ({
           </div>
         ) : (
           <VideoPlayer 
-            streamUrl={isArchiveMode ? getArchiveUrl() : streamUrl}
+            streamUrl={camera?.isArchiveMode ? getArchiveUrl() : streamUrl}
             onError={handleVideoError}
             className="camera-video"
           />
         )}
         
-        {isArchiveMode && archiveStartDate && (
+        {camera?.isArchiveMode && camera.archiveStartDate && (
           <>
             <div className="archive-indicator">
               <span className="archive-badge">
-                Архив: {formatDate(archiveStartDate)} - {archiveEndDate ? formatDate(archiveEndDate) : ''}
+                Архив: {formatDate(camera.archiveStartDate)} - {formatDate(camera.archiveEndDate)}
               </span>
             </div>
             <button 
               className="exit-archive-mode" 
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsArchiveMode(false);
-              }}
+              onClick={handleExitArchiveMode}
             >
               Вернуться к прямой трансляции
             </button>
           </>
         )}
       </div>
-
-      {showCalendar && (
-        <div className="calendar-wrapper" onClick={closeCalendar}>
-          <Calendar 
-            onClose={closeCalendar} 
-            onDateTimeSelect={handleDateTimeSelect} 
-          />
-        </div>
-      )}
     </div>
   );
 };

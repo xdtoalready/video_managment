@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import './App.css'
 import CameraGrid from './components/CameraGrid'
 import Controls from './components/Controls'
 import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
+import CalendarModal from './components/CalendarModal'
 
 function App() {
   const { loadCameras, viewMode, isGridView } = useStore();
@@ -26,6 +27,9 @@ function App() {
           <p>Функциональность архива будет реализована позже.</p>
         </div>
       )}
+      
+      {/* Глобальный модальный компонент календаря */}
+      <CalendarModal />
     </Layout>
   );
 }
