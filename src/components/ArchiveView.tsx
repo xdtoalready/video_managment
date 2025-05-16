@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useStore } from '../store/useStore';
 import ArchiveFilters from './ArchiveFilters';
 import RecordingsList from './RecordingsList';
 import ArchivePlayer from './ArchivePlayer';
-import MultiViewPlayer from './MultiViewPlayer';
+import FooterPlayer from './FooterPlayer'; // Импортируем новый FooterPlayer
 import './ArchiveView.css';
 
 const ArchiveView: React.FC = () => {
@@ -18,7 +18,7 @@ const ArchiveView: React.FC = () => {
   } = useStore();
   
   // Загрузка записей при монтировании компонента
-  useEffect(() => {
+  React.useEffect(() => {
     loadRecordings();
   }, [loadRecordings]);
   
@@ -45,24 +45,6 @@ const ArchiveView: React.FC = () => {
           </div>
         );
         
-      case 'multi':
-        // Просмотр нескольких записей
-        const selectedItems = recordings.filter(
-          recording => selectedRecordings.includes(recording.id)
-        );
-        
-        if (selectedItems.length === 0) return null;
-        
-        return (
-          <div className="archive-multi-view">
-            <button className="back-button" onClick={handleBackToList}>
-              ← Назад к списку
-            </button>
-            <h2 className="recording-title">Выбрано камер: {selectedItems.length}</h2>
-            <MultiViewPlayer recordings={selectedItems} />
-          </div>
-        );
-        
       case 'list':
       default:
         // Список записей
@@ -78,6 +60,7 @@ const ArchiveView: React.FC = () => {
   return (
     <div className="archive-view-container">
       {renderContent()}
+      <FooterPlayer /> {/* Добавляем FooterPlayer в конец компонента */}
     </div>
   );
 };

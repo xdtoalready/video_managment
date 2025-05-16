@@ -1,0 +1,311 @@
+/* Стили для глобального плеера */
+.global-player-controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.7));
+  color: white;
+  z-index: 1000;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(100%);
+  padding: 10px 0;
+}
+
+.global-player-controls.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Верхний докбар */
+.top-docbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.docbar-left,
+.docbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.docbar-center {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* Кнопки управления */
+.control-button {
+  background: none;
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.control-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.control-button.active {
+  background-color: var(--primary-color);
+}
+
+/* Отображение времени */
+.time-display {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Нижний докбар с таймлайном */
+.bottom-docbar {
+  padding: 12px 16px 8px;
+}
+
+/* Таймлайн */
+.timeline {
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.timeline-track {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  position: relative;
+}
+
+.timeline-progress {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+}
+
+/* Маркеры часов */
+.hour-marker {
+  position: absolute;
+  height: 14px;
+  width: 2px;
+  cursor: pointer;
+  transform: translateX(-50%);
+}
+
+.hour-marker-line {
+  width: 2px;
+  height: 10px;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.hour-marker-text {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+/* Маркеры обрезки */
+.trim-marker {
+  position: absolute;
+  top: -6px;
+  width: 4px;
+  height: 16px;
+  background-color: var(--primary-color);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.trim-marker.start {
+  background-color: #4caf50;
+}
+
+.trim-marker.end {
+  background-color: #ff5252;
+}
+
+.trim-selection {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-color: rgba(76, 175, 80, 0.3);
+  z-index: 4;
+}
+
+/* Ввод времени */
+.time-input-container {
+  position: absolute;
+  top: -50px;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 10;
+}
+
+.time-input-field {
+  width: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 4px;
+  color: white;
+  text-align: center;
+  font-size: 14px;
+}
+
+.time-input-apply {
+  background-color: var(--primary-color);
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+/* Селектор скачивания */
+.download-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.download-selector-container {
+  background-color: #333;
+  border-radius: 8px;
+  padding: 20px;
+  width: 400px;
+  max-width: 90%;
+}
+
+.download-selector-container h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: white;
+  font-size: 18px;
+  text-align: center;
+}
+
+.download-selector-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.download-selector-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.download-selector-item:hover {
+  background-color: var(--primary-color);
+}
+
+.download-selector-cancel {
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 10px;
+  color: white;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.download-selector-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .docbar-center {
+    display: none;
+  }
+  
+  .control-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .time-display {
+    font-size: 12px;
+  }
+  
+  .top-docbar, .bottom-docbar {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  
+  .docbar-left, .docbar-right {
+    gap: 8px;
+  }
+  
+  /* Скрываем некоторые элементы на маленьких экранах */
+  .control-button.forward-hour {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .control-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .top-docbar, .bottom-docbar {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  
+  .docbar-left, .docbar-right {
+    gap: 4px;
+  }
+  
+  .hour-marker-text {
+    display: none;
+  }
+}
