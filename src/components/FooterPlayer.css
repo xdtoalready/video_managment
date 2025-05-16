@@ -68,14 +68,12 @@
 }
 
 .footer-player {
+  background: var(--text-color);
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.7));
-  padding: 12px 16px;
   z-index: 1000;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Стили для режима обрезки */
@@ -89,10 +87,15 @@
 
 /* Верхняя панель управления */
 .controls-top {
+  background-color: var(--white);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding: 12px 16px;
+}
+
+.timeline-container {
+    padding: 16px;
 }
 
 .controls-left,
@@ -100,6 +103,17 @@
 .controls-right {
   display: flex;
   align-items: center;
+}
+
+.controls-left .control-button:hover {
+	background-color: var(--primary-hover);
+}
+
+.controls-left .control-button:hover svg rect {
+	fill: var(--white);
+}
+.controls-left .control-button:hover svg path {
+	stroke: var(--white);
 }
 
 .controls-left {
@@ -111,8 +125,9 @@
 }
 
 /* Кнопки управления */
-.control-button {
-  background: none;
+.control-button,
+.clip-button {
+  background: var(--light-bg);
   border: none;
   color: white;
   cursor: pointer;
@@ -122,12 +137,8 @@
   padding: 0;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
+  border-radius: 3px;
   transition: background-color 0.2s;
-}
-
-.control-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .control-button:disabled {
@@ -137,20 +148,13 @@
 
 /* Отображение времени */
 .time-display {
-  color: white;
+  color: var(--text-color);
   font-size: 14px;
   white-space: nowrap;
-  margin-left: 8px;
+  margin-left: 16px;
 }
 
 /* Название камеры и информация о режиме обрезки */
-.camera-name {
-  color: white;
-  font-size: 14px;
-  padding: 4px 8px;
-  background-color: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
-}
 
 .clip-mode-info {
   color: white;
@@ -170,21 +174,24 @@
 
 /* Селекторы времени */
 .time-selectors {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-right: 12px;
+padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 12px;
+    background: var(--light-bg);
+    border-radius: 6px;
 }
 
 .time-input {
-  width: 32px;
-  height: 24px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  color: white;
-  text-align: center;
-  font-size: 14px;
+    width: 38px;
+    height: 38px;
+    background-color: var(--white);
+    border: none;
+    color: var(--text-color);
+    border-radius: 3px;
+    text-align: center;
+    font-size: 16px;
 }
 
 .time-selectors span {
@@ -193,17 +200,9 @@
 }
 
 .apply-time-button {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  color: white;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-left: 4px;
+color: var(--gray2-color);
+    background: var(--white);
+    margin-left: 10px;
 }
 
 .apply-time-button:hover {
@@ -215,19 +214,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.clip-button {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  color: white;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
 }
 
 .clip-button:hover {
@@ -260,8 +246,10 @@
 .timeline {
   position: relative;
   width: 100%;
-  height: 40px;
+  height: 64px;
   cursor: pointer;
+  padding: 12px 16px;
+  background-color: var(--text-color);
 }
 
 .timeline-track {

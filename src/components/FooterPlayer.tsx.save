@@ -408,15 +408,74 @@ const FooterPlayer: React.FC = () => {
     <div className={`footer-player ${isClipMode ? 'clip-mode' : ''}`}>
       {/* Верхняя панель управления */}
       <div className="controls-top">
-        <div className="controls-center">
-          {/* Отображение названия камеры */}
-          <div className="camera-name badge-blue">
-            {activeRecording.cameraName}
-          </div>
+        <div className="controls-left">
+          {/* Кнопка стоп */}
+          <button className="control-button" onClick={stopPlayback} title="Стоп">
+            
+<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="12" height="12" fill="#A4A0A0"/>
+</svg>
 
-           {/* Отображение текущего времени */}
+          </button>
+          
+          {/* Перемотка на 10 секунд назад */}
+          <button className="control-button" onClick={() => seekRelative(-10)} title="10 секунд назад">
+
+<svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M16.4006 1.2002L11.6006 6.0002L16.4006 10.8002" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.40059 1.2002L1.60059 6.0002L6.40059 10.8002" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+          </button>
+          
+          {/* Кнопка плей/пауза */}
+          <button className="control-button" onClick={togglePlay} title={isPlaying ? "Пауза" : "Воспроизведение"}>
+            {isPlaying ? (
+
+<svg width="10" height="12" viewBox="0 0 10 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 5.29156C9 5.79923 9 6.43785 9 7.01179V11.7764C9 12.2501 9 11.9704 9 10.9454V0.973223C9 0.0290398 9 -0.237737 9 0.214954V5.29156Z" stroke="#A4A0A0"/>
+<path d="M1 5.29156C1 5.79923 1 6.43785 1 7.01179V11.7764C1 12.2501 1 11.9704 1 10.9454V0.973223C1 0.0290398 1 -0.237737 1 0.214954V5.29156Z" stroke="#A4A0A0"/>
+</svg>
+
+            ) : (
+              
+<svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M16.4006 1.2002L11.6006 6.0002L16.4006 10.8002" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.40059 1.2002L1.60059 6.0002L6.40059 10.8002" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+            )}
+          </button>
+          
+          {/* Перемотка на 10 секунд вперёд */}
+          <button className="control-button" onClick={() => seekRelative(10)} title="10 секунд вперёд">
+
+<svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1.59941 1.19995L6.39941 5.99995L1.59941 10.8" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11.5994 1.19995L16.3994 5.99995L11.5994 10.8" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+          </button>
+          
+          {/* Перемотка на 1 час вперёд */}
+          <button className="control-button" onClick={() => seekRelative(3600)} title="1 час вперёд">
+
+<svg width="8" height="12" viewBox="0 0 8 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1.60039 1.19995L6.40039 5.99995L1.60039 10.8" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+          </button>
+          
+          {/* Отображение текущего времени */}
           <div className="time-display">
             {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+        </div>
+        
+        <div className="controls-center">
+          {/* Отображение названия камеры */}
+          <div className="camera-name">
+            {activeRecording.cameraName}
           </div>
           
           {/* Кнопка клавиатурных сокращений */}
@@ -426,7 +485,7 @@ const FooterPlayer: React.FC = () => {
               onClick={() => setShowShortcutsHelp(!showShortcutsHelp)}
               title="Клавиатурные сокращения"
             >
-              <span className="keyboard-icon">Управление плеером</span>
+              <span className="keyboard-icon">⌨️</span>
             </button>
             
             {showShortcutsHelp && (
@@ -468,96 +527,8 @@ const FooterPlayer: React.FC = () => {
             </div>
           )}
         </div>
-
-		<div className="controls-left">
-          {/* Кнопка стоп */}
-          <button className="control-button" onClick={stopPlayback} title="Стоп">
-			<svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<rect width="12" height="12" fill="#A4A0A0"/>
-			</svg>
-          </button>
-          
-          {/* Перемотка на 10 секунд назад */}
-          <button className="control-button" onClick={() => seekRelative(-10)} title="10 секунд назад">
-			<svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M16.4006 1.2002L11.6006 6.0002L16.4006 10.8002" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-				<path d="M6.40059 1.2002L1.60059 6.0002L6.40059 10.8002" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
-          </button>
-          
-          {/* Кнопка плей/пауза */}
-          <button className="control-button" onClick={togglePlay} title={isPlaying ? "Пауза" : "Воспроизведение"}>
-            {isPlaying ? (
-			<svg width="10" height="12" viewBox="0 0 10 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M9 5.29156C9 5.79923 9 6.43785 9 7.01179V11.7764C9 12.2501 9 11.9704 9 10.9454V0.973223C9 0.0290398 9 -0.237737 9 0.214954V5.29156Z" stroke="#A4A0A0"/>
-				<path d="M1 5.29156C1 5.79923 1 6.43785 1 7.01179V11.7764C1 12.2501 1 11.9704 1 10.9454V0.973223C1 0.0290398 1 -0.237737 1 0.214954V5.29156Z" stroke="#A4A0A0"/>
-			</svg>
-            ) : (
-			<svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M8.4133 6.29156C9.19414 6.79922 9.19699 7.43784 8.4133 8.01179L2.35787 12.7764C1.59702 13.2501 1.08026 12.9704 1.02602 11.9454L1.00032 1.97321C0.983193 1.02903 1.64983 0.762266 2.28507 1.21496L8.4133 6.29156Z" stroke="#A4A0A0" stroke-width="2"/>
-			</svg>
-            )}
-          </button>
-          
-          {/* Перемотка на 10 секунд вперёд */}
-          <button className="control-button" onClick={() => seekRelative(10)} title="10 секунд вперёд">
-			<svg width="18" height="12" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M1.59941 1.19995L6.39941 5.99995L1.59941 10.8" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-				<path d="M11.5994 1.19995L16.3994 5.99995L11.5994 10.8" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
-          </button>
-          
-          {/* Перемотка на 1 час вперёд */}
-          <button className="control-button" onClick={() => seekRelative(3600)} title="1 час вперёд">
-			<svg width="8" height="12" viewBox="0 0 8 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<path d="M1.60039 1.19995L6.40039 5.99995L1.60039 10.8" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-			</svg>
-          </button>
-        </div>
         
         <div className="controls-right">
-        
-          {/* Кнопка обрезки */}
-          <div className="clip-controls">
-            {!isClipMode ? (
-              <button 
-                className="clip-button" 
-                onClick={toggleClipMode}
-                title="Режим обрезки"
-              >
-				<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M4.8625 4.8625L13 11.5M13 2.5L4.8625 9.1375M3.25 5.5C2.00736 5.5 1 4.49264 1 3.25C1 2.00736 2.00736 1 3.25 1C4.49264 1 5.5 2.00736 5.5 3.25C5.5 4.49264 4.49264 5.5 3.25 5.5ZM3.25 13C2.00736 13 1 11.9926 1 10.75C1 9.50736 2.00736 8.5 3.25 8.5C4.49264 8.5 5.5 9.50736 5.5 10.75C5.5 11.9926 4.49264 13 3.25 13Z" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-				</svg>
-              </button>
-            ) : (
-              <>
-                <button 
-                  className="clip-button" 
-                  onClick={toggleClipMode}
-                  title="Отменить обрезку"
-                >
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M4.8625 4.8625L13 11.5M13 2.5L4.8625 9.1375M3.25 5.5C2.00736 5.5 1 4.49264 1 3.25C1 2.00736 2.00736 1 3.25 1C4.49264 1 5.5 2.00736 5.5 3.25C5.5 4.49264 4.49264 5.5 3.25 5.5ZM3.25 13C2.00736 13 1 11.9926 1 10.75C1 9.50736 2.00736 8.5 3.25 8.5C4.49264 8.5 5.5 9.50736 5.5 10.75C5.5 11.9926 4.49264 13 3.25 13Z" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-                </button>
-                
-                {clipStart !== null && clipEnd !== null && (
-                  <button 
-                    className="clip-button download-button" 
-                    onClick={downloadClip}
-                    title="Скачать выделенный фрагмент"
-                  >
-                    
-<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M1 9.13626L1 11.595C1 11.9676 1.15804 12.325 1.43934 12.5885C1.72064 12.852 2.10218 13 2.5 13H11.5C11.8978 13 12.2794 12.852 12.5607 12.5885C12.842 12.325 13 11.9676 13 11.595V9.13626M7.00084 1V8.96164M7.00084 8.96164L10.4294 5.91953M7.00084 8.96164L3.57227 5.91953" stroke="#A4A0A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        
           {/* Селекторы времени */}
           <div className="time-selectors">
             <input 
@@ -587,64 +558,103 @@ const FooterPlayer: React.FC = () => {
               title="Секунды"
             />
             <button className="apply-time-button" onClick={applyTimeInput} title="Применить время">
-            	 Применить
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 16.2L4.8 12L3.4 13.4L9 19L21 7L19.6 5.6L9 16.2Z" fill="white"/>
+              </svg>
             </button>
+          </div>
+          
+          {/* Кнопка обрезки */}
+          <div className="clip-controls">
+            {!isClipMode ? (
+              <button 
+                className="clip-button" 
+                onClick={toggleClipMode}
+                title="Режим обрезки"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM8 15h8v2H8zm0-4h8v2H8zm0-4h8v2H8z" fill="white"/>
+                </svg>
+              </button>
+            ) : (
+              <>
+                <button 
+                  className="clip-button" 
+                  onClick={toggleClipMode}
+                  title="Отменить обрезку"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="white"/>
+                  </svg>
+                </button>
+                
+                {clipStart !== null && clipEnd !== null && (
+                  <button 
+                    className="clip-button download-button" 
+                    onClick={downloadClip}
+                    title="Скачать выделенный фрагмент"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="white"/>
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
       
       {/* Таймлайн */}
-      <div className="timeline-container">
-	      <div 
-	        className="timeline"
-	        ref={timelineRef}
-	        onClick={handleTimelineClick}
-	      >
-	        {/* Маркеры обрезки */}
-	        {isClipMode && clipStart !== null && (
-	          <div 
-	            className="clip-marker start-marker" 
-	            style={{ left: clipStartPosition }}
-	            onMouseDown={() => setIsDraggingMarker('start')}
-	          />
-	        )}
-	        {isClipMode && clipEnd !== null && (
-	          <div 
-	            className="clip-marker end-marker" 
-	            style={{ left: clipEndPosition }}
-	            onMouseDown={() => setIsDraggingMarker('end')}
-	          />
-	        )}
-	        {isClipMode && clipStart !== null && clipEnd !== null && (
-	          <div 
-	            className="clip-selection" 
-	            style={{ 
-	              left: clipStartPosition, 
-	              width: `calc(${clipEndPosition} - ${clipStartPosition})` 
-	            }}
-	          />
-	        )}
-	        
-	        <div className="timeline-track">
-	          <div 
-	            className="timeline-progress" 
-	            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
-	          />
-	        </div>
-	        
-	        {/* Разметка часов */}
-	        <div className="timeline-hours">
-	          {Array.from({ length: Math.ceil((duration || 0) / 3600) + 1 }).map((_, index) => (
-	            <div 
-	              key={index} 
-	              className="hour-marker"
-	              style={{ left: `${(index * 3600 / (duration || 1)) * 100}%` }}
-	            >
-	              <div className="hour-label">{index}:00</div>
-	            </div>
-	          ))}
-	        </div>
-	      </div>
+      <div 
+        className="timeline"
+        ref={timelineRef}
+        onClick={handleTimelineClick}
+      >
+        {/* Маркеры обрезки */}
+        {isClipMode && clipStart !== null && (
+          <div 
+            className="clip-marker start-marker" 
+            style={{ left: clipStartPosition }}
+            onMouseDown={() => setIsDraggingMarker('start')}
+          />
+        )}
+        {isClipMode && clipEnd !== null && (
+          <div 
+            className="clip-marker end-marker" 
+            style={{ left: clipEndPosition }}
+            onMouseDown={() => setIsDraggingMarker('end')}
+          />
+        )}
+        {isClipMode && clipStart !== null && clipEnd !== null && (
+          <div 
+            className="clip-selection" 
+            style={{ 
+              left: clipStartPosition, 
+              width: `calc(${clipEndPosition} - ${clipStartPosition})` 
+            }}
+          />
+        )}
+        
+        <div className="timeline-track">
+          <div 
+            className="timeline-progress" 
+            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+          />
+        </div>
+        
+        {/* Разметка часов */}
+        <div className="timeline-hours">
+          {Array.from({ length: Math.ceil((duration || 0) / 3600) + 1 }).map((_, index) => (
+            <div 
+              key={index} 
+              className="hour-marker"
+              style={{ left: `${(index * 3600 / (duration || 1)) * 100}%` }}
+            >
+              <div className="hour-label">{index}:00</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
