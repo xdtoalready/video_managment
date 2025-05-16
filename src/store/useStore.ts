@@ -33,6 +33,56 @@ interface CalendarState {
   endDate: Date | null;
 }
 
+// Тип для записей в архиве
+export interface Recording {
+  id: string;
+  cameraId: string;
+  cameraName: string;
+  location: LocationType;
+  startTime: Date;
+  endTime: Date;
+  duration: number; // в секундах
+  thumbnailUrl?: string;
+  fileUrl: string;
+  fileSize?: number; // в байтах
+}
+
+// Режим отображения архива
+export type ArchiveViewMode = 'list' | 'single' | 'multi';
+
+// Дополнительные поля для состояния архива
+interface ArchiveState {
+  // Текущий режим отображения архива
+  archiveViewMode: ArchiveViewMode;
+  
+  // Список найденных записей
+  recordings: Recording[];
+  
+  // Записи, выбранные для просмотра
+  selectedRecordings: string[];
+  
+  // Текущая активная запись
+  activeRecording: Recording | null;
+  
+  // Состояние фильтров для поиска записей
+  archiveFilters: {
+    dateRange: {
+      start: Date;
+      end: Date;
+    };
+    locations: LocationType[];
+    cameras: string[];
+  };
+  
+  // Методы управления архивом
+  loadRecordings: () => Promise<void>;
+  selectRecording: (recordingId: string) => void;
+  selectMultipleRecordings: (recordingIds: string[]) => void;
+  clearSelectedRecordings: () => void;
+  setArchiveViewMode: (mode: ArchiveViewMode) => void;
+  updateArchiveFilters: (filters: Partial<ArchiveState['archiveFilters']>) => void;
+}
+
 // Тип состояния приложения
 interface AppState {
   // Данные
@@ -131,6 +181,105 @@ export const useStore = create<AppState>((set, get) => ({
   // Установка режима просмотра (онлайн/архив)
   setViewMode: (mode: ViewMode) => {
     set({ viewMode: mode });
+  },
+
+// Новые поля для архива
+  archiveViewMode: 'list',
+  recordings: [],
+  selectedRecordings: [],
+  activeRecording: null,
+  archiveFilters: {
+    dateRange: {
+      start: new Date(Date.now() - 24 * 60 * 60 * 1000), // Последние 24 часа
+      end: new Date(),
+    },
+    locations: [],
+    cameras: [],
+  },
+
+// Загрузка записей из API
+  loadRecordings: async () => {
+    try {
+      const { archiveFilters } = get();
+      
+      // TODO: Заменить на реальный вызов API
+      const mockRecordings: Recording[] = [
+        {
+          id: '1',
+          cameraId: '1',
+          cameraName: 'Камера 1',
+          location: 'street',
+          startTime: new Date(Date.now() - 3600000),
+          endTime: new Date(Date.now() - 3500000),
+          duration: 100, // 100 секунд
+          fileUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+        },
+        {
+          id: '2',
+          cameraId: '2',
+          cameraName: 'Камера 2',
+          location: 'house',
+          startTime: new Date(Date.now() - 7200000),
+          endTime: new Date(Date.now() - 7000000),
+          duration: 200, // 200 секунд
+          fileUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+        },
+        {
+          id: '3',
+          cameraId: '3',
+          cameraName: 'Камера 3',
+          location: 'playground',
+          startTime: new Date(Date.now() - 10800000),
+          endTime: new Date(Date.now() - 10700000),
+          duration: 100, // 100 секунд
+          fileUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
+        },
+      ];
+      
+      set({ recordings: mockRecordings });
+    } catch (error) {
+      console.error('Ошибка при загрузке записей:', error);
+    }
+  },
+
+// Выбор одной записи для просмотра
+  selectRecording: (recordingId: string) => {
+    const { recordings } = get();
+    const recording = recordings.find(r => r.id === recordingId) || null;
+    
+    set({
+      activeRecording: recording,
+      selectedRecordings: [recordingId],
+      archiveViewMode: 'single'
+    });
+  },
+
+// Выбор нескольких записей для многооконного просмотра
+  selectMultipleRecordings: (recordingIds: string[]) => {
+    set({
+      selectedRecordings: recordingIds,
+      archiveViewMode: 'multi'
+    });
+  },
+
+clearSelectedRecordings: () => {
+    set({
+      selectedRecordings: [],
+      activeRecording: null
+    });
+  },
+
+setArchiveViewMode: (mode: ArchiveViewMode) => {
+    set({ archiveViewMode: mode });
+  },
+
+updateArchiveFilters: (filters) => {
+    set(state => ({
+      archiveFilters: {
+        ...state.archiveFilters,
+        ...filters
+      }
+    }));
   },
   
   // Переключение выбора локации (добавление/удаление из списка)

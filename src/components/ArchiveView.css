@@ -1,0 +1,53 @@
+/* Стили для архивного представления */
+.archive-view-container {
+  padding: 1.5rem;
+  height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+/* Стили для одиночного просмотра */
+.archive-single-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.back-button {
+  align-self: flex-start;
+  background-color: transparent;
+  color: var(--color-main2);
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.back-button:hover {
+  color: var(--primary-color);
+}
+
+.recording-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+/* Стили для просмотра нескольких камер */
+.archive-multi-view {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .archive-view-container {
+    padding: 1rem;
+  }
+  
+  .recording-title {
+    font-size: 1.2rem;
+  }
+}

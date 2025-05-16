@@ -5,6 +5,7 @@ import Controls from './components/Controls'
 import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
 import CalendarModal from './components/CalendarModal'
+import ArchiveView from './components/ArchiveView'
 
 function App() {
   const { loadCameras, viewMode, isGridView } = useStore();
@@ -17,15 +18,14 @@ function App() {
   return (
     <Layout>
       {viewMode === 'online' ? (
+        // Онлайн режим с прямой трансляцией
         <>
           <CameraGrid />
           {!isGridView && <Controls />}
         </>
       ) : (
-        <div className="archive-container">
-          <h2>Видео архив</h2>
-          <p>Функциональность архива будет реализована позже.</p>
-        </div>
+        // Архивный режим
+        <ArchiveView />
       )}
       
       {/* Глобальный модальный компонент календаря */}
