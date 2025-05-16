@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';  // Добавляем импорт useRef
 import { useStore } from '../store/useStore';
 import './FooterPlayer.css';
 
@@ -17,14 +17,20 @@ const FooterPlayer: React.FC = () => {
   const [timeInputMinutes, setTimeInputMinutes] = useState('00');
   const [timeInputSeconds, setTimeInputSeconds] = useState('00');
   
+  // Добавляем отсутствующее состояние для подсказок по клавиатурным сокращениям
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+  
   // Состояние для режима обрезки
   const [isClipMode, setIsClipMode] = useState(false);
   const [clipStart, setClipStart] = useState<number | null>(null);
   const [clipEnd, setClipEnd] = useState<number | null>(null);
   const [isDraggingMarker, setIsDraggingMarker] = useState<'start' | 'end' | null>(null);
 
+  const [networkError, setNetworkError] = useState<string | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Ссылка на таймлайн для обработки кликов
-  const timelineRef = React.useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
   // Получаем ссылку на видеоэлемент из DOM
   // Это позволит управлять видео, которое находится в другом компоненте
@@ -32,8 +38,83 @@ const FooterPlayer: React.FC = () => {
     return document.querySelector('.archive-player-video') as HTMLVideoElement;
   };
 
+  // Воспроизведение/пауза
+  const togglePlay = () => {
+    const videoElement = getVideoElement();
+    if (!videoElement) return;
+
+    if (videoElement.paused) {
+      videoElement.play().catch(error => {
+        console.error('Ошибка воспроизведения:', error);
+      });
+    } else {
+      videoElement.pause();
+    }
+  };
+
+  // Полная остановка (стоп)
+  const stopPlayback = () => {
+    const videoElement = getVideoElement();
+    if (!videoElement) return;
+
+    videoElement.pause();
+    videoElement.currentTime = 0;
+  };
+
+  // Перемотка на указанное количество секунд
+  const seekRelative = (seconds: number) => {
+    const videoElement = getVideoElement();
+    if (!videoElement) return;
+
+    const newTime = Math.max(0, Math.min(videoElement.currentTime + seconds, videoElement.duration || 0));
+    videoElement.currentTime = newTime;
+  };
+
+  // Начало режима обрезки
+  const toggleClipMode = () => {
+    if (!isClipMode) {
+      // Входим в режим обрезки
+      setIsClipMode(true);
+      setClipStart(null);
+      setClipEnd(null);
+    } else {
+      // Выходим из режима обрезки
+      setIsClipMode(false);
+      setClipStart(null);
+      setClipEnd(null);
+    }
+  };
+
   // Обновление состояния плеера при изменении времени видео
   useEffect(() => {
+    // Функция для обработки ошибок сети
+    const handleNetworkError = () => {
+      const videoElement = getVideoElement();
+      if (!videoElement) return;
+      
+      setNetworkError('Ошибка сети при загрузке видео. Пытаемся восстановить соединение...');
+      
+      // Пытаемся переподключиться каждые 5 секунд
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      
+      reconnectTimeoutRef.current = setTimeout(() => {
+        setNetworkError(null);
+        // Пытаемся перезагрузить видео
+        const currentTime = videoElement.currentTime;
+        videoElement.load();
+        videoElement.currentTime = currentTime;
+        
+        if (!videoElement.paused) {
+          videoElement.play().catch(error => {
+            console.error('Ошибка при восстановлении воспроизведения:', error);
+            handleNetworkError(); // Рекурсивно пытаемся снова
+          });
+        }
+      }, 5000);
+    };
+
     // Функция для обновления состояния
     const updatePlayerState = () => {
       const videoElement = getVideoElement();
@@ -54,6 +135,8 @@ const FooterPlayer: React.FC = () => {
       videoElement.addEventListener('pause', updatePlayerState);
       videoElement.addEventListener('timeupdate', updatePlayerState);
       videoElement.addEventListener('loadedmetadata', updatePlayerState);
+      videoElement.addEventListener('error', handleNetworkError);
+      videoElement.addEventListener('stalled', handleNetworkError);
     }
 
     // Очистка при размонтировании
@@ -64,6 +147,11 @@ const FooterPlayer: React.FC = () => {
         videoElement.removeEventListener('pause', updatePlayerState);
         videoElement.removeEventListener('timeupdate', updatePlayerState);
         videoElement.removeEventListener('loadedmetadata', updatePlayerState);
+        videoElement.removeEventListener('error', handleNetworkError);
+        videoElement.removeEventListener('stalled', handleNetworkError);
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
       }
     };
   }, [activeRecording]);
@@ -103,37 +191,67 @@ const FooterPlayer: React.FC = () => {
     };
   }, [isClipMode, isDraggingMarker, clipStart, clipEnd, duration]);
 
-  // Воспроизведение/пауза
-  const togglePlay = () => {
-    const videoElement = getVideoElement();
-    if (!videoElement) return;
-
-    if (videoElement.paused) {
-      videoElement.play().catch(error => {
-        console.error('Ошибка воспроизведения:', error);
-      });
-    } else {
-      videoElement.pause();
-    }
-  };
-
-  // Полная остановка (стоп)
-  const stopPlayback = () => {
-    const videoElement = getVideoElement();
-    if (!videoElement) return;
-
-    videoElement.pause();
-    videoElement.currentTime = 0;
-  };
-
-  // Перемотка на указанное количество секунд
-  const seekRelative = (seconds: number) => {
-    const videoElement = getVideoElement();
-    if (!videoElement) return;
-
-    const newTime = Math.max(0, Math.min(videoElement.currentTime + seconds, videoElement.duration || 0));
-    videoElement.currentTime = newTime;
-  };
+  // Добавим обработчик клавиатурных сокращений
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Игнорируем нажатия, если фокус на элементах ввода
+      if (
+        e.target instanceof HTMLInputElement || 
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+      
+      const videoElement = getVideoElement();
+      if (!videoElement) return;
+      
+      switch (e.code) {
+        case 'Space': // Пробел для паузы/воспроизведения
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'ArrowLeft': // Стрелка влево для перемотки назад
+          e.preventDefault();
+          seekRelative(e.shiftKey ? -60 : -10); // Shift + стрелка = 60 сек
+          break;
+        case 'ArrowRight': // Стрелка вправо для перемотки вперед
+          e.preventDefault();
+          seekRelative(e.shiftKey ? 60 : 10); // Shift + стрелка = 60 сек
+          break;
+        case 'KeyM': // M для маркера начала
+          if (isClipMode) {
+            e.preventDefault();
+            setClipStart(currentTime);
+          }
+          break;
+        case 'KeyN': // N для маркера конца
+          if (isClipMode) {
+            e.preventDefault();
+            setClipEnd(currentTime);
+          }
+          break;
+        case 'KeyC': // C для переключения режима обрезки
+          e.preventDefault();
+          toggleClipMode();
+          break;
+        case 'Escape': // Escape для выхода из режима обрезки
+          if (isClipMode) {
+            e.preventDefault();
+            setIsClipMode(false);
+            setClipStart(null);
+            setClipEnd(null);
+          }
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isClipMode, currentTime]);  // Упрощаем зависимости, чтобы избежать циклических ссылок
 
   // Перемотка по клику на таймлайн
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -187,33 +305,68 @@ const FooterPlayer: React.FC = () => {
     }
   };
 
-  // Начало режима обрезки
-  const toggleClipMode = () => {
-    if (!isClipMode) {
-      // Входим в режим обрезки
-      setIsClipMode(true);
-      setClipStart(null);
-      setClipEnd(null);
-    } else {
-      // Выходим из режима обрезки
-      setIsClipMode(false);
-      setClipStart(null);
-      setClipEnd(null);
-    }
-  };
-
   // Скачивание обрезанного видео
   const downloadClip = () => {
     if (clipStart === null || clipEnd === null || !activeRecording) return;
-
-    // В реальном приложении здесь был бы запрос к API для получения URL обрезанного видео
-    // Для прототипа просто показываем сообщение
-    alert(`Скачивание клипа для камеры ${activeRecording.cameraName} от ${formatTime(clipStart)} до ${formatTime(clipEnd)}`);
     
-    // После скачивания выходим из режима обрезки
-    setIsClipMode(false);
-    setClipStart(null);
-    setClipEnd(null);
+    // Получаем видеоэлемент
+    const videoElement = getVideoElement();
+    if (!videoElement) return;
+    
+    try {
+      // Для HLS потоков нужен специальный подход, так как это стриминг
+      // Вариант 1: Запрос к API SentryShot (предпочтительный для продакшена)
+      const apiUrl = `/api/recordings/${activeRecording.id}/clip?start=${clipStart}&end=${clipEnd}`;
+      
+      // Создаем скрытую ссылку для скачивания
+      const downloadLink = document.createElement('a');
+      downloadLink.href = apiUrl;
+      downloadLink.download = `clip_${activeRecording.cameraName}_${formatTimeForFilename(clipStart)}-${formatTimeForFilename(clipEnd)}.mp4`;
+      
+      // Добавляем индикатор загрузки
+      const loadingIndicator = document.createElement('div');
+      loadingIndicator.className = 'download-loading-indicator';
+      loadingIndicator.textContent = 'Подготовка клипа...';
+      loadingIndicator.style.position = 'fixed';
+      loadingIndicator.style.top = '50%';
+      loadingIndicator.style.left = '50%';
+      loadingIndicator.style.transform = 'translate(-50%, -50%)';
+      loadingIndicator.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      loadingIndicator.style.color = 'white';
+      loadingIndicator.style.padding = '20px';
+      loadingIndicator.style.borderRadius = '8px';
+      loadingIndicator.style.zIndex = '10000';
+      document.body.appendChild(loadingIndicator);
+      
+      // Имитируем процесс обработки
+      setTimeout(() => {
+        document.body.removeChild(loadingIndicator);
+        
+        // Кликаем по ссылке для скачивания
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // После скачивания выходим из режима обрезки
+        setIsClipMode(false);
+        setClipStart(null);
+        setClipEnd(null);
+      }, 2000); // имитация задержки обработки
+    } catch (error) {
+      console.error('Ошибка при скачивании клипа:', error);
+      alert('Произошла ошибка при подготовке клипа к скачиванию');
+    }
+  };
+
+  // Форматирование времени для имени файла (без двоеточий)
+  const formatTimeForFilename = (timeInSeconds: number) => {
+    if (isNaN(timeInSeconds)) return '000000';
+    
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    
+    return `${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}${seconds.toString().padStart(2, '0')}`;
   };
 
   // Применение времени из селекторов
@@ -313,6 +466,40 @@ const FooterPlayer: React.FC = () => {
             {activeRecording.cameraName}
           </div>
           
+          {/* Кнопка клавиатурных сокращений */}
+          <div className="keyboard-shortcuts-hint">
+            <button 
+              className="shortcuts-button" 
+              onClick={() => setShowShortcutsHelp(!showShortcutsHelp)}
+              title="Клавиатурные сокращения"
+            >
+              <span className="keyboard-icon">⌨️</span>
+            </button>
+            
+            {showShortcutsHelp && (
+              <div className="shortcuts-popup">
+                <h4>Клавиатурные сокращения:</h4>
+                <ul>
+                  <li><strong>Пробел</strong> - Пауза/Воспроизведение</li>
+                  <li><strong>←</strong> - Назад 10 сек</li>
+                  <li><strong>→</strong> - Вперед 10 сек</li>
+                  <li><strong>Shift + ←/→</strong> - Назад/Вперед 1 мин</li>
+                  <li><strong>C</strong> - Режим обрезки</li>
+                  <li><strong>M</strong> - Маркер начала</li>
+                  <li><strong>N</strong> - Маркер конца</li>
+                  <li><strong>Esc</strong> - Выход из режима обрезки</li>
+                </ul>
+              </div>
+            )}
+          </div>
+          
+          {/* Сообщение об ошибке сети */}
+          {networkError && (
+            <div className="network-error-banner">
+              {networkError}
+            </div>
+          )}
+
           {/* Информация о режиме обрезки */}
           {isClipMode && (
             <div className="clip-mode-info">
