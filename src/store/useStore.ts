@@ -13,6 +13,9 @@ export type LocationType =
 // Тип режима просмотра
 export type ViewMode = 'online' | 'archive';
 
+// Тип события на таймлайне
+export type EventType = 'motion' | 'sound' | 'object' | 'alarm' | 'custom';
+
 // Тип камеры
 export interface Camera {
   id: string;
@@ -49,6 +52,27 @@ export interface Recording {
 
 // Режим отображения архива
 export type ArchiveViewMode = 'list' | 'single' | 'multi';
+
+// Интерфейс события
+export interface TimelineEvent {
+  id: string;
+  cameraId: string;
+  time: Date;
+  type: EventType;
+  label: string;
+  data?: any;
+}
+
+// Интерфейс закладки
+export interface TimelineBookmark {
+  id: string;
+  cameraId: string;
+  time: Date;
+  label: string;
+  color: string;
+  notes?: string;
+  createdAt: Date;
+}
 
 // Дополнительные поля для состояния архива
 interface ArchiveState {
@@ -94,7 +118,17 @@ interface AppState {
   
   // Состояние календаря
   calendar: CalendarState;
-  
+
+  // События и закладки на таймлайне
+  timelineEvents: TimelineEvent[];
+  timelineBookmarks: TimelineBookmark[];
+
+  // Методы для работы с событиями и закладками
+  fetchTimelineEvents: (cameraId: string, timeRange: { start: Date; end: Date }) => Promise<void>;
+  addTimelineBookmark: (bookmark: Omit<TimelineBookmark, 'id' | 'createdAt'>) => void;
+  removeTimelineBookmark: (bookmarkId: string) => void;
+  updateTimelineBookmark: (bookmarkId: string, updates: Partial<Omit<TimelineBookmark, 'id' | 'createdAt'>>) => void;
+
   // Методы для изменения состояния
   setActiveCamera: (cameraId: string) => void;
   toggleGridView: () => void;
@@ -128,6 +162,8 @@ export const locationNames: Record<LocationType, string> = {
 
 // Создание хранилища
 export const useStore = create<AppState>((set, get) => ({
+  timelineEvents: [],
+  timelineBookmarks: [],
   cameras: [],
   activeCamera: null,
   selectedLocations: [],
@@ -158,7 +194,104 @@ export const useStore = create<AppState>((set, get) => ({
       };
     });
   },
-  
+
+  // Получение событий с сервера
+  fetchTimelineEvents: async (cameraId, timeRange) => {
+    try {
+      // В реальном приложении здесь будет запрос к API
+      // Для демонстрации используем моковые данные
+      const mockEvents: TimelineEvent[] = [
+        {
+          id: '1',
+          cameraId,
+          time: new Date(timeRange.start.getTime() + Math.random() * (timeRange.end.getTime() - timeRange.start.getTime())),
+          type: 'motion',
+          label: 'Обнаружено движение'
+        },
+        {
+          id: '2',
+          cameraId,
+          time: new Date(timeRange.start.getTime() + Math.random() * (timeRange.end.getTime() - timeRange.start.getTime())),
+          type: 'object',
+          label: 'Обнаружен человек'
+        },
+        {
+          id: '3',
+          cameraId,
+          time: new Date(timeRange.start.getTime() + Math.random() * (timeRange.end.getTime() - timeRange.start.getTime())),
+          type: 'alarm',
+          label: 'Тревожная ситуация'
+        }
+      ];
+
+      set(state => ({
+        timelineEvents: [
+          ...state.timelineEvents.filter(event =>
+              event.cameraId !== cameraId ||
+              event.time < timeRange.start ||
+              event.time > timeRange.end
+          ),
+          ...mockEvents
+        ]
+      }));
+    } catch (error) {
+      console.error('Ошибка при загрузке событий:', error);
+    }
+  },
+
+  // Добавление закладки
+  addTimelineBookmark: (bookmark) => {
+    const newBookmark: TimelineBookmark = {
+      ...bookmark,
+      id: `bookmark_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date()
+    };
+
+    set(state => ({
+      timelineBookmarks: [...state.timelineBookmarks, newBookmark]
+    }));
+
+    // Сохраняем закладки в localStorage
+    try {
+      const { timelineBookmarks } = get();
+      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
+    } catch (error) {
+      console.error('Ошибка при сохранении закладок:', error);
+    }
+  },
+
+  // Удаление закладки
+  removeTimelineBookmark: (bookmarkId) => {
+    set(state => ({
+      timelineBookmarks: state.timelineBookmarks.filter(bookmark => bookmark.id !== bookmarkId)
+    }));
+
+    // Обновляем localStorage
+    try {
+      const { timelineBookmarks } = get();
+      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
+    } catch (error) {
+      console.error('Ошибка при сохранении закладок:', error);
+    }
+  },
+
+  // Обновление закладки
+  updateTimelineBookmark: (bookmarkId, updates) => {
+    set(state => ({
+      timelineBookmarks: state.timelineBookmarks.map(bookmark =>
+          bookmark.id === bookmarkId ? { ...bookmark, ...updates } : bookmark
+      )
+    }));
+
+    // Обновляем localStorage
+    try {
+      const { timelineBookmarks } = get();
+      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
+    } catch (error) {
+      console.error('Ошибка при сохранении закладок:', error);
+    }
+  },
+
   // Переключение между сеткой и одной камерой
   toggleGridView: () => {
     set(state => ({
