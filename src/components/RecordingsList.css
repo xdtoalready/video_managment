@@ -62,15 +62,12 @@
 /* Таблица записей */
 .recordings-table {
   width: 100%;
-  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .recordings-table-header {
   display: flex;
-  background-color: var(--color-main2);
-  color: var(--white);
+  color: var(--gray2-color);
   font-weight: 500;
   padding: 0.75rem 1rem;
 }
@@ -97,6 +94,7 @@
 }
 
 .recording-cell {
+color: var(--gray2-color);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -105,36 +103,38 @@
   align-items: center;
 }
 
+/* Стили для ячейки с именем файла */
+.filename-cell {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: rgba(65,117,212,0.7);
+}
+
+.filename-cell:hover {
+	color: var(--color-main2);
+}
+
 .recording-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
+  gap: 20px;
+  flex: 0.6;
 }
 
 .recording-action-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: none;
+  color: var(--gray2-color);
+  background: transparent;
+  border-bottom: 1px solid var(--gray2-color);
+  border-radius: 0;
+  border-style: dashed;
+  padding: 12px 0px;
+  font-size: 18px;
   cursor: pointer;
   transition: var(--transition);
 }
 
-.recording-action-btn.play {
-  background-color: var(--primary-color);
-  color: var(--white);
-}
-
-.recording-action-btn.download {
-  background-color: var(--color-main2);
-  color: var(--white);
-}
-
 .recording-action-btn:hover {
-  transform: scale(1.1);
+  color: var(--text-color);
 }
 
 /* Пустой список записей */
@@ -146,4 +146,59 @@
   text-align: center;
   color: #888;
   font-style: italic;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+  .recording-row, .recordings-table-header {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .recording-row, .recordings-table-header {
+    padding: 0.6rem 0.8rem;
+  }
+  
+  .recording-cell {
+    flex: none;
+  }
+  
+  .recording-cell:nth-child(1) { width: 13%; } /* Дата */
+  .recording-cell:nth-child(2) { width: 18%; } /* Время начала */
+  .recording-cell:nth-child(3) { width: 18%; } /* Время окончания */
+  .recording-cell:nth-child(4) { width: 20%; } /* Имя файла */
+  .recording-cell:nth-child(5) { width: 16%; } /* Локация */
+  .recording-cell:nth-child(6) { width: 15%; } /* Действия */
+}
+
+@media (max-width: 768px) {
+  .recordings-table {
+    overflow-x: auto;
+  }
+  
+  .recordings-table-header, .recording-row {
+    min-width: 900px;
+  }
+  
+  .recordings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .recordings-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .recordings-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .multi-select-btn, .view-selected-btn {
+    width: 100%;
+  }
 }

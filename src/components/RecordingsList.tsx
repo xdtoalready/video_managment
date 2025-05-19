@@ -20,22 +20,33 @@ const RecordingsList: React.FC = () => {
     loadRecordings();
   }, [loadRecordings, archiveFilters]);
   
-  // Форматирование даты/времени
-  const formatDateTime = (date: Date): string => {
-    return date.toLocaleString('ru-RU', {
+  // Форматирование даты
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric'
     });
   };
   
-  // Форматирование продолжительности
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  // Форматирование времени
+  const formatTime = (date: Date): string => {
+    return date.toLocaleString('ru-RU', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+  
+  // Генерация имени файла (для примера)
+  const generateFileName = (recording: Recording): string => {
+    // В реальном приложении это было бы получено с сервера
+    // сейчас просто генерируем из startTime
+    const timestamp = recording.startTime.getTime().toString(16);
+    return timestamp.slice(-20).padStart(20, '0');
   };
   
   // Обработчик клика по записи
@@ -86,7 +97,7 @@ const RecordingsList: React.FC = () => {
     <div className="recordings-list-container">
       <div className="recordings-header">
         <h2>Архивные записи</h2>
-        <div className="recordings-actions">
+         {/*<div className="recordings-actions">
           <button 
             className={`multi-select-btn ${isMultiSelectMode ? 'active' : ''}`} 
             onClick={toggleMultiSelectMode}
@@ -103,15 +114,16 @@ const RecordingsList: React.FC = () => {
               Просмотреть выбранные ({selectedItems.length})
             </button>
           )}
-        </div>
+        </div>*/}
       </div>
       
       <div className="recordings-table">
         <div className="recordings-table-header">
-          <div className="recording-cell">Дата и время</div>
-          <div className="recording-cell">Камера</div>
+          <div className="recording-cell">Дата</div>
+          <div className="recording-cell">Время начала</div>
+          <div className="recording-cell">Время окончания</div>
+          <div className="recording-cell">Имя файла</div>
           <div className="recording-cell">Локация</div>
-          <div className="recording-cell">Длительность</div>
           <div className="recording-cell">Действия</div>
         </div>
         
@@ -123,11 +135,20 @@ const RecordingsList: React.FC = () => {
               onClick={() => handleRecordingClick(recording)}
             >
               <div className="recording-cell">
-                {formatDateTime(recording.startTime)}
+                {formatDate(recording.startTime)}
               </div>
-              <div className="recording-cell">{recording.cameraName}</div>
-              <div className="recording-cell">{locationNames[recording.location]}</div>
-              <div className="recording-cell">{formatDuration(recording.duration)}</div>
+              <div className="recording-cell">
+                {formatTime(recording.startTime)}
+              </div>
+              <div className="recording-cell">
+                {formatTime(recording.endTime)}
+              </div>
+              <div className="recording-cell filename-cell">
+                {generateFileName(recording)}
+              </div>
+              <div className="recording-cell">
+                {locationNames[recording.location]}
+              </div>
               <div className="recording-cell recording-actions">
                 <button 
                   className="recording-action-btn play"
@@ -135,8 +156,9 @@ const RecordingsList: React.FC = () => {
                     e.stopPropagation();
                     selectRecording(recording.id);
                   }}
+                  title="Смотреть"
                 >
-                  ▶
+                  Смотреть
                 </button>
                 <button 
                   className="recording-action-btn download"
@@ -145,8 +167,9 @@ const RecordingsList: React.FC = () => {
                     // Скачивание записи
                     window.open(recording.fileUrl, '_blank');
                   }}
+                  title="Скачать"
                 >
-                  ⬇
+                  Скачать
                 </button>
               </div>
             </div>

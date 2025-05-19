@@ -197,50 +197,89 @@ export const useStore = create<AppState>((set, get) => ({
     cameras: [],
   },
 
-// Загрузка записей из API
-  loadRecordings: async () => {
-    try {
-      const { archiveFilters } = get();
-      
-      // TODO: Заменить на реальный вызов API
-      const mockRecordings: Recording[] = [
-        {
-          id: '1',
-          cameraId: '1',
-          cameraName: 'Камера 1',
-          location: 'street',
-          startTime: new Date(Date.now() - 3600000),
-          endTime: new Date(Date.now() - 3500000),
-          duration: 100, // 100 секунд
-          fileUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
-        },
-        {
-          id: '2',
-          cameraId: '2',
-          cameraName: 'Камера 2',
-          location: 'house',
-          startTime: new Date(Date.now() - 7200000),
-          endTime: new Date(Date.now() - 7000000),
-          duration: 200, // 200 секунд
-          fileUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
-        },
-        {
-          id: '3',
-          cameraId: '3',
-          cameraName: 'Камера 3',
-          location: 'playground',
-          startTime: new Date(Date.now() - 10800000),
-          endTime: new Date(Date.now() - 10700000),
-          duration: 100, // 100 секунд
-          fileUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
-        },
-      ];
-      
-      set({ recordings: mockRecordings });
-    } catch (error) {
-      console.error('Ошибка при загрузке записей:', error);
-    }
-  },
+loadRecordings: async () => {
+  try {
+    const { archiveFilters } = get();
+    
+    // TODO: Заменить на реальный вызов API
+    const mockRecordings: Recording[] = [
+      {
+        id: '1',
+        cameraId: '1',
+        cameraName: 'Камера 1',
+        location: 'street',
+        startTime: new Date(2025, 0, 6, 14, 20, 1), // 2025-01-06 14:20:01
+        endTime: new Date(2025, 0, 6, 14, 24, 1),   // 2025-01-06 14:24:01
+        duration: 240, // 4 минуты в секундах
+        fileUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      },
+      {
+        id: '2',
+        cameraId: '2',
+        cameraName: 'Камера 2',
+        location: 'house',
+        startTime: new Date(2025, 0, 6, 16, 15, 30), // 2025-01-06 16:15:30
+        endTime: new Date(2025, 0, 6, 16, 20, 0),    // 2025-01-06 16:20:00
+        duration: 270, // 4.5 минуты в секундах
+        fileUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+      },
+      {
+        id: '3',
+        cameraId: '3',
+        cameraName: 'Камера 3',
+        location: 'playground',
+        startTime: new Date(2025, 0, 5, 10, 0, 0),   // 2025-01-05 10:00:00
+        endTime: new Date(2025, 0, 5, 10, 5, 0),     // 2025-01-05 10:05:00
+        duration: 300, // 5 минут в секундах
+        fileUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
+      },
+      {
+        id: '4',
+        cameraId: '1',
+        cameraName: 'Камера 1',
+        location: 'street',
+        startTime: new Date(2025, 0, 4, 18, 30, 0),  // 2025-01-04 18:30:00
+        endTime: new Date(2025, 0, 4, 18, 35, 0),    // 2025-01-04 18:35:00
+        duration: 300, // 5 минут в секундах
+        fileUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+      },
+      {
+        id: '5',
+        cameraId: '2',
+        cameraName: 'Камера 2',
+        location: 'house',
+        startTime: new Date(2025, 0, 3, 9, 45, 0),   // 2025-01-03 09:45:00
+        endTime: new Date(2025, 0, 3, 9, 50, 0),     // 2025-01-03 09:50:00
+        duration: 300, // 5 минут в секундах
+        fileUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+      },
+      {
+        id: '6',
+        cameraId: '5',
+        cameraName: 'Камера 5',
+        location: 'playground',
+        startTime: new Date(2025, 0, 6, 8, 0, 0),    // 2025-01-06 08:00:00
+        endTime: new Date(2025, 0, 6, 8, 15, 0),     // 2025-01-06 08:15:00
+        duration: 900, // 15 минут в секундах
+        fileUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
+      },
+      {
+        id: '7',
+        cameraId: '3',
+        cameraName: 'Камера 3',
+        location: 'playground',
+        startTime: new Date(2025, 0, 5, 13, 10, 0),  // 2025-01-05 13:10:00
+        endTime: new Date(2025, 0, 5, 13, 25, 0),    // 2025-01-05 13:25:00
+        duration: 900, // 15 минут в секундах
+        fileUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
+      },
+    ];
+    
+    set({ recordings: mockRecordings });
+  } catch (error) {
+    console.error('Ошибка при загрузке записей:', error);
+  }
+},
 
 // Выбор одной записи для просмотра
   selectRecording: (recordingId: string) => {
