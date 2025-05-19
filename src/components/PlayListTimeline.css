@@ -1,0 +1,160 @@
+/* src/components/PlaylistTimeline.css */
+
+.playlist-timeline {
+  position: relative;
+  width: 100%;
+  height: 64px;
+  background-color: var(--text-color);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+/* Фон таймлайна */
+.timeline-background {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+/* Записи на таймлайне */
+.timeline-recording {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.timeline-recording.active {
+  background-color: var(--color-main2);
+}
+
+/* Пробелы между записями */
+.timeline-gap {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.2),
+    rgba(0, 0, 0, 0.2) 5px,
+    rgba(0, 0, 0, 0.4) 5px,
+    rgba(0, 0, 0, 0.4) 10px
+  );
+  border-radius: 3px;
+}
+
+/* События на таймлайне */
+.timeline-events {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  height: 22px;
+}
+
+.timeline-event {
+  position: absolute;
+  height: 10px;
+  top: 17px;
+  border-radius: 3px;
+  z-index: 3;
+}
+
+.event-motion {
+  background-color: rgba(255, 165, 0, 0.8);
+}
+
+.event-person {
+  background-color: rgba(255, 0, 0, 0.8);
+}
+
+.event-vehicle {
+  background-color: rgba(0, 0, 255, 0.8);
+}
+
+.event-custom {
+  background-color: rgba(0, 255, 0, 0.8);
+}
+
+/* Индикатор текущей позиции */
+.timeline-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 5;
+}
+
+.playhead-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background-color: var(--primary-color);
+}
+
+.playhead-handle {
+  position: absolute;
+  top: 12px;
+  left: -8px;
+  width: 18px;
+  height: 18px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+/* Часовые маркеры */
+.timeline-hours {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  z-index: 2;
+}
+
+.hour-marker {
+  position: absolute;
+  width: 1px;
+  height: 16px;
+  margin-top: 24px;
+}
+
+.hour-marker-line {
+  width: 1px;
+  height: 8px;
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.hour-marker-label {
+  position: absolute;
+  top: 8px;
+  left: -15px;
+  width: 30px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 10px;
+  text-align: center;
+}
+
+/* День/ночь индикаторы */
+.day-night-indicator {
+  position: absolute;
+  top: 0;
+  height: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.night-indicator {
+  background-color: rgba(0, 0, 50, 0.3);
+}
+
+.day-indicator {
+  background-color: rgba(255, 255, 100, 0.1);
+}

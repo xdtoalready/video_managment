@@ -3,12 +3,15 @@
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  background-color: #000;
   border-radius: var(--border-radius);
   overflow: hidden;
   box-shadow: var(--card-shadow);
   flex: 1;
   max-height: calc(100vh - 200px);
+}
+
+.archive-player-container .archive-player-container {
+ background-color: #000;	
 }
 
 .archive-player-container.fullscreen {

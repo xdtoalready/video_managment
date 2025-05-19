@@ -123,7 +123,7 @@ const ArchiveView: React.FC = () => {
                     </div>
                   </div>
 
-                  <h2 className="recording-title">{activeRecording.cameraName}</h2>
+                  {/*<h2 className="recording-title">{activeRecording.cameraName}</h2>*/}
                   <ArchivePlayer recording={activeRecording} />
                 </div>
 
