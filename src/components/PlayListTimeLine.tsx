@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useStore, ArchiveEvent } from '../store/useStore';
-import './PlayListTimeline.css';
+import './PlayListTimeLine.css';
 
 const PlaylistTimeline: React.FC = () => {
   const { 
