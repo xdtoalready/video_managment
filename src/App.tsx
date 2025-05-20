@@ -24,7 +24,6 @@ function App() {
           {!isGridView && <Controls />}
         </>
       ) : (
-        // Архивный режим
         <ArchiveView />
       )}
       
