@@ -16,6 +16,22 @@ export type ViewMode = 'online' | 'archive';
 // Тип события на таймлайне
 export type EventType = 'motion' | 'sound' | 'object' | 'alarm' | 'custom';
 
+// Тип для уровней масштабирования таймлайна
+export type TimelineZoomLevel = 'years' | 'months' | 'days' | 'hours' | 'minutes' | 'seconds';
+
+// Интерфейс для видимого диапазона таймлайна
+export interface TimelineVisibleRange {
+  start: Date;
+  end: Date;
+}
+
+// Интерфейс для временной метки
+export interface TimelineMark {
+  time: Date;
+  label: string;
+  major: boolean; // Основная или второстепенная метка
+}
+
 // Тип камеры
 export interface Camera {
   id: string;
@@ -119,6 +135,10 @@ interface AppState {
   // Состояние календаря
   calendar: CalendarState;
 
+  // Новые поля для масштабирования и временных меток
+  timelineZoomLevel: TimelineZoomLevel;
+  timelineVisibleRange: TimelineVisibleRange;
+
   // События и закладки на таймлайне
   timelineEvents: TimelineEvent[];
   timelineBookmarks: TimelineBookmark[];
@@ -140,6 +160,15 @@ interface AppState {
   addCamera: (camera: Omit<Camera, 'isActive'>) => void;
   removeCamera: (cameraId: string) => void;
   loadCameras: () => Promise<void>;
+
+  // Новые методы
+  setTimelineZoomLevel: (level: TimelineZoomLevel) => void;
+  setTimelineVisibleRange: (range: TimelineVisibleRange) => void;
+  zoomTimelineIn: () => void;
+  zoomTimelineOut: () => void;
+  panTimelineLeft: (percentage?: number) => void;
+  panTimelineRight: (percentage?: number) => void;
+  generateTimelineMarks: () => TimelineMark[];
   
   // Методы для управления календарем
   openCalendar: (cameraId: string) => void;
@@ -169,7 +198,14 @@ export const useStore = create<AppState>((set, get) => ({
   selectedLocations: [],
   viewMode: 'online',
   isGridView: true,
-  
+
+  // Новые поля после существующих
+  timelineZoomLevel: 'hours', // По умолчанию масштаб в часах
+  timelineVisibleRange: {
+    start: new Date(new Date().setHours(new Date().getHours() - 24)), // 24 часа назад
+    end: new Date() // Текущее время
+  },
+
   // Инициализация состояния календаря
   calendar: {
     isOpen: false,
@@ -193,6 +229,315 @@ export const useStore = create<AppState>((set, get) => ({
         activeCamera: newActiveCamera
       };
     });
+  },
+
+  setTimelineZoomLevel: (level: TimelineZoomLevel) => {
+    const currentRange = get().timelineVisibleRange;
+    const currentCenter = new Date((currentRange.start.getTime() + currentRange.end.getTime()) / 2);
+
+    // Определяем новый диапазон в зависимости от уровня масштабирования
+    let newStart: Date;
+    let newEnd: Date;
+
+    switch (level) {
+      case 'years':
+        newStart = new Date(currentCenter);
+        newStart.setFullYear(currentCenter.getFullYear() - 5);
+        newEnd = new Date(currentCenter);
+        newEnd.setFullYear(currentCenter.getFullYear() + 5);
+        break;
+      case 'months':
+        newStart = new Date(currentCenter);
+        newStart.setMonth(currentCenter.getMonth() - 6);
+        newEnd = new Date(currentCenter);
+        newEnd.setMonth(currentCenter.getMonth() + 6);
+        break;
+      case 'days':
+        newStart = new Date(currentCenter);
+        newStart.setDate(currentCenter.getDate() - 15);
+        newEnd = new Date(currentCenter);
+        newEnd.setDate(currentCenter.getDate() + 15);
+        break;
+      case 'hours':
+        newStart = new Date(currentCenter);
+        newStart.setHours(currentCenter.getHours() - 12);
+        newEnd = new Date(currentCenter);
+        newEnd.setHours(currentCenter.getHours() + 12);
+        break;
+      case 'minutes':
+        newStart = new Date(currentCenter);
+        newStart.setMinutes(currentCenter.getMinutes() - 30);
+        newEnd = new Date(currentCenter);
+        newEnd.setMinutes(currentCenter.getMinutes() + 30);
+        break;
+      case 'seconds':
+        newStart = new Date(currentCenter);
+        newStart.setSeconds(currentCenter.getSeconds() - 60);
+        newEnd = new Date(currentCenter);
+        newEnd.setSeconds(currentCenter.getSeconds() + 60);
+        break;
+      default:
+        newStart = new Date(currentRange.start);
+        newEnd = new Date(currentRange.end);
+    }
+
+    set({
+      timelineZoomLevel: level,
+      timelineVisibleRange: {
+        start: newStart,
+        end: newEnd
+      }
+    });
+  },
+
+  zoomTimelineIn: () => {
+    const currentLevel = get().timelineZoomLevel;
+
+    // Определяем следующий уровень масштабирования
+    let newLevel: TimelineZoomLevel;
+
+    switch (currentLevel) {
+      case 'years':
+        newLevel = 'months';
+        break;
+      case 'months':
+        newLevel = 'days';
+        break;
+      case 'days':
+        newLevel = 'hours';
+        break;
+      case 'hours':
+        newLevel = 'minutes';
+        break;
+      case 'minutes':
+        newLevel = 'seconds';
+        break;
+      default:
+        newLevel = 'seconds';
+    }
+
+    get().setTimelineZoomLevel(newLevel);
+  },
+
+  zoomTimelineOut: () => {
+    const currentLevel = get().timelineZoomLevel;
+
+    // Определяем предыдущий уровень масштабирования
+    let newLevel: TimelineZoomLevel;
+
+    switch (currentLevel) {
+      case 'months':
+        newLevel = 'years';
+        break;
+      case 'days':
+        newLevel = 'months';
+        break;
+      case 'hours':
+        newLevel = 'days';
+        break;
+      case 'minutes':
+        newLevel = 'hours';
+        break;
+      case 'seconds':
+        newLevel = 'minutes';
+        break;
+      default:
+        newLevel = 'years';
+    }
+
+    get().setTimelineZoomLevel(newLevel);
+  },
+
+  setTimelineVisibleRange: (range: TimelineVisibleRange) => {
+    set({ timelineVisibleRange: range });
+  },
+
+  panTimelineLeft: (percentage: number = 25) => {
+    const { start, end } = get().timelineVisibleRange;
+    const duration = end.getTime() - start.getTime();
+    const panAmount = duration * (percentage / 100);
+
+    set({
+      timelineVisibleRange: {
+        start: new Date(start.getTime() - panAmount),
+        end: new Date(end.getTime() - panAmount)
+      }
+    });
+  },
+
+  panTimelineRight: (percentage: number = 25) => {
+    const { start, end } = get().timelineVisibleRange;
+    const duration = end.getTime() - start.getTime();
+    const panAmount = duration * (percentage / 100);
+
+    set({
+      timelineVisibleRange: {
+        start: new Date(start.getTime() + panAmount),
+        end: new Date(end.getTime() + panAmount)
+      }
+    });
+  },
+
+  generateTimelineMarks: () => {
+    const { timelineZoomLevel, timelineVisibleRange } = get();
+    const marks: TimelineMark[] = [];
+
+    const start = new Date(timelineVisibleRange.start);
+    const end = new Date(timelineVisibleRange.end);
+
+    // Функция для форматирования даты в зависимости от уровня масштабирования
+    const formatDate = (date: Date, level: TimelineZoomLevel): string => {
+      switch (level) {
+        case 'years':
+          return date.getFullYear().toString();
+        case 'months':
+          return date.toLocaleString('default', { month: 'short', year: 'numeric' });
+        case 'days':
+          return date.toLocaleString('default', { day: 'numeric', month: 'short' });
+        case 'hours':
+          return date.toLocaleString('default', { hour: '2-digit', minute: '2-digit' });
+        case 'minutes':
+          return date.toLocaleString('default', { hour: '2-digit', minute: '2-digit' });
+        case 'seconds':
+          return date.toLocaleString('default', { minute: '2-digit', second: '2-digit' });
+        default:
+          return date.toLocaleString();
+      }
+    };
+
+    // Генерируем метки в зависимости от уровня масштабирования
+    switch (timelineZoomLevel) {
+      case 'years':
+        // Метки для каждого года
+        const startYear = start.getFullYear();
+        const endYear = end.getFullYear();
+
+        for (let year = startYear; year <= endYear; year++) {
+          const markDate = new Date(year, 0, 1);
+          if (markDate >= start && markDate <= end) {
+            marks.push({
+              time: markDate,
+              label: year.toString(),
+              major: true
+            });
+          }
+
+          // Добавляем метки для каждого квартала
+          for (let quarter = 1; quarter <= 3; quarter++) {
+            const quarterDate = new Date(year, quarter * 3, 1);
+            if (quarterDate >= start && quarterDate <= end) {
+              marks.push({
+                time: quarterDate,
+                label: `Q${quarter + 1}`,
+                major: false
+              });
+            }
+          }
+        }
+        break;
+
+      case 'months':
+        // Метки для каждого месяца
+        const startDate = new Date(start);
+        startDate.setDate(1);
+        const endDate = new Date(end);
+
+        while (startDate <= endDate) {
+          if (startDate >= start && startDate <= end) {
+            marks.push({
+              time: new Date(startDate),
+              label: startDate.toLocaleString('default', { month: 'short' }),
+              major: true
+            });
+          }
+
+          // Переходим к следующему месяцу
+          startDate.setMonth(startDate.getMonth() + 1);
+        }
+        break;
+
+      case 'days':
+        // Метки для каждого дня
+        const startDay = new Date(start);
+        startDay.setHours(0, 0, 0, 0);
+        const endDay = new Date(end);
+
+        while (startDay <= endDay) {
+          if (startDay >= start && startDay <= end) {
+            marks.push({
+              time: new Date(startDay),
+              label: startDay.getDate().toString(),
+              major: startDay.getDate() === 1 // Первый день месяца - основная метка
+            });
+          }
+
+          // Переходим к следующему дню
+          startDay.setDate(startDay.getDate() + 1);
+        }
+        break;
+
+      case 'hours':
+        // Метки для каждого часа
+        const startHour = new Date(start);
+        startHour.setMinutes(0, 0, 0);
+        const endHour = new Date(end);
+
+        while (startHour <= endHour) {
+          if (startHour >= start && startHour <= end) {
+            marks.push({
+              time: new Date(startHour),
+              label: startHour.getHours().toString(),
+              major: startHour.getHours() === 0 // Полночь - основная метка
+            });
+          }
+
+          // Переходим к следующему часу
+          startHour.setHours(startHour.getHours() + 1);
+        }
+        break;
+
+      case 'minutes':
+        // Метки для каждых 5 минут
+        const startMinute = new Date(start);
+        startMinute.setMinutes(Math.floor(startMinute.getMinutes() / 5) * 5, 0, 0);
+        const endMinute = new Date(end);
+
+        while (startMinute <= endMinute) {
+          if (startMinute >= start && startMinute <= end) {
+            marks.push({
+              time: new Date(startMinute),
+              label: `${startMinute.getHours()}:${startMinute.getMinutes().toString().padStart(2, '0')}`,
+              major: startMinute.getMinutes() === 0 // Начало часа - основная метка
+            });
+          }
+
+          // Переходим к следующим 5 минутам
+          startMinute.setMinutes(startMinute.getMinutes() + 5);
+        }
+        break;
+
+      case 'seconds':
+        // Метки для каждых 10 секунд
+        const startSecond = new Date(start);
+        startSecond.setSeconds(Math.floor(startSecond.getSeconds() / 10) * 10, 0);
+        const endSecond = new Date(end);
+
+        while (startSecond <= endSecond) {
+          if (startSecond >= start && startSecond <= end) {
+            marks.push({
+              time: new Date(startSecond),
+              label: startSecond.getSeconds().toString(),
+              major: startSecond.getSeconds() === 0 // Начало минуты - основная метка
+            });
+          }
+
+          // Переходим к следующим 10 секундам
+          startSecond.setSeconds(startSecond.getSeconds() + 10);
+        }
+        break;
+    }
+
+    return marks;
   },
 
   // Получение событий с сервера

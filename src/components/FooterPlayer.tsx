@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';  // Добавляем импорт useRef
 import { useStore } from '../store/useStore';
 import './FooterPlayer.css';
+import ScalableTimeline from './ScalableTimeline';
 
 const FooterPlayer: React.FC = () => {
   // Получаем состояние из глобального хранилища
@@ -16,6 +17,9 @@ const FooterPlayer: React.FC = () => {
   const [timeInputHours, setTimeInputHours] = useState('00');
   const [timeInputMinutes, setTimeInputMinutes] = useState('00');
   const [timeInputSeconds, setTimeInputSeconds] = useState('00');
+
+  // Cостояние для переключения между таймлайнами
+  const [useScalableTimeline, setUseScalableTimeline] = useState(true);
   
   // Добавляем отсутствующее состояние для подсказок по клавиатурным сокращениям
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
@@ -37,6 +41,61 @@ const FooterPlayer: React.FC = () => {
   const getVideoElement = (): HTMLVideoElement | null => {
     return document.querySelector('.archive-player-video') as HTMLVideoElement;
   };
+
+  // Обработчик выбора времени на таймлайне
+  const handleTimeSelected = (time: Date) => {
+    if (!activeRecording || !videoRef.current) return;
+
+    // Если выбранное время находится в текущей записи
+    if (time >= activeRecording.startTime && time <= activeRecording.endTime) {
+      // Вычисляем смещение в секундах от начала записи
+      const offsetSeconds = (time.getTime() - activeRecording.startTime.getTime()) / 1000;
+      videoRef.current.currentTime = offsetSeconds;
+    } else if (activePlaylist?.items) {
+      // Если выбранное время находится в другой записи плейлиста
+      for (let i = 0; i < activePlaylist.items.length; i++) {
+        const recording = activePlaylist.items[i];
+
+        if (time >= recording.startTime && time <= recording.endTime) {
+          // Переключаемся на эту запись
+          setIsTransitioning(true);
+
+          useStore.setState({
+            activePlaylist: {
+              ...activePlaylist,
+              currentItemIndex: i
+            },
+            activeRecording: recording
+          });
+
+          // После переключения устанавливаем нужное время
+          setTimeout(() => {
+            if (videoRef.current) {
+              const offsetSeconds = (time.getTime() - recording.startTime.getTime()) / 1000;
+              videoRef.current.currentTime = offsetSeconds;
+            }
+            setIsTransitioning(false);
+          }, 500);
+
+          break;
+        }
+      }
+    }
+  };
+
+  // Добавьте эффект для обновления видимого диапазона при изменении активной записи
+  useEffect(() => {
+    if (activeRecording) {
+      // Устанавливаем видимый диапазон вокруг текущей записи
+      const recordingDuration = activeRecording.endTime.getTime() - activeRecording.startTime.getTime();
+      const padding = recordingDuration * 0.5; // 50% отступ с каждой стороны
+
+      useStore.getState().setTimelineVisibleRange({
+        start: new Date(activeRecording.startTime.getTime() - padding),
+        end: new Date(activeRecording.endTime.getTime() + padding)
+      });
+    }
+  }, [activeRecording]);
 
   // Воспроизведение/пауза
   const togglePlay = () => {
@@ -252,6 +311,49 @@ const FooterPlayer: React.FC = () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isClipMode, currentTime]);  // Упрощаем зависимости, чтобы избежать циклических ссылок
+
+  // Эффект для синхронизации текущего времени с расширенным таймлайном
+  useEffect(() => {
+    if (!useScalableTimeline || !activeRecording) return;
+
+    const videoElement = getVideoElement();
+    if (!videoElement) return;
+
+    const updateTimelinePosition = () => {
+      const { timelineVisibleRange } = useStore.getState();
+      const currentTimeMs = activeRecording.startTime.getTime() + videoElement.currentTime * 1000;
+      const visibleStart = timelineVisibleRange.start.getTime();
+      const visibleEnd = timelineVisibleRange.end.getTime();
+
+      // Если текущее время выходит за пределы видимого диапазона, обновляем диапазон
+      if (currentTimeMs < visibleStart || currentTimeMs > visibleEnd) {
+        const visibleDuration = visibleEnd - visibleStart;
+        const halfDuration = visibleDuration / 2;
+
+        useStore.setState({
+          timelineVisibleRange: {
+            start: new Date(currentTimeMs - halfDuration),
+            end: new Date(currentTimeMs + halfDuration)
+          }
+        });
+      }
+    };
+
+    // Обновляем положение каждую секунду
+    const intervalId = setInterval(updateTimelinePosition, 1000);
+
+    // Обработчик события timeupdate
+    const handleTimeUpdate = () => {
+      updateTimelinePosition();
+    };
+
+    videoElement.addEventListener('timeupdate', handleTimeUpdate);
+
+    return () => {
+      clearInterval(intervalId);
+      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [useScalableTimeline, activeRecording]);
 
   // Перемотка по клику на таймлайн
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -594,58 +696,86 @@ const FooterPlayer: React.FC = () => {
       </div>
       
       {/* Таймлайн */}
-      <div className="timeline-container">
-	      <div 
-	        className="timeline"
-	        ref={timelineRef}
-	        onClick={handleTimelineClick}
-	      >
-	        {/* Маркеры обрезки */}
-	        {isClipMode && clipStart !== null && (
-	          <div 
-	            className="clip-marker start-marker" 
-	            style={{ left: clipStartPosition }}
-	            onMouseDown={() => setIsDraggingMarker('start')}
-	          />
-	        )}
-	        {isClipMode && clipEnd !== null && (
-	          <div 
-	            className="clip-marker end-marker" 
-	            style={{ left: clipEndPosition }}
-	            onMouseDown={() => setIsDraggingMarker('end')}
-	          />
-	        )}
-	        {isClipMode && clipStart !== null && clipEnd !== null && (
-	          <div 
-	            className="clip-selection" 
-	            style={{ 
-	              left: clipStartPosition, 
-	              width: `calc(${clipEndPosition} - ${clipStartPosition})` 
-	            }}
-	          />
-	        )}
-	        
-	        <div className="timeline-track">
-	          <div 
-	            className="timeline-progress" 
-	            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
-	          />
-	        </div>
-	        
-	        {/* Разметка часов */}
-	        <div className="timeline-hours">
-	          {Array.from({ length: Math.ceil((duration || 0) / 3600) + 1 }).map((_, index) => (
-	            <div 
-	              key={index} 
-	              className="hour-marker"
-	              style={{ left: `${(index * 3600 / (duration || 1)) * 100}%` }}
-	            >
-	              <div className="hour-label">{index}:00</div>
-	            </div>
-	          ))}
-	        </div>
-	      </div>
+      {/* Переключатель типа таймлайна */}
+      <div className="timeline-toggle">
+        <button
+            className={`timeline-toggle-button ${!useScalableTimeline ? 'active' : ''}`}
+            onClick={() => setUseScalableTimeline(false)}
+        >
+          Стандартный таймлайн
+        </button>
+        <button
+            className={`timeline-toggle-button ${useScalableTimeline ? 'active' : ''}`}
+            onClick={() => setUseScalableTimeline(true)}
+        >
+          Расширенный таймлайн
+        </button>
       </div>
+
+      {/* Отображаем выбранный таймлайн */}
+      {useScalableTimeline ? (
+          <ScalableTimeline
+              onTimeSelected={handleTimeSelected}
+              isClipMode={isClipMode}
+              clipStart={clipStart}
+              clipEnd={clipEnd}
+              onClipStartSet={(time) => setClipStart(time)}
+              onClipEndSet={(time) => setClipEnd(time)}
+          />
+      ) : (
+          <div className="timeline-container">
+            <div
+                className="timeline"
+                ref={timelineRef}
+                onClick={handleTimelineClick}
+            >
+              {/* Маркеры обрезки */}
+              {isClipMode && clipStart !== null && (
+                  <div
+                      className="clip-marker start-marker"
+                      style={{ left: clipStartPosition }}
+                      onMouseDown={() => setIsDraggingMarker('start')}
+                  />
+              )}
+              {isClipMode && clipEnd !== null && (
+                  <div
+                      className="clip-marker end-marker"
+                      style={{ left: clipEndPosition }}
+                      onMouseDown={() => setIsDraggingMarker('end')}
+                  />
+              )}
+              {isClipMode && clipStart !== null && clipEnd !== null && (
+                  <div
+                      className="clip-selection"
+                      style={{
+                        left: clipStartPosition,
+                        width: `calc(${clipEndPosition} - ${clipStartPosition})`
+                      }}
+                  />
+              )}
+
+              <div className="timeline-track">
+                <div
+                    className="timeline-progress"
+                    style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                />
+              </div>
+
+              {/* Разметка часов */}
+              <div className="timeline-hours">
+                {Array.from({ length: Math.ceil((duration || 0) / 3600) + 1 }).map((_, index) => (
+                    <div
+                        key={index}
+                        className="hour-marker"
+                        style={{ left: `${(index * 3600 / (duration || 1)) * 100}%` }}
+                    >
+                      <div className="hour-label">{index}:00</div>
+                    </div>
+                ))}
+              </div>
+            </div>
+          </div>
+      )}
     </div>
   );
 };
