@@ -9,7 +9,8 @@ const FooterPlayer: React.FC = () => {
     activePlaylist,
     appendPlaylistRecordings,
     preloadVideo,
-    clearMetadataCache
+    clearMetadataCache,
+    archiveViewMode
   } = useStore();
 
   const videoRef = useRef<HTMLVideoElement>(null);
