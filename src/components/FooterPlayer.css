@@ -1,9 +1,10 @@
 /* Стили для переключения между таймлайнами */
 .timeline-toggle {
-  display: flex;
+  /*display: flex;*/
   justify-content: flex-end;
   margin-bottom: 10px;
   padding: 0 16px;
+  display: none;
 }
 
 .timeline-toggle-button {
@@ -29,7 +30,7 @@
 
 /* Стили для контейнера с масштабируемым таймлайном */
 .footer-player .scalable-timeline {
-  margin: 0 16px 10px 16px;
+  /*margin: 0 16px 10px 16px;*/
 }
 
 /* Совместимость стилей для разных таймлайнов */
@@ -380,11 +381,11 @@ color: var(--gray2-color);
 
 /* Адаптивность */
 @media (max-width: 1024px) {
-  .controls-top {
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-  }
+  /*.controls-top {*/
+  /*  flex-direction: column;*/
+  /*  gap: 12px;*/
+  /*  align-items: flex-start;*/
+  /*}*/
   
   .controls-right {
     width: 100%;
@@ -441,4 +442,13 @@ color: var(--gray2-color);
 /* Скрываем встроенные элементы управления в ArchivePlayer */
 .archive-player-container .player-controls {
   display: none !important;
+}
+
+@media screen (max-width 1140px) {
+  .controls-top {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+  }
 }
