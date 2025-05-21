@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useStore, TimelineEvent, EventType } from '../store/useStore';
+import { useStore, TimelineEvent, EventType } from '../../store/useStore.ts';
 import './EventsSearch.css';
 
 interface EventsSearchProps {

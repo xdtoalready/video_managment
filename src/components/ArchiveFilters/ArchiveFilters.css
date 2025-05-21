@@ -1,4 +1,3 @@
-/* Стили для фильтров архива */
 .archive-filters {
   background-color: var(--white);
   border-radius: var(--border-radius);
@@ -19,7 +18,6 @@
   color: var(--text-color);
 }
 
-/* Фильтры дат */
 .date-filter {
   display: flex;
   gap: 1rem;
@@ -47,7 +45,6 @@
   color: var(--text-color);
 }
 
-/* Выпадающие фильтры */
 .dropdown-filter {
   position: relative;
 }
@@ -107,7 +104,6 @@
   margin-right: 0.5rem;
 }
 
-/* Кнопки фильтров */
 .filter-buttons {
   display: flex;
   justify-content: flex-end;
@@ -145,7 +141,6 @@
   background-color: var(--primary-color);
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .date-filter {
     flex-direction: column;

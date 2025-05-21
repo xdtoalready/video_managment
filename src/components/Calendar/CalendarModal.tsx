@@ -1,6 +1,6 @@
 import React from 'react';
-import { useStore } from '../store/useStore';
-import Calendar from './Calendar';
+import { useStore } from '../../store/useStore.ts';
+import Calendar from './Calendar.tsx';
 
 const CalendarModal: React.FC = () => {
   const { 

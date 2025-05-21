@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Hls from 'hls.js';
-import { Recording } from '../store/useStore';
+import { Recording } from '../../store/useStore.ts';
 import './ArchivePlayer.css';
 
 interface ArchivePlayerProps {

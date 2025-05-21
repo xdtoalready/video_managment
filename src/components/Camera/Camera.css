@@ -1,6 +1,3 @@
-/* Стили для режимов просмотра камер */
-
-/* Сетка камер */
 .camera-grid-container {
   padding: 1.5rem;
   background-color: var(--white);
@@ -26,7 +23,6 @@
   font-style: italic;
 }
 
-/* Карточка камеры в сетке */
 .camera-card {
   width: 100%;
   position: relative;
@@ -46,7 +42,6 @@
   outline: 2px solid var(--primary-color);
 }
 
-/* Активная камера в режиме просмотра одной камеры */
 .camera-card.camera-active {
   cursor: default;
   transform: none;
@@ -61,7 +56,6 @@
   box-shadow: none;
 }
 
-/* Заголовок камеры */
 .camera-card-header {
   z-index: 50;
   width: 100%;
@@ -72,7 +66,6 @@
   padding: 10px;
 }
 
-/* Стили для заголовка в активном режиме */
 .camera-active .camera-card-header {
   padding: 15px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
@@ -93,7 +86,6 @@
   font-size: 16px;
 }
 
-/* Кнопка меню */
 .camera-menu-button {
   display: flex;
   align-items: center;
@@ -121,7 +113,6 @@
   background-color: white;
 }
 
-/* Контейнер видео */
 .camera-view {
   position: relative;
   border-radius: var(--border-radius);
@@ -137,7 +128,6 @@
   height: 100%;
 }
 
-/* Контейнер для режима одной камеры */
 .camera-single-view-container {
   position: relative;
   height: calc(100vh - 40px);
@@ -148,7 +138,6 @@
   overflow: hidden;
 }
 
-/* Кнопка возврата к сетке */
 .back-to-grid {
   position: absolute;
   top: 15px;

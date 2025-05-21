@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/useStore';
-import ArchiveFilters from './ArchiveFilters';
-import RecordingsList from './RecordingsList';
-import ArchivePlayer from './ArchivePlayer';
-import FooterPlayer from './FooterPlayer';
-import BookmarksPanel from './BookmarksPanel';
-import EventsSearch from './EventsSearch';
+import { useStore } from '../../store/useStore.ts';
+import ArchiveFilters from '../ArchiveFilters/ArchiveFilters.tsx';
+import RecordingsList from '../RecordingsList/RecordingsList.tsx';
+import ArchivePlayer from '../ArchivePlayer/ArchivePlayer.tsx';
+import FooterPlayer from '../FooterPlayer/FooterPlayer.tsx';
+import BookmarksPanel from '../BookmarksPanel/BookmarksPanel.tsx';
+import EventsSearch from '../EventsSearch/EventsSearch.tsx';
 import './ArchiveView.css';
 
 const ArchiveView: React.FC = () => {

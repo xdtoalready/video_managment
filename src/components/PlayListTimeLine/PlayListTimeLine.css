@@ -1,5 +1,3 @@
-/* src/components/PlaylistTimeline.css */
-
 .playlist-timeline {
   position: relative;
   width: 100%;
@@ -9,7 +7,6 @@
   margin-bottom: 8px;
 }
 
-/* Фон таймлайна */
 .timeline-background {
   position: absolute;
   top: 16px;
@@ -20,7 +17,6 @@
   border-radius: 3px;
 }
 
-/* Записи на таймлайне */
 .timeline-recording {
   position: absolute;
   top: 0;
@@ -33,7 +29,6 @@
   background-color: var(--color-main2);
 }
 
-/* Пробелы между записями */
 .timeline-gap {
   position: absolute;
   top: 0;
@@ -48,7 +43,6 @@
   border-radius: 3px;
 }
 
-/* События на таймлайне */
 .timeline-events {
   position: absolute;
   top: 8px;
@@ -81,7 +75,6 @@
   background-color: rgba(0, 255, 0, 0.8);
 }
 
-/* Индикатор текущей позиции */
 .timeline-playhead {
   position: absolute;
   top: 0;
@@ -110,7 +103,6 @@
   border: 2px solid white;
 }
 
-/* Часовые маркеры */
 .timeline-hours {
   position: absolute;
   top: 0;
@@ -143,7 +135,6 @@
   text-align: center;
 }
 
-/* День/ночь индикаторы */
 .day-night-indicator {
   position: absolute;
   top: 0;

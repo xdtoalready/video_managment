@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStore, Recording, locationNames } from '../store/useStore';
+import { useStore, Recording, locationNames } from '../../store/useStore.ts';
 import './RecordingsList.css';
 
 const RecordingsList: React.FC = () => {

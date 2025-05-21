@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react'
 import './App.css'
-import CameraGrid from './components/CameraGrid'
-import Controls from './components/Controls'
+import CameraGrid from './components/Camera/CameraGrid.tsx'
+import Controls from './components/Controls/Controls.tsx'
 import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
-import CalendarModal from './components/CalendarModal'
-import ArchiveView from './components/ArchiveView'
+import CalendarModal from './components/Calendar/CalendarModal.tsx'
+import ArchiveView from './components/ArchiveView/ArchiveView.tsx'
 
 function App() {
   const { loadCameras, viewMode, isGridView } = useStore();

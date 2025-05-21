@@ -1,4 +1,3 @@
-/* Стили для архивного представления */
 .archive-view-container {
   height: calc(100vh - 40px);
   overflow-y: auto;
@@ -6,8 +5,8 @@
 }
 
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-  color: red; /* Изменяет цвет иконки */
-  font-size: 20px; /* Изменяет размер иконки */
+  color: red;
+  font-size: 20px;
   background-image: url("data:image/svg+xml,%0A%3Csvg width='19' height='19' viewBox='0 0 19 19' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.92857 5.75H14M4.30952 0.75V2.25018M14.5 0.75V2.25M17.5 5.25L17.5 15.2501C17.5 16.9069 16.1569 18.2501 14.5 18.2501H4.5C2.84315 18.2501 1.5 16.9069 1.5 15.2501V5.25C1.5 3.59315 2.84315 2.25 4.5 2.25H14.5C16.1569 2.25 17.5 3.59315 17.5 5.25Z' stroke='%23333333' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A");
   background-repeat: no-repeat;
   background-position: center;
@@ -19,7 +18,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   border-radius: 6px;
 }
 
-/* Стили для одиночного просмотра */
 .archive-single-view {
   height: 100%;
   display: flex;
@@ -101,7 +99,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   font-weight: 500;
 }
 
-/* Адаптивность */
 @media (max-width: 1024px) {
   .archive-main-content {
     flex-direction: column;

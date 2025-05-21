@@ -1,7 +1,5 @@
-// src/components/PlaylistTimeline.tsx
-
 import React, { useRef, useEffect } from 'react';
-import { useStore, ArchiveEvent } from '../store/useStore';
+import { useStore, ArchiveEvent } from '../../store/useStore.ts';
 import './PlayListTimeLine.css';
 
 const PlaylistTimeline: React.FC = () => {
@@ -12,8 +10,7 @@ const PlaylistTimeline: React.FC = () => {
   } = useStore();
   
   const timelineRef = useRef<HTMLDivElement>(null);
-  
-  // Обработчик клика на таймлайне
+
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!timelineRef.current || !playlist.items.length) return;
     
@@ -23,7 +20,7 @@ const PlaylistTimeline: React.FC = () => {
     
     seekToAbsolutePosition(targetTime);
   };
-  
+
   // Расчет позиции для события или записи относительно общей длительности
   const calculatePosition = (timestamp: Date): number => {
     if (!playlist.timeRange.start || !playlist.timeRange.end) return 0;

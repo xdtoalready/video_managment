@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';  // Добавляем импорт useRef
-import { useStore } from '../store/useStore';
+import React, { useState, useEffect, useRef } from 'react';
+import { useStore } from '../../store/useStore.ts';
 import './FooterPlayer.css';
-import ScalableTimeline from './ScalableTimeline';
+import ScalableTimeline from '../ScalableTimeline/ScalableTimeline.tsx';
 
 const FooterPlayer: React.FC = () => {
-  // Получаем состояние из глобального хранилища
   const { 
     activeRecording,
     archiveViewMode
@@ -107,7 +106,7 @@ const FooterPlayer: React.FC = () => {
     }
   };
 
-  // Добавьте эффект для обновления видимого диапазона при изменении активной записи
+  // Эффект для обновления видимого диапазона при изменении активной записи
   useEffect(() => {
     if (activeRecording) {
       // Устанавливаем видимый диапазон вокруг текущей записи

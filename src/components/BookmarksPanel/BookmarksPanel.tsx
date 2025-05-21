@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore, TimelineBookmark } from '../store/useStore';
+import { useStore, TimelineBookmark } from '../../store/useStore.ts';
 import './BookmarksPanel.css';
 
 interface BookmarksPanelProps {

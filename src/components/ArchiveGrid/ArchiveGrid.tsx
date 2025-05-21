@@ -1,6 +1,6 @@
 import React from 'react';
 import VideoPlayer from './VideoPlayer';
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore.ts';
 import './ArchiveGrid.css';
 
 interface ArchiveGridProps {
@@ -25,12 +25,12 @@ const ArchiveGrid: React.FC<ArchiveGridProps> = () => {
     );
   }
   
-  // Получаем объекты выбранных записей
+  // Получение объекты выбранных записей
   const selectedItems = recordings.filter(
     recording => selectedRecordings.includes(recording.id)
   );
   
-  // Определяем класс для сетки в зависимости от количества видео
+  // Определение класса для сетки в зависимости от количества видео
   const gridClass = `archive-grid items-${selectedItems.length}`;
   
   return (

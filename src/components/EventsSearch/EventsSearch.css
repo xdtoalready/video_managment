@@ -208,7 +208,6 @@
     background-color: rgba(155, 89, 182, 0.2);
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .events-search {
         padding: 10px;

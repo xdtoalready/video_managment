@@ -194,7 +194,6 @@
     background-color: #e0e0e0;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .bookmarks-panel {
         padding: 10px;

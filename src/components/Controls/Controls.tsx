@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useStore } from '../store/useStore';
-import { sentryshotAPI } from '../api/sentryshot';
+import { useStore } from '../../store/useStore.ts';
+import { sentryshotAPI } from '../../api/sentryshot.ts';
 
 const Controls: React.FC = () => {
   const { activeCamera } = useStore();

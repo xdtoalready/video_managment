@@ -1,4 +1,3 @@
-/* Стили для архивного плеера */
 .archive-player-container {
   position: relative;
   width: 100%;
@@ -33,7 +32,6 @@
   cursor: pointer;
 }
 
-/* Состояния загрузки и ошибки */
 .player-loading,
 .player-error {
   position: absolute;
@@ -54,7 +52,6 @@
   color: #ff5252;
 }
 
-/* Элементы управления */
 .player-controls {
   position: absolute;
   bottom: 0;
@@ -135,7 +132,6 @@
   white-space: nowrap;
 }
 
-/* Управление громкостью */
 .volume-control {
   display: flex;
   align-items: center;
@@ -169,7 +165,6 @@
   border: none;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .volume-control {
     display: none;

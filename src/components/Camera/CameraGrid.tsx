@@ -1,15 +1,15 @@
 import React from 'react';
-import CameraView from './CameraView';
-import { useStore } from '../store/useStore';
-import { locationNames } from '../store/useStore';
+import CameraView from './CameraView.tsx';
+import { useStore } from '../../store/useStore.ts';
+import { locationNames } from '../../store/useStore.ts';
 
 const CameraGrid: React.FC = () => {
   const { 
     cameras, 
     isGridView, 
     activeCamera, 
-    showSingleCamera, // Используем новый метод
-    showGridView,     // Используем новый метод
+    showSingleCamera,
+    showGridView,
     selectedLocations 
   } = useStore();
   

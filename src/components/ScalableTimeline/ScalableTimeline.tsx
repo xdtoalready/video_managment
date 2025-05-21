@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useStore } from '../store/useStore';
+import { useStore } from '../../store/useStore.ts';
 import './ScalableTimeline.css';
 
 interface ScalableTimelineProps {
@@ -12,13 +12,13 @@ interface ScalableTimelineProps {
 }
 
 const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
-                                                               onTimeSelected,
-                                                               isClipMode = false,
-                                                               clipStart = null,
-                                                               clipEnd = null,
-                                                               onClipStartSet,
-                                                               onClipEndSet
-                                                           }) => {
+   onTimeSelected,
+   isClipMode = false,
+   clipStart = null,
+   clipEnd = null,
+   onClipStartSet,
+   onClipEndSet
+}) => {
     const {
         timelineZoomLevel,
         timelineVisibleRange,

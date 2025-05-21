@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import VideoPlayer from './video/VideoPlayer';
-import { useStore } from '../store/useStore';
+import VideoPlayer from '../video/VideoPlayer.tsx';
+import { useStore } from '../../store/useStore.ts';
 
 interface CameraViewProps {
   streamUrl: string;
