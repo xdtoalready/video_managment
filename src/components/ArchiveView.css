@@ -45,6 +45,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 }
 
 .archive-toolbar {
+  background: var(--white);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -70,6 +71,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .archive-tools {
   display: flex;
   gap: 10px;
+  padding: 0.5rem 1rem;
 }
 
 .tool-button {
