@@ -328,7 +328,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                         }}
                     />
                 )}
-                };
 
                 {currentPosition !== null && (
                     <div
