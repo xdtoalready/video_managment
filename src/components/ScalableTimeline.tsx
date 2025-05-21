@@ -59,20 +59,23 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         setIsDragging(true);
         setDragStartX(e.clientX);
         setDragStartRange({ ...timelineVisibleRange });
+        e.preventDefault();
     }, [timelineVisibleRange]);
 
     // Обработчик перетаскивания
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         if (!isDragging || !dragStartRange) return;
 
+        // Рассчитываем, насколько переместилась мышь
+        const deltaX = e.clientX - dragStartX;
+
+        // Рассчитываем, сколько миллисекунд соответствует этому перемещению
         const timelineDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
         const timelineWidth = timelineRef.current?.clientWidth || 1;
         const pixelsPerMs = timelineWidth / timelineDuration;
-
-        const deltaX = e.clientX - dragStartX;
         const deltaMs = deltaX / pixelsPerMs;
 
-        // Перемещаем видимый диапазон в противоположном направлении перетаскивания
+        // Перемещаем диапазон в направлении, противоположном перемещению мыши
         setTimelineVisibleRange({
             start: new Date(dragStartRange.start.getTime() - deltaMs),
             end: new Date(dragStartRange.end.getTime() - deltaMs)
@@ -156,12 +159,14 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             const deltaX = e.clientX - dragStartX;
             const deltaMs = deltaX / pixelsPerMs;
 
-            setTimelineVisibleRange({
+            // Важно вызывать этот метод напрямую из хранилища, так как это глобальный обработчик
+            useStore.getState().setTimelineVisibleRange({
                 start: new Date(dragStartRange.start.getTime() - deltaMs),
                 end: new Date(dragStartRange.end.getTime() - deltaMs)
             });
         };
 
+        // Добавляем глобальные обработчики
         document.addEventListener('mouseup', handleGlobalMouseUp);
         document.addEventListener('mousemove', handleGlobalMouseMove);
 
@@ -169,7 +174,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             document.removeEventListener('mouseup', handleGlobalMouseUp);
             document.removeEventListener('mousemove', handleGlobalMouseMove);
         };
-    }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange, setTimelineVisibleRange]);
+    }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange]);
 
     // Генерируем сегменты записей для плейлиста
     const generateRecordingSegments = () => {

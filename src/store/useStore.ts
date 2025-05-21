@@ -752,6 +752,33 @@ loadRecordings: async () => {
         fileUrl: 'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
       },
     ];
+
+    // Определяем минимальное и максимальное время из записей
+    if (mockRecordings.length > 0) {
+      let minTime = mockRecordings[0].startTime.getTime();
+      let maxTime = mockRecordings[0].endTime.getTime();
+
+      mockRecordings.forEach(recording => {
+        if (recording.startTime.getTime() < minTime) {
+          minTime = recording.startTime.getTime();
+        }
+        if (recording.endTime.getTime() > maxTime) {
+          maxTime = recording.endTime.getTime();
+        }
+      });
+
+      // Добавляем небольшой отступ (10% от общей длительности)
+      const totalDuration = maxTime - minTime;
+      const padding = totalDuration * 0.1;
+
+      // Устанавливаем видимый диапазон
+      set({
+        timelineVisibleRange: {
+          start: new Date(minTime - padding),
+          end: new Date(maxTime + padding)
+        }
+      });
+    }
     
     set({ recordings: mockRecordings });
   } catch (error) {
