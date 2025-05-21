@@ -423,7 +423,11 @@ color: var(--gray2-color);
 
 /* Добавляем отступ для контента, чтобы он не перекрывался футером */
 .archive-view-container {
-  padding-bottom: 120px;
+  padding-bottom: var(--footer-height);
+}
+
+.archive-main-content {
+  height: calc(100vh - 150px - var(--footer-height));
 }
 
 /* Скрываем встроенные элементы управления видео */

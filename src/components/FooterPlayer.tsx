@@ -10,6 +10,8 @@ const FooterPlayer: React.FC = () => {
     archiveViewMode
   } = useStore();
 
+  const footerRef = useRef<HTMLDivElement>(null);
+
   // Локальное состояние плеера
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -41,6 +43,28 @@ const FooterPlayer: React.FC = () => {
   const getVideoElement = (): HTMLVideoElement | null => {
     return document.querySelector('.archive-player-video') as HTMLVideoElement;
   };
+
+  // Эффект для измерения высоты
+  useEffect(() => {
+    const updateFooterHeight = () => {
+      if (footerRef.current) {
+        const height = footerRef.current.offsetHeight;
+        document.documentElement.style.setProperty('--footer-height', `${height}px`);
+      }
+    };
+
+    // Измеряем высоту при монтировании
+    updateFooterHeight();
+
+    // Добавляем слушатель изменения размера окна
+    window.addEventListener('resize', updateFooterHeight);
+
+    // Очистка при размонтировании
+    return () => {
+      window.removeEventListener('resize', updateFooterHeight);
+      document.documentElement.style.setProperty('--footer-height', '0px');
+    };
+  }, []);
 
   // Обработчик выбора времени на таймлайне
   const handleTimeSelected = (time: Date) => {
@@ -531,7 +555,7 @@ const FooterPlayer: React.FC = () => {
   }
 
   return (
-    <div className={`footer-player ${isClipMode ? 'clip-mode' : ''}`}>
+    <div ref={footerRef} className={`footer-player ${isClipMode ? 'clip-mode' : ''}`}>
       {/* Верхняя панель управления */}
       <div className="controls-top">
         <div className="controls-center">
