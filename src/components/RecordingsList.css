@@ -118,7 +118,7 @@ color: var(--gray2-color);
   display: flex;
   justify-content: flex-end;
   gap: 20px;
-  flex: 0.6;
+  flex: 1;
 }
 
 .recording-action-btn {
@@ -172,13 +172,13 @@ color: var(--gray2-color);
   .recording-cell:nth-child(6) { width: 15%; } /* Действия */
 }
 
+.recordings-table-header, .recording-row {
+  min-width: 1200px;
+}
+
 @media (max-width: 768px) {
   .recordings-table {
     overflow-x: auto;
-  }
-  
-  .recordings-table-header, .recording-row {
-    min-width: 900px;
   }
   
   .recordings-header {

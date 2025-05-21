@@ -39,10 +39,12 @@
 
 .date-field input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  background-color: var(--light-bg);
+  padding: 15px 20px;
+  border: none;
+  border-radius: 6px;
   font-size: 0.9rem;
+  color: var(--text-color);
 }
 
 /* Выпадающие фильтры */

@@ -99,19 +99,19 @@ const ArchiveFilters: React.FC = () => {
         <h3>Временной диапазон</h3>
         <div className="date-filter">
           <div className="date-field">
-            <label>С</label>
             <input 
               type="datetime-local" 
               value={startDate} 
-              onChange={handleStartDateChange} 
+              onChange={handleStartDateChange}
+              placeholder="От"
             />
           </div>
           <div className="date-field">
-            <label>По</label>
             <input 
               type="datetime-local" 
               value={endDate} 
-              onChange={handleEndDateChange} 
+              onChange={handleEndDateChange}
+              placeholder="До"
             />
           </div>
         </div>
