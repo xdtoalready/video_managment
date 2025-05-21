@@ -43,7 +43,7 @@
   padding: 15px 20px;
   border: none;
   border-radius: 6px;
-  font-size: 0.9rem;
+  font-size: 18px;
   color: var(--text-color);
 }
 
@@ -53,16 +53,18 @@
 }
 
 .dropdown-button {
+  background-color: var(--light-bg);
+  padding: 15px 20px;
+  border: none;
   width: 100%;
   text-align: left;
-  padding: 0.75rem;
-  background-color: var(--white);
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  color: var(--text-color);
+  font-weight: 400;
 }
 
 .dropdown-arrow {
@@ -70,6 +72,10 @@
 }
 
 .dropdown-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px;
   position: absolute;
   top: 100%;
   left: 0;
@@ -82,6 +88,15 @@
   overflow-y: auto;
   z-index: 10;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-content .checkbox-label:not(:last-child) {
+  margin-right: 6px;
+}
+
+.checkbox-label {
+  padding: 6px;
+  border-radius: 6px;
 }
 
 .checkbox-label:hover {
@@ -113,17 +128,17 @@
 
 .reset-button {
   background-color: transparent;
-  color: var(--color-main2);
-  border: 1px solid #ddd;
+  color: var(--primary-color);
+  outline: 1px solid #D1CDCD;
 }
 
 .apply-button {
-  background-color: var(--color-main2);
+  background-color: var(--secondary-color);
   color: var(--white);
 }
 
 .reset-button:hover {
-  background-color: var(--light-bg);
+  background-color: #e0e0e0;
 }
 
 .apply-button:hover {
