@@ -44,6 +44,8 @@
     border-radius: 4px;
     overflow: hidden;
     cursor: grab;
+    /* Для сенсорных устройств */
+    touch-action: pan-y;
 }
 
 .timeline-container.dragging {
@@ -110,6 +112,38 @@
     height: 100%;
     background-color: #ff0000;
     z-index: 2;
+    touch-action: none; /* Отключаем стандартные сенсорные действия */
+}
+
+.playhead-handle {
+    position: absolute;
+    top: -5px;
+    left: -8px;
+    width: 18px;
+    height: 18px;
+    background-color: #ff0000;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    touch-action: none; /* Отключаем стандартные сенсорные действия */
+}
+
+.playhead-time-label {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.timeline-current-position:hover .playhead-time-label {
+    opacity: 1;
 }
 
 .timeline-range-display {
@@ -120,23 +154,83 @@
     font-size: 12px;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .timeline-controls {
-        flex-wrap: wrap;
+/* Маркеры обрезки */
+.clip-marker {
+    position: absolute;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    z-index: 3;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.clip-marker.start-marker {
+    background-color: #4CAF50;
+}
+
+.clip-marker.end-marker {
+    background-color: #F44336;
+}
+
+.clip-selection {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background-color: rgba(76, 175, 80, 0.2);
+    z-index: 1;
+}
+
+/* Отключаем выделение текста при перетаскивании на мобильных устройствах */
+.timeline-container,
+.timeline-current-position,
+.playhead-handle,
+.clip-marker {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent; /* Убираем выделение при тапе */
+}
+
+/* Специальные стили для сенсорных устройств */
+@media (pointer: coarse) {
+    /* Для устройств с сенсорным экраном */
+    .timeline-container {
+        min-height: 80px; /* Больше высота для лучшего взаимодействия */
+    }
+
+    .playhead-handle {
+        width: 24px; /* Больше размер для легкого попадания */
+        height: 24px;
+        left: -12px;
+        top: -5px;
     }
 
     .timeline-control-button {
-        width: 25px;
-        height: 25px;
-        font-size: 14px;
-    }
-
-    .timeline-container {
-        height: 50px;
+        width: 36px; /* Увеличиваем размер кнопок управления */
+        height: 36px;
+        font-size: 20px;
     }
 
     .timeline-mark-label {
         font-size: 10px;
+    }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+    .timeline-range-display {
+        font-size: 10px;
+    }
+
+    .timeline-control-button {
+        margin-right: 3px;
+    }
+
+    .timeline-zoom-level {
+        margin: 0 5px;
     }
 }

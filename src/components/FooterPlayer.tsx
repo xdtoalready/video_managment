@@ -120,6 +120,30 @@ const FooterPlayer: React.FC = () => {
     videoElement.currentTime = 0;
   };
 
+  useEffect(() => {
+    const videoElement = getVideoElement();
+    if (!videoElement) return;
+
+    const updateTimeInfo = () => {
+      setCurrentTime(videoElement.currentTime);
+      // Обновляем строковые представления времени для инпутов
+      const totalTimeSeconds = Math.floor(videoElement.currentTime);
+      const hours = Math.floor(totalTimeSeconds / 3600);
+      const minutes = Math.floor((totalTimeSeconds % 3600) / 60);
+      const seconds = totalTimeSeconds % 60;
+
+      setTimeInputHours(hours.toString().padStart(2, '0'));
+      setTimeInputMinutes(minutes.toString().padStart(2, '0'));
+      setTimeInputSeconds(seconds.toString().padStart(2, '0'));
+    };
+
+    videoElement.addEventListener('timeupdate', updateTimeInfo);
+
+    return () => {
+      videoElement.removeEventListener('timeupdate', updateTimeInfo);
+    };
+  }, [activeRecording]);
+
   // Перемотка на указанное количество секунд
   const seekRelative = (seconds: number) => {
     const videoElement = getVideoElement();

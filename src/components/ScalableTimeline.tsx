@@ -12,13 +12,13 @@ interface ScalableTimelineProps {
 }
 
 const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
-   onTimeSelected,
-   isClipMode = false,
-   clipStart = null,
-   clipEnd = null,
-   onClipStartSet,
-   onClipEndSet
-}) => {
+                                                               onTimeSelected,
+                                                               isClipMode = false,
+                                                               clipStart = null,
+                                                               clipEnd = null,
+                                                               onClipStartSet,
+                                                               onClipEndSet
+                                                           }) => {
     const {
         timelineZoomLevel,
         timelineVisibleRange,
@@ -102,9 +102,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         setIsDragging(true);
         setDragStartX(e.touches[0].clientX);
         setDragStartRange({...timelineVisibleRange});
-
-        // Предотвращаем прокрутку страницы во время перетаскивания
-        e.preventDefault();
     }, [timelineVisibleRange]);
 
     // Обработчик перемещения при касании
@@ -126,9 +123,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             start: new Date(dragStartRange.start.getTime() - deltaMs),
             end: new Date(dragStartRange.end.getTime() - deltaMs)
         });
-
-        // Предотвращаем прокрутку страницы во время перетаскивания
-        e.preventDefault();
     }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange, setTimelineVisibleRange]);
 
     // Обработчик касания для индикатора
@@ -139,9 +133,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
         setIsDraggingPlayhead(true);
         setDragStartPlayheadX(e.touches[0].clientX);
-
-        // Предотвращаем прокрутку страницы
-        e.preventDefault();
     }, []);
 
     // Обработчик перемещения при касании индикатора
@@ -160,9 +151,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
         // Обновляем текущее время видео
         onTimeSelected(newTime);
-
-        // Предотвращаем прокрутку страницы
-        e.preventDefault();
     }, [isDraggingPlayhead, timelineVisibleRange, onTimeSelected]);
 
     // Обработчик окончания касания
@@ -187,7 +175,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         onTimeSelected(newTime);
     }, [isDraggingPlayhead, timelineVisibleRange, onTimeSelected]);
 
-// Обработчик окончания перетаскивания индикатора
+    // Обработчик окончания перетаскивания индикатора
     const handlePlayheadMouseUp = useCallback(() => {
         setIsDraggingPlayhead(false);
     }, []);
@@ -238,7 +226,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const clickTime = new Date(timelineVisibleRange.start.getTime() + timelineDuration * clickPosition);
 
         if (isClipMode) {
-            const videoElement = document.querySelector('video') as HTMLVideoElement;
+            const videoElement = document.querySelector('.archive-player-video') as HTMLVideoElement;
             if (!videoElement || !activeRecording) return;
 
             // Рассчитываем локальное время внутри текущей записи
@@ -277,6 +265,41 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 setIsDragging(false);
                 setDragStartRange(null);
             }
+            if (isDraggingPlayhead) {
+                setIsDraggingPlayhead(false);
+            }
+        };
+
+        const handleGlobalMouseMove = (e: MouseEvent) => {
+            if (!isDragging && !isDraggingPlayhead) return;
+
+            // Обработка перетаскивания таймлайна
+            if (isDragging && dragStartRange && timelineRef.current) {
+                const timelineDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+                const timelineWidth = timelineRef.current.clientWidth;
+                const pixelsPerMs = timelineWidth / timelineDuration;
+
+                const deltaX = e.clientX - dragStartX;
+                const deltaMs = deltaX / pixelsPerMs;
+
+                useStore.getState().setTimelineVisibleRange({
+                    start: new Date(dragStartRange.start.getTime() - deltaMs),
+                    end: new Date(dragStartRange.end.getTime() - deltaMs)
+                });
+            }
+
+            // Обработка перетаскивания индикатора
+            if (isDraggingPlayhead && timelineRef.current) {
+                const rect = timelineRef.current.getBoundingClientRect();
+                const clickPosition = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const newTime = new Date(
+                    timelineVisibleRange.start.getTime() +
+                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime()) * clickPosition
+                );
+
+                // Используем метод из пропсов для обновления времени
+                onTimeSelected(newTime);
+            }
         };
 
         // Добавляем глобальные обработчики событий касания
@@ -293,6 +316,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
         const handleGlobalTouchMove = (e: TouchEvent) => {
             if (e.touches.length !== 1) return;
+            if (!isDragging && !isDraggingPlayhead) return;
 
             const touch = e.touches[0];
 
@@ -305,7 +329,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 const deltaX = touch.clientX - dragStartX;
                 const deltaMs = deltaX / pixelsPerMs;
 
-                // Используем метод хранилища напрямую
                 useStore.getState().setTimelineVisibleRange({
                     start: new Date(dragStartRange.start.getTime() - deltaMs),
                     end: new Date(dragStartRange.end.getTime() - deltaMs)
@@ -322,14 +345,8 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                     (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime()) * touchPosition
                 );
 
-                // Обновляем текущее время видео
-                const videoElement = document.querySelector('video');
-                if (videoElement && activeRecording) {
-                    const offsetSeconds = (newTime.getTime() - activeRecording.startTime.getTime()) / 1000;
-                    if (offsetSeconds >= 0 && offsetSeconds <= videoElement.duration) {
-                        videoElement.currentTime = offsetSeconds;
-                    }
-                }
+                // Используем метод из пропсов для обновления времени
+                onTimeSelected(newTime);
             }
 
             // Если мы перетаскиваем, предотвращаем прокрутку страницы
@@ -338,52 +355,18 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             }
         };
 
-        const handleGlobalMouseMove = (e: MouseEvent) => {
-            if (!isDragging || !dragStartRange || !timelineRef.current) return;
-
-            const timelineDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
-            const timelineWidth = timelineRef.current.clientWidth;
-            const pixelsPerMs = timelineWidth / timelineDuration;
-
-            const deltaX = e.clientX - dragStartX;
-            const deltaMs = deltaX / pixelsPerMs;
-
-            // Добавьте логику для перетаскивания индикатора
-            if (isDraggingPlayhead && timelineRef.current) {
-                const rect = timelineRef.current.getBoundingClientRect();
-                const clickPosition = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                const newTime = new Date(
-                    timelineVisibleRange.start.getTime() +
-                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime()) * clickPosition
-                );
-
-                // Используем метод из хранилища напрямую
-                const videoElement = document.querySelector('video');
-                if (videoElement && activeRecording) {
-                    const offsetSeconds = (newTime.getTime() - activeRecording.startTime.getTime()) / 1000;
-                    if (offsetSeconds >= 0 && offsetSeconds <= videoElement.duration) {
-                        videoElement.currentTime = offsetSeconds;
-                    }
-                }
-            }
-
-            // Важно вызывать этот метод напрямую из хранилища, так как это глобальный обработчик
-            useStore.getState().setTimelineVisibleRange({
-                start: new Date(dragStartRange.start.getTime() - deltaMs),
-                end: new Date(dragStartRange.end.getTime() - deltaMs)
-            });
-        };
-
+        document.addEventListener('mouseup', handleGlobalMouseUp);
+        document.addEventListener('mousemove', handleGlobalMouseMove);
         document.addEventListener('touchend', handleGlobalTouchEnd);
         document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
 
-        // Добавляем глобальные обработчики
-        document.addEventListener('mouseup', handleGlobalMouseUp);
-        document.addEventListener('mousemove', handleGlobalMouseMove);
-
         return () => {
+            document.removeEventListener('mouseup', handleGlobalMouseUp);
+            document.removeEventListener('mousemove', handleGlobalMouseMove);
+            document.removeEventListener('touchend', handleGlobalTouchEnd);
+            document.removeEventListener('touchmove', handleGlobalTouchMove);
         };
-    }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange, isDraggingPlayhead, activeRecording]);
+    }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange, isDraggingPlayhead, activeRecording, onTimeSelected]);
 
     // Генерируем сегменты записей для плейлиста
     const generateRecordingSegments = () => {
@@ -429,7 +412,8 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const calculateCurrentPosition = () => {
         if (!activeRecording) return null;
 
-        const videoElement = document.querySelector('video') as HTMLVideoElement;
+        // Находим элемент видео который может быть в разных контейнерах в зависимости от режима
+        const videoElement = document.querySelector('.archive-player-video') as HTMLVideoElement;
         if (!videoElement) return null;
 
         const currentTime = videoElement.currentTime;
@@ -449,6 +433,9 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     };
 
     const currentPosition = calculateCurrentPosition();
+
+    // Находим элемент видео для отображения текущего времени
+    const videoElement = document.querySelector('.archive-player-video') as HTMLVideoElement;
 
     return (
         <div className="scalable-timeline">
