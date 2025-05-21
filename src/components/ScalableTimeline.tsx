@@ -32,6 +32,10 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         generateTimelineMarks
     } = useStore();
 
+
+    const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
+    const [dragStartPlayheadX, setDragStartPlayheadX] = useState(0);
+
     const [isDragging, setIsDragging] = useState(false);
     const [dragStartX, setDragStartX] = useState(0);
     const [dragStartRange, setDragStartRange] = useState<{ start: Date; end: Date } | null>(null);
@@ -61,6 +65,33 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         setDragStartRange({ ...timelineVisibleRange });
         e.preventDefault();
     }, [timelineVisibleRange]);
+
+    // Обработчик начала перетаскивания индикатора
+    const handlePlayheadMouseDown = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation(); // Останавливаем всплытие, чтобы не сработал обработчик таймлайна
+        setIsDraggingPlayhead(true);
+        setDragStartPlayheadX(e.clientX);
+    }, []);
+
+// Обработчик перетаскивания индикатора
+    const handlePlayheadMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!isDraggingPlayhead || !timelineRef.current) return;
+
+        const rect = timelineRef.current.getBoundingClientRect();
+        const clickPosition = (e.clientX - rect.left) / rect.width;
+        const newTime = new Date(
+            timelineVisibleRange.start.getTime() +
+            (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime()) * clickPosition
+        );
+
+        // Вызываем обработчик выбора времени для обновления позиции видео
+        onTimeSelected(newTime);
+    }, [isDraggingPlayhead, timelineVisibleRange, onTimeSelected]);
+
+// Обработчик окончания перетаскивания индикатора
+    const handlePlayheadMouseUp = useCallback(() => {
+        setIsDraggingPlayhead(false);
+    }, []);
 
     // Обработчик перетаскивания
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -159,6 +190,25 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             const deltaX = e.clientX - dragStartX;
             const deltaMs = deltaX / pixelsPerMs;
 
+            // Добавьте логику для перетаскивания индикатора
+            if (isDraggingPlayhead && timelineRef.current) {
+                const rect = timelineRef.current.getBoundingClientRect();
+                const clickPosition = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const newTime = new Date(
+                    timelineVisibleRange.start.getTime() +
+                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime()) * clickPosition
+                );
+
+                // Используем метод из хранилища напрямую
+                const videoElement = document.querySelector('video');
+                if (videoElement && activeRecording) {
+                    const offsetSeconds = (newTime.getTime() - activeRecording.startTime.getTime()) / 1000;
+                    if (offsetSeconds >= 0 && offsetSeconds <= videoElement.duration) {
+                        videoElement.currentTime = offsetSeconds;
+                    }
+                }
+            }
+
             // Важно вызывать этот метод напрямую из хранилища, так как это глобальный обработчик
             useStore.getState().setTimelineVisibleRange({
                 start: new Date(dragStartRange.start.getTime() - deltaMs),
@@ -174,7 +224,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             document.removeEventListener('mouseup', handleGlobalMouseUp);
             document.removeEventListener('mousemove', handleGlobalMouseMove);
         };
-    }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange]);
+    }, [isDragging, dragStartRange, dragStartX, timelineVisibleRange, isDraggingPlayhead, activeRecording]);
 
     // Генерируем сегменты записей для плейлиста
     const generateRecordingSegments = () => {
@@ -338,7 +388,12 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                     <div
                         className="timeline-current-position"
                         style={{ left: `${currentPosition}%` }}
-                    />
+                        onMouseDown={handlePlayheadMouseDown}
+                        onMouseMove={handlePlayheadMouseMove}
+                        onMouseUp={handlePlayheadMouseUp}
+                    >
+                        <div className="playhead-handle" />
+                    </div>
                 )}
             </div>
 
