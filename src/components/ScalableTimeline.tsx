@@ -32,6 +32,18 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         generateTimelineMarks
     } = useStore();
 
+    const formatZoomLevel = (level: string): string => {
+        const translations: Record<string, string> = {
+            'years': 'Годы',
+            'months': 'Месяцы',
+            'days': 'Дни',
+            'hours': 'Часы',
+            'minutes': 'Минуты',
+            'seconds': 'Секунды'
+        };
+
+        return translations[level] || level;
+    };
 
     const [isDraggingPlayhead, setIsDraggingPlayhead] = useState(false);
     const [dragStartPlayheadX, setDragStartPlayheadX] = useState(0);
@@ -297,7 +309,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 <button className="timeline-control-button" onClick={() => zoomTimelineOut()} title="Уменьшить масштаб">
                     -
                 </button>
-                <span className="timeline-zoom-level">{timelineZoomLevel}</span>
+                <span className="timeline-zoom-level">{formatZoomLevel(timelineZoomLevel)}</span>
                 <button className="timeline-control-button" onClick={() => zoomTimelineIn()} title="Увеличить масштаб">
                     +
                 </button>
