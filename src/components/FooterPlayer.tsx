@@ -5,10 +5,16 @@ import ScalableTimeline from './ScalableTimeline';
 
 const FooterPlayer: React.FC = () => {
   // Получаем состояние из глобального хранилища
-  const { 
+  const {
     activeRecording,
+    activePlaylist,
+    appendPlaylistRecordings,
+    preloadVideo,
+    clearMetadataCache,
     archiveViewMode
   } = useStore();
+
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Локальное состояние плеера
   const [currentTime, setCurrentTime] = useState(0);
@@ -23,6 +29,9 @@ const FooterPlayer: React.FC = () => {
   
   // Добавляем отсутствующее состояние для подсказок по клавиатурным сокращениям
   const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+
+  // Добавить к существующим состояниям
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Состояние для режима обрезки
   const [isClipMode, setIsClipMode] = useState(false);
@@ -142,6 +151,89 @@ const FooterPlayer: React.FC = () => {
       setClipStart(null);
       setClipEnd(null);
     }
+  };
+
+  // Добавить эффект для предзагрузки соседних записей
+  useEffect(() => {
+    if (!activePlaylist || !activePlaylist.items || !activePlaylist.items.length) return;
+
+    const currentIndex = activePlaylist.currentItemIndex;
+    const items = activePlaylist.items;
+
+    // Текущая запись
+    const currentItem = items[currentIndex];
+
+    // Предзагружаем следующую запись, если она есть
+    if (currentIndex < items.length - 1) {
+      preloadVideo(items[currentIndex + 1].fileUrl);
+    }
+
+    // Предзагружаем предыдущую запись, если она есть
+    if (currentIndex > 0) {
+      preloadVideo(items[currentIndex - 1].fileUrl);
+    }
+
+    // Если мы приближаемся к концу списка, загружаем еще записи
+    if (currentIndex >= items.length - 3) {
+      appendPlaylistRecordings(currentItem.cameraId, 'after');
+    }
+
+    // Если мы приближаемся к началу списка, загружаем еще записи
+    if (currentIndex <= 2) {
+      appendPlaylistRecordings(currentItem.cameraId, 'before');
+    }
+  }, [activePlaylist, preloadVideo, appendPlaylistRecordings]);
+
+  // Очистка кэша при размонтировании компонента
+  useEffect(() => {
+    return () => {
+      if (activeRecording) {
+        clearMetadataCache(activeRecording.cameraId);
+      }
+    };
+  }, [activeRecording, clearMetadataCache]);
+
+  // Добавить обработчики для навигации между записями
+  const handlePreviousRecording = () => {
+    if (!activePlaylist || !activePlaylist.items ||
+        activePlaylist.currentItemIndex <= 0) return;
+
+    setIsTransitioning(true);
+
+    // Обновляем индекс текущей записи
+    useStore.setState({
+      activePlaylist: {
+        ...activePlaylist,
+        currentItemIndex: activePlaylist.currentItemIndex - 1
+      },
+      activeRecording: activePlaylist.items[activePlaylist.currentItemIndex - 1]
+    });
+
+    // Сбрасываем состояние перехода после небольшой задержки
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  const handleNextRecording = () => {
+    if (!activePlaylist || !activePlaylist.items ||
+        activePlaylist.currentItemIndex >= activePlaylist.items.length - 1) return;
+
+    setIsTransitioning(true);
+
+    // Обновляем индекс текущей записи
+    useStore.setState({
+      activePlaylist: {
+        ...activePlaylist,
+        currentItemIndex: activePlaylist.currentItemIndex + 1
+      },
+      activeRecording: activePlaylist.items[activePlaylist.currentItemIndex + 1]
+    });
+
+    // Сбрасываем состояние перехода после небольшой задержки
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
   };
 
   // Обновление состояния плеера при изменении времени видео
@@ -365,7 +457,61 @@ const FooterPlayer: React.FC = () => {
     const rect = timeline.getBoundingClientRect();
     const clickPosition = (e.clientX - rect.left) / rect.width;
     const newTime = clickPosition * (videoElement.duration || 0);
-    
+
+    // Добавьте поддержку плейлиста
+    if (activePlaylist && activePlaylist.items && activePlaylist.items.length > 0) {
+      const timeline = timelineRef.current;
+      if (!timeline) return;
+
+      const rect = timeline.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickPosition = clickX / rect.width;
+
+      // Определяем, на какую запись кликнули
+      const timelineStart = activePlaylist.timeRange.start.getTime();
+      const timelineEnd = activePlaylist.timeRange.end.getTime();
+      const timelineLength = timelineEnd - timelineStart;
+
+      const clickTime = new Date(timelineStart + timelineLength * clickPosition);
+
+      // Ищем запись, в которую попадает клик
+      for (let i = 0; i < activePlaylist.items.length; i++) {
+        const recording = activePlaylist.items[i];
+        if (clickTime >= recording.startTime && clickTime <= recording.endTime) {
+          // Если кликнули не на текущую запись, переключаемся на нее
+          if (i !== activePlaylist.currentItemIndex) {
+            setIsTransitioning(true);
+
+            useStore.setState({
+              activePlaylist: {
+                ...activePlaylist,
+                currentItemIndex: i
+              },
+              activeRecording: recording
+            });
+
+            // После переключения устанавливаем нужное время в видео
+            setTimeout(() => {
+              if (videoRef.current) {
+                // Рассчитываем время относительно начала записи
+                const relativeTime = (clickTime.getTime() - recording.startTime.getTime()) / 1000;
+                videoRef.current.currentTime = relativeTime;
+              }
+              setIsTransitioning(false);
+            }, 300);
+          } else {
+            // Если кликнули на текущую запись, просто устанавливаем время
+            if (videoRef.current) {
+              const relativeTime = (clickTime.getTime() - recording.startTime.getTime()) / 1000;
+              videoRef.current.currentTime = relativeTime;
+            }
+          }
+
+          break;
+        }
+      }
+    }
+
     // В режиме обрезки клик устанавливает маркеры
     if (isClipMode) {
       // Проверяем, не кликнули ли мы рядом с существующим маркером
@@ -515,6 +661,31 @@ const FooterPlayer: React.FC = () => {
           <div className="camera-name badge-blue">
             {activeRecording.cameraName}
           </div>
+
+          {/* Добавляем элементы навигации по плейлисту */}
+          {activePlaylist && activePlaylist.items && activePlaylist.items.length > 1 && (
+              <div className="playlist-navigation">
+                <button
+                    className="playlist-nav-button"
+                    onClick={handlePreviousRecording}
+                    disabled={!activePlaylist || activePlaylist.currentItemIndex <= 0}
+                >
+                  &lt; Пред.
+                </button>
+
+                <div className="playlist-info">
+                  {activePlaylist.currentItemIndex + 1} / {activePlaylist.items.length}
+                </div>
+
+                <button
+                    className="playlist-nav-button"
+                    onClick={handleNextRecording}
+                    disabled={!activePlaylist || activePlaylist.currentItemIndex >= activePlaylist.items.length - 1}
+                >
+                  След. &gt;
+                </button>
+              </div>
+          )}
 
            {/* Отображение текущего времени */}
           <div className="time-display">
@@ -710,6 +881,89 @@ const FooterPlayer: React.FC = () => {
         >
           Расширенный таймлайн
         </button>
+      <div className="timeline-container">
+	      <div 
+	        className="timeline"
+	        ref={timelineRef}
+	        onClick={handleTimelineClick}
+	      >
+
+            {/* Отображение сегментов для записей в плейлисте */}
+            {activePlaylist && activePlaylist.items && activePlaylist.items.length > 0 && (
+                <div className="timeline-segments">
+                  {activePlaylist.items.map((recording, index) => {
+                    const startPos = recording.startTime.getTime();
+                    const endPos = recording.endTime.getTime();
+
+                    // Рассчитываем относительные позиции в текущем таймлайне
+                    // Это нужно адаптировать под вашу логику таймлайна
+                    const playlistStart = activePlaylist.timeRange.start.getTime();
+                    const playlistEnd = activePlaylist.timeRange.end.getTime();
+                    const playlistDuration = playlistEnd - playlistStart;
+
+                    const relativeStart = Math.max(0, (startPos - playlistStart) / playlistDuration * 100);
+                    const relativeWidth = Math.min(100 - relativeStart,
+                        (endPos - startPos) / playlistDuration * 100);
+
+                    return (
+                        <div
+                            key={recording.id}
+                            className={`timeline-segment ${index === activePlaylist.currentItemIndex ? 'active' : ''}`}
+                            style={{
+                              left: `${relativeStart}%`,
+                              width: `${relativeWidth}%`
+                            }}
+                            title={`${recording.cameraName} (${new Date(recording.startTime).toLocaleString()} - ${new Date(recording.endTime).toLocaleString()})`}
+                        />
+                    );
+                  })}
+                </div>
+            )}
+	        {/* Маркеры обрезки */}
+	        {isClipMode && clipStart !== null && (
+	          <div 
+	            className="clip-marker start-marker" 
+	            style={{ left: clipStartPosition }}
+	            onMouseDown={() => setIsDraggingMarker('start')}
+	          />
+	        )}
+	        {isClipMode && clipEnd !== null && (
+	          <div 
+	            className="clip-marker end-marker" 
+	            style={{ left: clipEndPosition }}
+	            onMouseDown={() => setIsDraggingMarker('end')}
+	          />
+	        )}
+	        {isClipMode && clipStart !== null && clipEnd !== null && (
+	          <div 
+	            className="clip-selection" 
+	            style={{ 
+	              left: clipStartPosition, 
+	              width: `calc(${clipEndPosition} - ${clipStartPosition})` 
+	            }}
+	          />
+	        )}
+	        
+	        <div className="timeline-track">
+	          <div 
+	            className="timeline-progress" 
+	            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+	          />
+	        </div>
+	        
+	        {/* Разметка часов */}
+	        <div className="timeline-hours">
+	          {Array.from({ length: Math.ceil((duration || 0) / 3600) + 1 }).map((_, index) => (
+	            <div 
+	              key={index} 
+	              className="hour-marker"
+	              style={{ left: `${(index * 3600 / (duration || 1)) * 100}%` }}
+	            >
+	              <div className="hour-label">{index}:00</div>
+	            </div>
+	          ))}
+	        </div>
+	      </div>
       </div>
 
       {/* Отображаем выбранный таймлайн */}

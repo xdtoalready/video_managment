@@ -43,6 +43,21 @@ const ArchiveView: React.FC = () => {
     }
   };
 
+  // Вызов loadCamera
+  const handleRecordingSelect = (recordingId: string) => {
+    // Выбираем запись с помощью существующего метода
+    selectRecording(recordingId);
+
+    // После выбора записи загружаем плейлист для этой камеры
+    const recording = useStore.getState().activeRecording;
+    if (recording) {
+      loadCameraPlaylist(recording.cameraId, {
+        start: new Date(recording.startTime.getTime() - 3600000), // -1 час
+        end: new Date(recording.endTime.getTime() + 3600000)      // +1 час
+      });
+    }
+  };
+
   // Переключение панели закладок
   const toggleBookmarksPanel = () => {
     setShowBookmarks(prev => !prev);

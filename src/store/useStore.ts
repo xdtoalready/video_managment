@@ -44,6 +44,32 @@ export interface Camera {
   archiveEndDate?: Date | null;
 }
 
+// Интерфейс для кэша метаданных записей
+interface RecordingsMetadataCache {
+  [cameraId: string]: {
+    [recordingId: string]: Recording;
+  };
+}
+
+// Расширяем тип Recording для связывания записей в плейлист
+interface RecordingWithLinks extends Recording {
+  previousRecordingId?: string; // ID предыдущей записи
+  nextRecordingId?: string;     // ID следующей записи
+}
+
+// Интерфейс для расширенного плейлиста
+interface CachedPlaylist {
+  cameraId: string;
+  cameraName: string;
+  recordings: RecordingWithLinks[];
+  currentRecordingIndex: number;
+  timeRange: {
+    start: Date;
+    end: Date;
+  };
+  lastUpdated: Date;
+}
+
 // Тип состояния для календаря
 interface CalendarState {
   isOpen: boolean;
@@ -138,10 +164,19 @@ interface AppState {
   // Новые поля для масштабирования и временных меток
   timelineZoomLevel: TimelineZoomLevel;
   timelineVisibleRange: TimelineVisibleRange;
+  // Новые поля для кэширования
+  recordingsMetadataCache: RecordingsMetadataCache;
+  cachedPlaylists: { [cameraId: string]: CachedPlaylist };
 
   // События и закладки на таймлайне
   timelineEvents: TimelineEvent[];
   timelineBookmarks: TimelineBookmark[];
+
+  // Новые методы
+  loadCameraPlaylist: (cameraId: string, dateRange?: { start: Date; end: Date }) => Promise<void>;
+  appendPlaylistRecordings: (cameraId: string, direction: 'before' | 'after', count?: number) => Promise<void>;
+  preloadVideo: (url: string) => void;
+  clearMetadataCache: (cameraId?: string) => void;
 
   // Методы для работы с событиями и закладками
   fetchTimelineEvents: (cameraId: string, timeRange: { start: Date; end: Date }) => Promise<void>;
@@ -205,7 +240,9 @@ export const useStore = create<AppState>((set, get) => ({
     start: new Date(new Date().setHours(new Date().getHours() - 24)), // 24 часа назад
     end: new Date() // Текущее время
   },
-
+  // Поля для кэширования
+  recordingsMetadataCache: {},
+  cachedPlaylists: {},
   // Инициализация состояния календаря
   calendar: {
     isOpen: false,
@@ -230,7 +267,6 @@ export const useStore = create<AppState>((set, get) => ({
       };
     });
   },
-
   setTimelineZoomLevel: (level: TimelineZoomLevel) => {
     const currentRange = get().timelineVisibleRange;
     const currentCenter = new Date((currentRange.start.getTime() + currentRange.end.getTime()) / 2);
@@ -538,6 +574,368 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     return marks;
+
+  loadCameraPlaylist: async (cameraId: string, dateRange?: { start: Date; end: Date }) => {
+    try {
+      // Проверяем, есть ли в кэше плейлист для этой камеры
+      const { cachedPlaylists, archiveFilters } = get();
+
+      // Используем переданный диапазон дат или берем из фильтров
+      const range = dateRange || {
+        start: archiveFilters.dateRange.start,
+        end: archiveFilters.dateRange.end
+      };
+
+      // Проверяем, есть ли в кэше плейлист с подходящим диапазоном дат
+      const cachedPlaylist = cachedPlaylists[cameraId];
+      if (cachedPlaylist) {
+        const cachedStart = cachedPlaylist.timeRange.start;
+        const cachedEnd = cachedPlaylist.timeRange.end;
+
+        // Если кэшированный плейлист покрывает запрашиваемый диапазон,
+        // и был обновлен не более 5 минут назад, используем его
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        if (cachedStart <= range.start && cachedEnd >= range.end &&
+            cachedPlaylist.lastUpdated > fiveMinutesAgo) {
+
+          // Фильтруем записи по запрашиваемому диапазону
+          const filteredRecordings = cachedPlaylist.recordings.filter(rec =>
+              rec.startTime <= range.end && rec.endTime >= range.start
+          );
+
+          if (filteredRecordings.length > 0) {
+            console.log('Используем кэшированный плейлист для камеры', cameraId);
+
+            // Обновляем активный плейлист
+            set({
+              activePlaylist: {
+                ...playlist,
+                items: filteredRecordings,
+                currentItemIndex: 0,
+                timeRange: range,
+                absolutePosition: 0
+              }
+            });
+
+            return;
+          }
+        }
+      }
+
+      // Если нет в кэше или кэш устарел, загружаем с сервера
+      console.log('Загружаем плейлист для камеры', cameraId);
+
+      // Здесь в реальном приложении будет вызов API
+      // Для примера используем archiveAPI из вашего кода
+      const params: RecordingsSearchParams = {
+        startDate: range.start,
+        endDate: range.end,
+        cameras: [cameraId]
+      };
+
+      const recordings = await archiveAPI.getRecordings(params);
+
+      if (recordings.length === 0) {
+        console.log('Нет записей для камеры', cameraId, 'в указанном диапазоне');
+        return;
+      }
+
+      // Связываем записи между собой (предыдущая/следующая)
+      const linkedRecordings = recordings.map((rec, index) => ({
+        ...rec,
+        previousRecordingId: index > 0 ? recordings[index - 1].id : undefined,
+        nextRecordingId: index < recordings.length - 1 ? recordings[index + 1].id : undefined
+      }));
+
+      // Обновляем кэш метаданных
+      set(state => {
+        const updatedCache = { ...state.recordingsMetadataCache };
+
+        if (!updatedCache[cameraId]) {
+          updatedCache[cameraId] = {};
+        }
+
+        // Добавляем записи в кэш
+        linkedRecordings.forEach(recording => {
+          updatedCache[cameraId][recording.id] = recording;
+        });
+
+        // Создаем/обновляем кэшированный плейлист
+        const updatedPlaylists = { ...state.cachedPlaylists };
+        updatedPlaylists[cameraId] = {
+          cameraId,
+          cameraName: recordings[0].cameraName, // Берем имя камеры из первой записи
+          recordings: linkedRecordings,
+          currentRecordingIndex: 0,
+          timeRange: range,
+          lastUpdated: new Date()
+        };
+
+        // Обновляем активный плейлист в формате, который ожидает ваш PlayListTimeLine
+        const totalDuration = linkedRecordings.reduce((sum, rec) => sum + rec.duration, 0);
+
+        return {
+          recordingsMetadataCache: updatedCache,
+          cachedPlaylists: updatedPlaylists,
+          // Обновляем активный плейлист в формате вашего существующего кода
+          activePlaylist: {
+            items: linkedRecordings,
+            currentItemIndex: 0,
+            timeRange: range,
+            totalDuration,
+            absolutePosition: 0,
+            // Добавляем пустой массив событий, если он нужен вашему компоненту
+            events: []
+          }
+        };
+      });
+
+      // Предзагружаем первую запись и следующую
+      if (linkedRecordings.length > 0) {
+        get().preloadVideo(linkedRecordings[0].fileUrl);
+
+        if (linkedRecordings.length > 1) {
+          get().preloadVideo(linkedRecordings[1].fileUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке плейлиста камеры:', error);
+    }
+  },
+
+  appendPlaylistRecordings: async (cameraId: string, direction: 'before' | 'after', count: number = 5) => {
+    const { activePlaylist, cachedPlaylists } = get();
+
+    if (!activePlaylist || activePlaylist.items.length === 0) {
+      console.error('Нет активного плейлиста');
+      return;
+    }
+
+    try {
+      // Определяем временной диапазон для запроса
+      let dateRange;
+      if (direction === 'before') {
+        const firstRecording = activePlaylist.items[0];
+        dateRange = {
+          start: new Date(firstRecording.startTime.getTime() - count * 60 * 60 * 1000), // count часов до первой записи
+          end: firstRecording.startTime
+        };
+      } else {
+        const lastRecording = activePlaylist.items[activePlaylist.items.length - 1];
+        dateRange = {
+          start: lastRecording.endTime,
+          end: new Date(lastRecording.endTime.getTime() + count * 60 * 60 * 1000) // count часов после последней записи
+        };
+      }
+
+      // Загружаем записи для указанного диапазона
+      const params: RecordingsSearchParams = {
+        startDate: dateRange.start,
+        endDate: dateRange.end,
+        cameras: [cameraId]
+      };
+
+      const newRecordings = await archiveAPI.getRecordings(params);
+
+      if (newRecordings.length === 0) {
+        console.log(`Нет записей ${direction === 'before' ? 'до' : 'после'} текущего диапазона`);
+        return;
+      }
+
+      // Обрабатываем новые записи
+      set(state => {
+        const updatedCache = { ...state.recordingsMetadataCache };
+        if (!updatedCache[cameraId]) {
+          updatedCache[cameraId] = {};
+        }
+
+        // Обновляем активный плейлист
+        const currentPlaylist = { ...state.activePlaylist! };
+        let updatedItems = [...currentPlaylist.items];
+        let currentItemIndex = currentPlaylist.currentItemIndex;
+
+        if (direction === 'before') {
+          // Связываем новые записи с существующими
+          if (updatedItems.length > 0) {
+            const firstExistingRecording = updatedItems[0];
+            const lastNewRecording = newRecordings[newRecordings.length - 1];
+
+            lastNewRecording.nextRecordingId = firstExistingRecording.id;
+
+            // Обновляем кэш для первой существующей записи
+            updatedCache[cameraId][firstExistingRecording.id] = {
+              ...firstExistingRecording,
+              previousRecordingId: lastNewRecording.id
+            };
+          }
+
+          // Связываем новые записи между собой
+          for (let i = 0; i < newRecordings.length; i++) {
+            const recording = newRecordings[i];
+
+            if (i > 0) {
+              recording.previousRecordingId = newRecordings[i - 1].id;
+            }
+
+            if (i < newRecordings.length - 1) {
+              recording.nextRecordingId = newRecordings[i + 1].id;
+            }
+
+            // Добавляем запись в кэш
+            updatedCache[cameraId][recording.id] = recording;
+          }
+
+          // Добавляем новые записи в начало списка
+          updatedItems = [...newRecordings, ...updatedItems];
+
+          // Обновляем индекс текущей записи
+          currentItemIndex += newRecordings.length;
+        } else {
+          // Связываем новые записи с существующими
+          if (updatedItems.length > 0) {
+            const lastExistingRecording = updatedItems[updatedItems.length - 1];
+            const firstNewRecording = newRecordings[0];
+
+            lastExistingRecording.nextRecordingId = firstNewRecording.id;
+            firstNewRecording.previousRecordingId = lastExistingRecording.id;
+
+            // Обновляем кэш для последней существующей записи
+            updatedCache[cameraId][lastExistingRecording.id] = {
+              ...lastExistingRecording,
+              nextRecordingId: firstNewRecording.id
+            };
+          }
+
+          // Связываем новые записи между собой
+          for (let i = 0; i < newRecordings.length; i++) {
+            const recording = newRecordings[i];
+
+            if (i > 0) {
+              recording.previousRecordingId = newRecordings[i - 1].id;
+            }
+
+            if (i < newRecordings.length - 1) {
+              recording.nextRecordingId = newRecordings[i + 1].id;
+            }
+
+            // Добавляем запись в кэш
+            updatedCache[cameraId][recording.id] = recording;
+          }
+
+          // Добавляем новые записи в конец списка
+          updatedItems = [...updatedItems, ...newRecordings];
+        }
+
+        // Обновляем плейлист
+        const updatedTimeRange = {
+          start: direction === 'before'
+              ? dateRange.start
+              : currentPlaylist.timeRange.start,
+          end: direction === 'after'
+              ? dateRange.end
+              : currentPlaylist.timeRange.end
+        };
+
+        // Обновляем кэшированный плейлист
+        const updatedCachedPlaylists = { ...state.cachedPlaylists };
+        if (updatedCachedPlaylists[cameraId]) {
+          updatedCachedPlaylists[cameraId] = {
+            ...updatedCachedPlaylists[cameraId],
+            recordings: updatedItems,
+            timeRange: updatedTimeRange,
+            lastUpdated: new Date()
+          };
+        }
+
+        // Пересчитываем общую длительность
+        const totalDuration = updatedItems.reduce((sum, rec) => sum + rec.duration, 0);
+
+        return {
+          recordingsMetadataCache: updatedCache,
+          cachedPlaylists: updatedCachedPlaylists,
+          activePlaylist: {
+            ...currentPlaylist,
+            items: updatedItems,
+            currentItemIndex,
+            timeRange: updatedTimeRange,
+            totalDuration
+          }
+        };
+      });
+
+      // Предзагружаем новые записи
+      if (newRecordings.length > 0) {
+        get().preloadVideo(newRecordings[0].fileUrl);
+      }
+    } catch (error) {
+      console.error(`Ошибка при загрузке дополнительных записей ${direction === 'before' ? 'до' : 'после'}:`, error);
+    }
+  },
+
+  preloadVideo: (url: string) => {
+    // Проверяем, что URL не пустой
+    if (!url) return;
+
+    console.log('Предзагрузка видео:', url);
+
+    // Создаем скрытый video элемент для предзагрузки
+    const videoElement = document.createElement('video');
+    videoElement.style.display = 'none';
+    videoElement.preload = 'auto';
+    videoElement.muted = true;
+
+    // Добавляем обработчики событий
+    videoElement.addEventListener('loadedmetadata', () => {
+      console.log(`Метаданные видео ${url} загружены`);
+    });
+
+    videoElement.addEventListener('canplaythrough', () => {
+      console.log(`Видео ${url} предзагружено и готово к воспроизведению`);
+      // Удаляем элемент после предзагрузки
+      setTimeout(() => {
+        if (document.body.contains(videoElement)) {
+          document.body.removeChild(videoElement);
+        }
+      }, 1000);
+    });
+
+    videoElement.addEventListener('error', (e) => {
+      console.error(`Ошибка при предзагрузке видео ${url}:`, e);
+      if (document.body.contains(videoElement)) {
+        document.body.removeChild(videoElement);
+      }
+    });
+
+    // Устанавливаем источник и добавляем элемент в DOM
+    videoElement.src = url;
+    document.body.appendChild(videoElement);
+
+    // Начинаем загрузку
+    videoElement.load();
+  },
+
+  clearMetadataCache: (cameraId?: string) => {
+    set(state => {
+      if (cameraId) {
+        // Очищаем кэш только для указанной камеры
+        const updatedCache = { ...state.recordingsMetadataCache };
+        delete updatedCache[cameraId];
+
+        const updatedPlaylists = { ...state.cachedPlaylists };
+        delete updatedPlaylists[cameraId];
+
+        return {
+          recordingsMetadataCache: updatedCache,
+          cachedPlaylists: updatedPlaylists
+        };
+      } else {
+        // Очищаем весь кэш
+        return {
+          recordingsMetadataCache: {},
+          cachedPlaylists: {}
+        };
+      }
+    });
   },
 
   // Получение событий с сервера
