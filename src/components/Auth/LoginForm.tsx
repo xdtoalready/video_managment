@@ -176,15 +176,36 @@ const LoginForm: React.FC = () => {
                             />
                         </div>
 
+                        {/*<div className="form-group checkbox-group">*/}
+                        {/*    <label className="checkbox-label">*/}
+                        {/*        <input*/}
+                        {/*            type="checkbox"*/}
+                        {/*            checked={rememberMe}*/}
+                        {/*            onChange={(e) => setRememberMe(e.target.checked)}*/}
+                        {/*            disabled={isLoading}*/}
+                        {/*        />*/}
+                        {/*        <span className="checkbox-text">Запомнить меня</span>*/}
+                        {/*    </label>*/}
+                        {/*</div>*/}
+
                         <div className="form-group checkbox-group">
-                            <label className="checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                    disabled={isLoading}
-                                />
-                                <span className="checkbox-text">Запомнить меня</span>
+                            <label className="checkbox-label"}>
+                                <div className="checkbox-wrapper">
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        disabled={isLoading}
+                                    />
+                                    <div className="custom-checkbox">
+                                        <div className="custom-checkbox-icon">
+                                            <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <span className="checkbox-text">Запомнить меня</span>
+                                </div>
                             </label>
                         </div>
 

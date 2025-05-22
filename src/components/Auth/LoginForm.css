@@ -25,7 +25,7 @@
 }
 
 .login-card {
-    background: rgba(255, 255, 255, 0.95);
+    background: var(--white);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 40px;
@@ -68,7 +68,7 @@
     font-size: 28px;
     font-weight: 400;
     color: var(--text-color);
-    margin: 0 0 8px 0;
+    margin: 0 0 14px 0;
 }
 
 .login-subtitle {
@@ -151,7 +151,7 @@
     color: var(--text-color);
 }
 
-.form-input {
+.login-form .form-input {
     padding: 15px 20px;
     border: 2px solid #E8E8E8;
     border-radius: 12px;
@@ -358,36 +358,36 @@
 }
 
 /* Темная тема для системных настроек */
-@media (prefers-color-scheme: dark) {
-    .login-container {
-        background: linear-gradient(135deg, #2C3E50 0%, #3F4E62 100%);
-    }
+/*@media (prefers-color-scheme: dark) {*/
+/*    .login-container {*/
+/*        background: linear-gradient(135deg, #2C3E50 0%, #3F4E62 100%);*/
+/*    }*/
 
-    .login-card {
-        background: rgba(45, 55, 72, 0.95);
-        color: #E2E8F0;
-    }
+/*    .login-card {*/
+/*        background: rgba(45, 55, 72, 0.95);*/
+/*        color: #E2E8F0;*/
+/*    }*/
 
-    .login-title {
-        color: #E2E8F0;
-    }
+/*    .login-title {*/
+/*        color: #E2E8F0;*/
+/*    }*/
 
-    .form-input {
-        background-color: rgba(255, 255, 255, 0.1);
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #E2E8F0;
-    }
+/*    .form-input {*/
+/*        background-color: rgba(255, 255, 255, 0.1);*/
+/*        border-color: rgba(255, 255, 255, 0.2);*/
+/*        color: #E2E8F0;*/
+/*    }*/
 
-    .form-input:focus {
-        background-color: rgba(255, 255, 255, 0.15);
-        border-color: var(--color-main2);
-    }
+/*    .form-input:focus {*/
+/*        background-color: rgba(255, 255, 255, 0.15);*/
+/*        border-color: var(--color-main2);*/
+/*    }*/
 
-    .form-label {
-        color: #E2E8F0;
-    }
+/*    .form-label {*/
+/*        color: #E2E8F0;*/
+/*    }*/
 
-    .checkbox-text {
-        color: #E2E8F0;
-    }
-}
+/*    .checkbox-text {*/
+/*        color: #E2E8F0;*/
+/*    }*/
+/*}*/
