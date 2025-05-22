@@ -231,7 +231,7 @@ const SystemStatusFooter: React.FC = () => {
         </div>
 
         <div className="status-item">
-          <span className="status-label">SentryShot</span>
+          <span className="status-label">Видеонаблюдение</span>
           <span className="status-value">v1.0</span>
         </div>
       </div>
