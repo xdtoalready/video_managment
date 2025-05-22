@@ -91,10 +91,10 @@
   margin-right: 6px;
 }
 
-.checkbox-label {
-  padding: 6px;
-  border-radius: 6px;
-}
+/*.checkbox-label {*/
+/*  padding: 6px;*/
+/*  border-radius: 6px;*/
+/*}*/
 
 .checkbox-label:hover {
   background-color: var(--light-bg);
