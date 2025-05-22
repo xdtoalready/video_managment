@@ -131,7 +131,7 @@ const LoginForm: React.FC = () => {
                             <span className="login-date-value badge-blue">{getCurrentDate()}</span>
                         </div>
                         <h1 className="login-title">Видеонаблюдение</h1>
-                        <p className="login-subtitle">SentryShot System</p>
+                        <p className="login-subtitle">Вход в систему видеонаблюдения</p>
                     </div>
 
                     {/* Статус подключения */}

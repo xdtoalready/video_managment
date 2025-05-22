@@ -184,12 +184,18 @@
 }
 
 .login-form .checkbox-label {
+    padding: 6px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
     font-size: 14px;
     color: var(--text-color);
+}
+
+.login-form .form-group.checkbox-group {
+    justify-content: center;
 }
 
 .login-form .checkbox-label input[type="checkbox"] {
