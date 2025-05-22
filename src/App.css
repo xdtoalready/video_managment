@@ -800,7 +800,7 @@ button:focus, button:focus-visible {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
-  margin: 20px;
+  /*margin: 20px;*/
 }
 
 .login-header {
@@ -1246,20 +1246,20 @@ button:focus, button:focus-visible {
 }
 
 /* ===== ТЕМНАЯ ТЕМА (опционально) ===== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text-color: #ffffff;
-    --light-bg: #2d2d2d;
-    --white: #1a1a1a;
-    --gray2-color: #cccccc;
-  }
+/*@media (prefers-color-scheme: dark) {*/
+/*  :root {*/
+/*    --text-color: #ffffff;*/
+/*    --light-bg: #2d2d2d;*/
+/*    --white: #1a1a1a;*/
+/*    --gray2-color: #cccccc;*/
+/*  }*/
 
-  .login-container {
-    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-  }
+/*  .login-container {*/
+/*    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);*/
+/*  }*/
 
-  .app-loading,
-  .app-error {
-    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
-  }
-}
+/*  .app-loading,*/
+/*  .app-error {*/
+/*    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);*/
+/*  }*/
+/*}*/
