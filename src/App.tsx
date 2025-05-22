@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
+import LoginForm from './components/Auth/LoginForm.tsx'
 import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
 import CalendarModal from './components/Calendar/CalendarModal.tsx'
 import ArchiveView from './components/ArchiveView/ArchiveView.tsx'
-import LoginForm from './components/Auth/LoginForm.tsx'
 
 function App() {
   const {

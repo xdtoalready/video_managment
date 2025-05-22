@@ -1245,6 +1245,32 @@ button:focus, button:focus-visible {
   }
 }
 
+/* ===== Готовые пресеты  ===== */
+
+.checkbox-label .checkbox-wrapper input {
+  display: none;
+}
+
+.checkbox-label .checkbox-wrapper .custom-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.checkbox-label .checkbox-wrapper unput:checked + .custom-checkbox {
+   background-color: var(--white);
+   border-color: var(--white);
+ }
+
+.checkbox-label .checkbox-wrapper unput:checked + .custom-checkbox {
+  opacity: 1;
+}
+
 /* ===== ТЕМНАЯ ТЕМА (опционально) ===== */
 /*@media (prefers-color-scheme: dark) {*/
 /*  :root {*/
