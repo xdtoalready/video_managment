@@ -46,7 +46,7 @@ const CameraGrid: React.FC = () => {
         />
         
         <button className="back-to-grid" onClick={showGridView}>
-            <svg width="24" height="10" viewBox="0 0 24 10" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <svg width="24" height="10" viewBox="0 0 24 10" fill="none">
                 <rect width="24" height="10" fill="url(#pattern0_80_29)"/>
                 <defs>
                     <pattern id="pattern0_80_29" patternContentUnits="objectBoundingBox" width="1" height="1">
