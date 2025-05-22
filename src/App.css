@@ -1262,12 +1262,12 @@ button:focus, button:focus-visible {
     transition: var(--transition);
 }
 
-.checkbox-label .checkbox-wrapper unput:checked + .custom-checkbox {
+.checkbox-label .checkbox-wrapper input:checked + .custom-checkbox {
    background-color: var(--white);
    border-color: var(--white);
  }
 
-.checkbox-label .checkbox-wrapper unput:checked + .custom-checkbox {
+.checkbox-label .checkbox-wrapper input:checked + .custom-checkbox {
   opacity: 1;
 }
 
