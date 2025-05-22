@@ -1,5 +1,5 @@
 // src/App.tsx - Обновленное главное приложение с аутентификацией
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
 import LoginForm from './components/Auth/LoginForm.tsx'
@@ -19,6 +19,8 @@ function App() {
   } = useStore();
 
   const [isInitializing, setIsInitializing] = useState(true);
+  const [showPersistentConnection, setShowPersistentConnection] = useState(false);
+  const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Инициализация приложения
   useEffect(() => {
@@ -42,6 +44,35 @@ function App() {
 
     initializeApp();
   }, [isAuthenticated, checkAuthStatus, loadCameras, connectionStatus]);
+
+  // Логика управления отображением постоянного блока подключения
+  useEffect(() => {
+    // Очищаем предыдущий таймер
+    if (connectingTimeoutRef.current) {
+      clearTimeout(connectingTimeoutRef.current);
+      connectingTimeoutRef.current = null;
+    }
+
+    if (connectionStatus === 'connecting') {
+      // Показываем постоянный блок через 2 секунды после начала подключения
+      connectingTimeoutRef.current = setTimeout(() => {
+        setShowPersistentConnection(true);
+      }, 2000);
+    } else if (connectionStatus === 'connected') {
+      // Скрываем блок при успешном подключении
+      setShowPersistentConnection(false);
+    } else if (connectionStatus === 'error') {
+      // При ошибке показываем блок сразу и оставляем висеть
+      setShowPersistentConnection(true);
+    }
+
+    // Очистка при размонтировании
+    return () => {
+      if (connectingTimeoutRef.current) {
+        clearTimeout(connectingTimeoutRef.current);
+      }
+    };
+  }, [connectionStatus]);
 
   // Периодическая проверка состояния подключения
   useEffect(() => {
@@ -78,7 +109,8 @@ function App() {
 
   // Показываем уведомление о проблемах с подключением
   const renderConnectionAlert = () => {
-    if (connectionStatus === 'error' || !isOnline) {
+    // Показываем ошибку только если есть серьезные проблемы
+    if (connectionStatus === 'error' && !isOnline) {
       return (
           <div className="connection-alert error">
             <div className="alert-content">
@@ -96,12 +128,18 @@ function App() {
       );
     }
 
-    if (connectionStatus === 'connecting') {
+    // Показываем постоянный блок подключения только при длительных попытках
+    if (showPersistentConnection && (connectionStatus === 'connecting' || connectionStatus === 'error')) {
       return (
-          <div className="connection-alert connecting">
+          <div className="connection-alert connecting persistent">
             <div className="alert-content">
               <div className="loading-spinner-small"></div>
-              <span>Подключение к серверу...</span>
+              <span>Подключение к серверу<span className="loading-dots"></span></span>
+              {connectionStatus === 'error' && (
+                  <button onClick={checkAuthStatus} className="retry-button-small">
+                    Повторить
+                  </button>
+              )}
             </div>
           </div>
       );
