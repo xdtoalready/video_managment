@@ -137,23 +137,3 @@
   box-shadow: var(--card-shadow);
   overflow: hidden;
 }
-
-.back-to-grid {
-  position: absolute;
-  bottom: 15px;
-  left: 15px;
-  right: auto;
-  top: auto;
-  z-index: 10;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: var(--white);
-  border: none;
-  border-radius: 10px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.back-to-grid:hover {
-  background-color: var(--primary-hover);
-}
