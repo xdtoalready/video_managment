@@ -20,7 +20,6 @@ function App() {
         // Онлайн режим с прямой трансляцией
         <>
           <CameraGrid />
-          {!isGridView && <Controls />}
         </>
       ) : (
         // Архивный режим
