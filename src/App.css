@@ -1263,11 +1263,11 @@ button:focus, button:focus-visible {
 }
 
 .checkbox-label .checkbox-wrapper input:checked + .custom-checkbox {
-   background-color: var(--white);
+   background-color: var(--primary-color);
    border-color: var(--white);
  }
 
-.checkbox-label .checkbox-wrapper input:checked + .custom-checkbox {
+.checkbox-label .checkbox-wrapper input:checked + .custom-checkbox .custom-checkbox-icon {
   opacity: 1;
 }
 
