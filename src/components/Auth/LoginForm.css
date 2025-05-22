@@ -145,8 +145,8 @@
     gap: 8px;
 }
 
-.form-label {
-    font-size: 14px;
+.login-form .form-label {
+    font-size: 14px !important;
     font-weight: 500;
     color: var(--text-color);
 }
@@ -250,7 +250,7 @@
 
 .login-button {
     padding: 15px 20px;
-    background: linear-gradient(135deg, var(--color-main2) 0%, var(--primary-color) 100%);
+    background:var(--primary-color);
     color: white;
     border: none;
     border-radius: 12px;

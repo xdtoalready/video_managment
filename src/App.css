@@ -1264,11 +1264,25 @@ button:focus, button:focus-visible {
 
 .checkbox-label .checkbox-wrapper input:checked + .custom-checkbox {
    background-color: var(--primary-color);
-   border-color: var(--white);
+   /*border-color: var(--white);*/
  }
 
 .checkbox-label .checkbox-wrapper input:checked + .custom-checkbox .custom-checkbox-icon {
   opacity: 1;
+}
+
+.connection-alert.connecting {
+  height: 24px;
+  width: 100%;
+  background-color: var(--primary-color);
+  color: var(--white);
+  padding: 6px;
+}
+
+.system-status-footer {
+    display: flex;
+    gap: 32px;
+    padding: 6px;
 }
 
 /* ===== ТЕМНАЯ ТЕМА (опционально) ===== */
