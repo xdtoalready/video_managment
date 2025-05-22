@@ -176,18 +176,6 @@ const LoginForm: React.FC = () => {
                             />
                         </div>
 
-                        {/*<div className="form-group checkbox-group">*/}
-                        {/*    <label className="checkbox-label">*/}
-                        {/*        <input*/}
-                        {/*            type="checkbox"*/}
-                        {/*            checked={rememberMe}*/}
-                        {/*            onChange={(e) => setRememberMe(e.target.checked)}*/}
-                        {/*            disabled={isLoading}*/}
-                        {/*        />*/}
-                        {/*        <span className="checkbox-text">Запомнить меня</span>*/}
-                        {/*    </label>*/}
-                        {/*</div>*/}
-
                         <div className="form-group checkbox-group">
                             <label className="checkbox-label"}>
                                 <div className="checkbox-wrapper">
