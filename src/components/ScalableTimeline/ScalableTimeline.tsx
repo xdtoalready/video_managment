@@ -35,6 +35,13 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const [dragStartX, setDragStartX] = useState(0);
     const [dragStartOffset, setDragStartOffset] = useState(0);
 
+    const isMobile = useIsMobile();
+    const [touchStartTime, setTouchStartTime] = useState(0);
+
+    // Обновленные константы для мобильных устройств
+    const UPDATE_THRESHOLD = isMobile ? 0.02 : 0.01; // Больший порог для мобильных
+    const ANIMATION_DURATION = isMobile ? 150 : 200; // Быстрее анимация на мобильных
+
     // Для плавности анимации
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -53,6 +60,24 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const videoElement = document.querySelector('.archive-player-video') as HTMLVideoElement;
         return videoElement?.currentTime || 0;
     }, []);
+
+    // Хук для определения мобильного устройства
+    const useIsMobile = () => {
+        const [isMobile, setIsMobile] = useState(false);
+
+        useEffect(() => {
+            const checkMobile = () => {
+                setIsMobile(window.innerWidth <= 768);
+            };
+
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+
+            return () => window.removeEventListener('resize', checkMobile);
+        }, []);
+
+        return isMobile;
+    };
 
     // Функция для установки времени видео
     const setVideoTime = useCallback((timeInSeconds: number) => {
@@ -108,7 +133,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     }, [activeRecording, calculateTimelineOffset, isDragging, updateTimelineOffsetDirect]);
 
     // Плавная анимация для программных изменений
-    const animateToOffset = useCallback((targetOffset: number, duration = 200) => {
+    const animateToOffset = useCallback((targetOffset: number, duration = ANIMATION_DURATION) => {
         if (isDragging || isAnimating) return;
 
         const startOffset = currentOffsetRef.current;
@@ -120,8 +145,10 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             const elapsed = currentTime - startTime;
             const progress = Math.min(elapsed / duration, 1);
 
-            // Easing функция для плавности
-            const easeProgress = 1 - Math.pow(1 - progress, 2);
+            // Easing функция, адаптированная для мобильных (более резкая)
+            const easeProgress = isMobile
+                ? 1 - Math.pow(1 - progress, 1.5) // Быстрее на мобильных
+                : 1 - Math.pow(1 - progress, 2);   // Плавнее на десктопе
 
             const newOffset = startOffset + (targetOffset - startOffset) * easeProgress;
             updateTimelineOffsetDirect(newOffset);
@@ -139,7 +166,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
 
         animationRef.current = requestAnimationFrame(animate);
-    }, [isDragging, isAnimating, updateTimelineOffsetDirect]);
+    }, [isDragging, isAnimating, updateTimelineOffsetDirect, isMobile, ANIMATION_DURATION]);
 
     // Обработчик начала перетаскивания
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -304,8 +331,11 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 const currentTime = videoElement.currentTime;
                 const isPlaying = !videoElement.paused;
 
+                // Адаптируем порог обновления для мобильных устройств
+                const threshold = isMobile ? 0.02 : 0.01;
+
                 // Обновляем только если видео воспроизводится и время изменилось
-                if (isPlaying && Math.abs(currentTime - lastVideoTimeRef.current) > 0.01) {
+                if (isPlaying && Math.abs(currentTime - lastVideoTimeRef.current) > threshold) {
                     centerTimelineOnCurrentTime(true); // Используем прямое обновление DOM
                     lastVideoTimeRef.current = currentTime;
                 }
@@ -354,7 +384,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             videoElement.removeEventListener('pause', handlePause);
             videoElement.removeEventListener('seeking', handleSeeking);
         };
-    }, [activeRecording, centerTimelineOnCurrentTime, isDragging, isAnimating]);
+    }, [activeRecording, centerTimelineOnCurrentTime, isDragging, isAnimating, isMobile]);
 
     // Синхронизация состояния с DOM при изменении состояния React
     useEffect(() => {
@@ -393,6 +423,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         if (e.touches.length !== 1 || !timelineRef.current || isAnimating) return;
 
         const touch = e.touches[0];
+        setTouchStartTime(Date.now());
 
         // Останавливаем анимацию если она есть
         if (animationRef.current) {
@@ -404,8 +435,42 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         setDragStartX(touch.clientX);
         setDragStartOffset(currentOffsetRef.current);
 
+        // Добавляем тактильную обратную связь на поддерживающих устройствах
+        if ('vibrate' in navigator && isMobile) {
+            navigator.vibrate(10);
+        }
+
         e.preventDefault();
-    }, [isAnimating]);
+    }, [isAnimating, isMobile]);
+
+    // Эффект для предотвращения случайного зума на мобильных:
+    useEffect(() => {
+        if (!isMobile || !timelineRef.current) return;
+
+        const timelineElement = timelineRef.current;
+
+        // Предотвращаем зум при двойном тапе
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length > 1) {
+                e.preventDefault();
+            }
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            const now = Date.now();
+            if (now - touchStartTime < 300) {
+                e.preventDefault();
+            }
+        };
+
+        timelineElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+        timelineElement.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+        return () => {
+            timelineElement.removeEventListener('touchstart', handleTouchStart);
+            timelineElement.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [isMobile, touchStartTime]);
 
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
         if (!isDragging || e.touches.length !== 1) return;
@@ -416,11 +481,53 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         e.preventDefault();
     }, [isDragging, handleDrag]);
 
-    const handleTouchEnd = useCallback(() => {
-        if (isDragging) {
-            handleMouseUp();
+    const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+        if (!isDragging) return;
+
+        const touchDuration = Date.now() - touchStartTime;
+
+        // Если это был быстрый тап (меньше 200мс), обрабатываем как клик
+        if (touchDuration < 200 && !isAnimating) {
+            const rect = timelineRef.current?.getBoundingClientRect();
+            if (rect && e.changedTouches[0]) {
+                const touch = e.changedTouches[0];
+                const clickX = touch.clientX - rect.left;
+                const containerWidth = rect.width;
+
+                // Рассчитываем смещение клика от центра
+                const offsetFromCenter = clickX - containerWidth / 2;
+
+                // Рассчитываем время для клика
+                const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+                const pixelsPerMs = containerWidth / visibleDuration;
+                const offsetMs = offsetFromCenter / pixelsPerMs;
+
+                const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
+
+                if (activeRecording) {
+                    const recordingStart = activeRecording.startTime.getTime();
+                    const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
+
+                    if (localTimeSeconds >= 0) {
+                        setVideoTime(localTimeSeconds);
+
+                        // Добавляем тактильную обратную связь
+                        if ('vibrate' in navigator && isMobile) {
+                            navigator.vibrate(20);
+                        }
+
+                        // Плавно центрируем таймлайн
+                        setTimeout(() => {
+                            const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
+                            animateToOffset(targetOffset, ANIMATION_DURATION);
+                        }, 50);
+                    }
+                }
+            }
         }
-    }, [isDragging, handleMouseUp]);
+
+        handleMouseUp();
+    }, [isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, setVideoTime, isMobile, handleMouseUp, animateToOffset, ANIMATION_DURATION]);
 
     // Очистка при размонтировании
     useEffect(() => {
