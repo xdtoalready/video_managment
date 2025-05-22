@@ -11,6 +11,24 @@ interface ScalableTimelineProps {
     onClipEndSet?: (time: number) => void;
 }
 
+// Хук для определения мобильного устройства
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    return isMobile;
+};
+
 const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
    onTimeSelected,
    isClipMode = false,
@@ -61,23 +79,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         return videoElement?.currentTime || 0;
     }, []);
 
-    // Хук для определения мобильного устройства
-    const useIsMobile = () => {
-        const [isMobile, setIsMobile] = useState(false);
-
-        useEffect(() => {
-            const checkMobile = () => {
-                setIsMobile(window.innerWidth <= 768);
-            };
-
-            checkMobile();
-            window.addEventListener('resize', checkMobile);
-
-            return () => window.removeEventListener('resize', checkMobile);
-        }, []);
-
-        return isMobile;
-    };
 
     // Функция для установки времени видео
     const setVideoTime = useCallback((timeInSeconds: number) => {
