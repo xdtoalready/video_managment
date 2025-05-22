@@ -110,7 +110,7 @@
 }
 
 .playhead-handle {
-    position: absolute;
+    /*position: absolute;*/
     top: -5px;
     left: 50%;
     width: 18px;
