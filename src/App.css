@@ -187,9 +187,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-left: 12px;
 }
 
-/* Список локаций */
+button:focus, button:focus-visible {
+  outline: none;
+}
+
 .location-list {
   list-style: none;
   padding: 0;
