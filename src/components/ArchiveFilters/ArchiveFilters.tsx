@@ -230,24 +230,41 @@ const ArchiveFilters: React.FC = () => {
                 <div className="dropdown-content">
                   <div className="filter-option">
                     <label className="checkbox-label">
-                      <input
-                          type="checkbox"
-                          checked={selectedLocations.length === 0}
-                          onChange={() => setSelectedLocations([])}
-                      />
-                      <span>Все локации</span>
+                      <div className="checkbox-wrapper">
+                        <input
+                            type="checkbox"
+                            checked={selectedLocations.length === 0}
+                            onChange={() => setSelectedLocations([])}
+                        />
+                        <div className="custom-checkbox">
+                          <div className="custom-checkbox-icon">
+                            <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
                     </label>
                   </div>
                   {availableLocations.map((location) => (
                       <div key={location} className="filter-option">
                         <label className="checkbox-label">
-                          <input
-                              type="checkbox"
-                              checked={selectedLocations.includes(location)}
-                              onChange={() => toggleLocation(location)}
-                          />
-                          <span>{locationNames[location]}</span>
-                          <small>({cameras.filter(cam => cam.location === location).length})</small>
+                          <div className="checkbox-wrapper">
+                            <input
+                                type="checkbox"
+                                checked={selectedLocations.includes(location)}
+                                onChange={() => toggleLocation(location)}
+                            />
+                            <div className="custom-checkbox">
+                              <div className="custom-checkbox-icon">
+                                <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </div>
+                            </div>
+                            <span>{locationNames[location]}</span>
+                            <small>({cameras.filter(cam => cam.location === location).length})</small>
+                          </div>
                         </label>
                       </div>
                   ))}

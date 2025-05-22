@@ -1046,9 +1046,9 @@ button:focus, button:focus-visible {
 
 .preset-button {
   padding: 6px 12px;
-  border: 1px solid var(--color-main2);
-  background: transparent;
-  color: var(--color-main2);
+  /*border: 1px solid var(--color-main2);*/
+  background-color: var(--secondary-color);
+  color: var(--white);
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
@@ -1056,8 +1056,7 @@ button:focus, button:focus-visible {
 }
 
 .preset-button:hover {
-  background: var(--color-main2);
-  color: var(--white);
+  background: var(--primary-color);
 }
 
 .filter-option {
@@ -1081,9 +1080,9 @@ button:focus, button:focus-visible {
   padding: 12px;
 }
 
-.search-info {
-  margin-bottom: 8px;
-}
+/*.search-info {*/
+/*  margin-bottom: 8px;*/
+/*}*/
 
 .search-warning {
   color: #FF9800;
