@@ -772,8 +772,8 @@ button:focus, button:focus-visible {
 }
 
 
-@media (max-width: 456px) {
+@media (max-width: 600px) {
   .archive-player-container {
-    aspect-ratio: auto;
+    aspect-ratio: auto !important;
   }
 }
