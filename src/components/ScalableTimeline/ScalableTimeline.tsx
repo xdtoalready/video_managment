@@ -439,7 +439,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
     return (
         <div className="scalable-timeline">
-            <div className="timeline-controls">
+            {/*<div className="timeline-controls">
                 <button className="timeline-control-button" onClick={zoomTimelineOut} title="Уменьшить масштаб">
                     -
                 </button>
@@ -447,7 +447,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 <button className="timeline-control-button" onClick={zoomTimelineIn} title="Увеличить масштаб">
                     +
                 </button>
-            </div>
+            </div> */}
 
             <div
                 ref={timelineRef}

@@ -42,6 +42,7 @@ body {
   flex: 1;
   margin: 10px;
   overflow-y: auto;
+  height: calc(100vh + 280px);
 }
 
 .border-linebrake {
@@ -767,5 +768,12 @@ button:focus, button:focus-visible {
   .camera-controls {
     flex-direction: column;
     align-items: center;
+  }
+}
+
+
+@media (max-width: 456px) {
+  .archive-player-container {
+    aspect-ratio: auto;
   }
 }
