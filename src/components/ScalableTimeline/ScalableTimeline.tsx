@@ -29,7 +29,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         generateTimelineMarks
     } = useStore();
 
-    // Состояние для смещения таймлайна (ключевое изменение!)
+    // Состояние для смещения таймлайна
     const [timelineOffset, setTimelineOffset] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [dragStartX, setDragStartX] = useState(0);
@@ -40,6 +40,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
     const timelineRef = useRef<HTMLDivElement>(null);
     const animationRef = useRef<number>();
+    const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
     // Функция для получения текущего времени видео
     const getCurrentVideoTime = useCallback(() => {
@@ -50,14 +51,14 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     // Функция для установки времени видео
     const setVideoTime = useCallback((timeInSeconds: number) => {
         const videoElement = document.querySelector('.archive-player-video') as HTMLVideoElement;
-        if (videoElement && timeInSeconds >= 0 && timeInSeconds <= videoElement.duration) {
+        if (videoElement && timeInSeconds >= 0 && timeInSeconds <= (videoElement.duration || Infinity)) {
             videoElement.currentTime = timeInSeconds;
         }
     }, []);
 
     // Функция для центрирования таймлайна относительно текущего времени
     const centerTimelineOnCurrentTime = useCallback(() => {
-        if (!activeRecording || !timelineRef.current) return;
+        if (!activeRecording || !timelineRef.current || isDragging) return;
 
         const currentTime = getCurrentVideoTime();
         const recordingStart = activeRecording.startTime.getTime();
@@ -75,10 +76,12 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const targetOffset = (0.5 - currentTimePosition) * containerWidth;
 
         setTimelineOffset(targetOffset);
-    }, [activeRecording, timelineVisibleRange, getCurrentVideoTime]);
+    }, [activeRecording, timelineVisibleRange, getCurrentVideoTime, isDragging]);
 
     // Функция для плавного перехода к определенному смещению
-    const animateToOffset = useCallback((targetOffset: number, duration = 300) => {
+    const animateToOffset = useCallback((targetOffset: number, duration = 200) => {
+        if (isDragging || isAnimating) return;
+
         const startOffset = timelineOffset;
         const startTime = performance.now();
 
@@ -89,7 +92,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             const progress = Math.min(elapsed / duration, 1);
 
             // Easing функция для плавности
-            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            const easeProgress = 1 - Math.pow(1 - progress, 2);
 
             const newOffset = startOffset + (targetOffset - startOffset) * easeProgress;
             setTimelineOffset(newOffset);
@@ -101,16 +104,16 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             }
         };
 
-        animationRef.current = requestAnimationFrame(animate);
-    }, [timelineOffset]);
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+        }
 
-    // Обработчик перетаскивания с улучшенной логикой
+        animationRef.current = requestAnimationFrame(animate);
+    }, [timelineOffset, isDragging, isAnimating]);
+
+    // Обработчик начала перетаскивания
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (!timelineRef.current || isAnimating) return;
-
-        setIsDragging(true);
-        setDragStartX(e.clientX);
-        setDragStartOffset(timelineOffset);
 
         // Останавливаем анимацию если она есть
         if (animationRef.current) {
@@ -118,13 +121,19 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             setIsAnimating(false);
         }
 
+        setIsDragging(true);
+        setDragStartX(e.clientX);
+        setDragStartOffset(timelineOffset);
+
         e.preventDefault();
+        e.stopPropagation();
     }, [timelineOffset, isAnimating]);
 
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    // Обработчик перетаскивания
+    const handleDrag = useCallback((clientX: number) => {
         if (!isDragging || !timelineRef.current || !activeRecording) return;
 
-        const deltaX = e.clientX - dragStartX;
+        const deltaX = clientX - dragStartX;
         const newOffset = dragStartOffset + deltaX;
 
         setTimelineOffset(newOffset);
@@ -145,21 +154,26 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const localTimeSeconds = (centerTimeMs - recordingStart) / 1000;
 
         // Обновляем время видео с ограничениями
-        setVideoTime(localTimeSeconds);
+        if (localTimeSeconds >= 0) {
+            setVideoTime(localTimeSeconds);
+        }
     }, [isDragging, dragStartX, dragStartOffset, timelineVisibleRange, activeRecording, setVideoTime]);
 
+    // Обработчик окончания перетаскивания
     const handleMouseUp = useCallback(() => {
         if (!isDragging) return;
 
         setIsDragging(false);
 
         // После окончания перетаскивания плавно центрируем таймлайн
-        setTimeout(() => {
-            if (!timelineRef.current) return;
+        if (updateTimeoutRef.current) {
+            clearTimeout(updateTimeoutRef.current);
+        }
+
+        updateTimeoutRef.current = setTimeout(() => {
+            if (!timelineRef.current || !activeRecording) return;
 
             const currentTime = getCurrentVideoTime();
-            if (!activeRecording) return;
-
             const recordingStart = activeRecording.startTime.getTime();
             const currentTimeMs = recordingStart + currentTime * 1000;
 
@@ -178,6 +192,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     // Обработчик колесика мыши для масштабирования
     const handleWheel = useCallback((e: React.WheelEvent) => {
         e.preventDefault();
+        e.stopPropagation();
 
         if (e.deltaY < 0) {
             zoomTimelineIn();
@@ -186,7 +201,11 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
 
         // После изменения масштаба центрируем таймлайн
-        setTimeout(centerTimelineOnCurrentTime, 50);
+        if (updateTimeoutRef.current) {
+            clearTimeout(updateTimeoutRef.current);
+        }
+
+        updateTimeoutRef.current = setTimeout(centerTimelineOnCurrentTime, 100);
     }, [zoomTimelineIn, zoomTimelineOut, centerTimelineOnCurrentTime]);
 
     // Обработчик клика по таймлайну
@@ -228,40 +247,54 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 }
             } else {
                 // Обычный режим - перемотка
-                setVideoTime(localTimeSeconds);
+                if (localTimeSeconds >= 0) {
+                    setVideoTime(localTimeSeconds);
 
-                // Плавно центрируем таймлайн
-                setTimeout(() => {
-                    const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
-                    animateToOffset(targetOffset);
-                }, 50);
+                    // Плавно центрируем таймлайн
+                    if (updateTimeoutRef.current) {
+                        clearTimeout(updateTimeoutRef.current);
+                    }
+
+                    updateTimeoutRef.current = setTimeout(() => {
+                        const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
+                        animateToOffset(targetOffset);
+                    }, 50);
+                }
             }
         }
+
+        e.preventDefault();
+        e.stopPropagation();
     }, [timelineVisibleRange, isClipMode, clipStart, clipEnd, onClipStartSet, onClipEndSet, activeRecording, isDragging, isAnimating, setVideoTime, animateToOffset]);
 
     // Эффект для автоматического центрирования при воспроизведении
     useEffect(() => {
-        if (!activeRecording || isDragging || isAnimating) return;
+        if (!activeRecording) return;
 
         const videoElement = document.querySelector('.archive-player-video') as HTMLVideoElement;
         if (!videoElement) return;
 
-        let lastTime = videoElement.currentTime;
+        let lastUpdateTime = 0;
+        const UPDATE_INTERVAL = 200; // мс
 
         const updateTimelinePosition = () => {
-            const currentTime = videoElement.currentTime;
+            const now = Date.now();
 
-            // Обновляем только если время изменилось и видео воспроизводится
-            if (Math.abs(currentTime - lastTime) > 0.1 && !videoElement.paused) {
+            // Обновляем только если прошло достаточно времени и не перетаскиваем
+            if (now - lastUpdateTime > UPDATE_INTERVAL && !isDragging && !isAnimating && !videoElement.paused) {
                 centerTimelineOnCurrentTime();
-                lastTime = currentTime;
+                lastUpdateTime = now;
             }
         };
 
-        // Обновляем положение каждые 100мс для плавности
-        const intervalId = setInterval(updateTimelinePosition, 100);
-
+        // Обработчики событий
         const handleTimeUpdate = () => {
+            if (!isDragging && !isAnimating) {
+                updateTimelinePosition();
+            }
+        };
+
+        const handlePlay = () => {
             if (!isDragging && !isAnimating) {
                 centerTimelineOnCurrentTime();
             }
@@ -273,23 +306,26 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             }
         };
 
+        // Интервал для регулярного обновления
+        const intervalId = setInterval(updateTimelinePosition, UPDATE_INTERVAL);
+
         videoElement.addEventListener('timeupdate', handleTimeUpdate);
+        videoElement.addEventListener('play', handlePlay);
         videoElement.addEventListener('seeking', handleSeeking);
-        videoElement.addEventListener('play', centerTimelineOnCurrentTime);
 
         return () => {
             clearInterval(intervalId);
             videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+            videoElement.removeEventListener('play', handlePlay);
             videoElement.removeEventListener('seeking', handleSeeking);
-            videoElement.removeEventListener('play', centerTimelineOnCurrentTime);
         };
     }, [activeRecording, centerTimelineOnCurrentTime, isDragging, isAnimating]);
 
-    // Глобальные обработчики событий
+    // Глобальные обработчики событий мыши
     useEffect(() => {
         const handleGlobalMouseMove = (e: MouseEvent) => {
             if (isDragging) {
-                handleMouseMove(e as any);
+                handleDrag(e.clientX);
             }
         };
 
@@ -299,19 +335,64 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             }
         };
 
-        document.addEventListener('mousemove', handleGlobalMouseMove);
-        document.addEventListener('mouseup', handleGlobalMouseUp);
+        if (isDragging) {
+            document.addEventListener('mousemove', handleGlobalMouseMove);
+            document.addEventListener('mouseup', handleGlobalMouseUp);
+        }
 
         return () => {
             document.removeEventListener('mousemove', handleGlobalMouseMove);
             document.removeEventListener('mouseup', handleGlobalMouseUp);
+        };
+    }, [isDragging, handleDrag, handleMouseUp]);
+
+    // Обработчики для сенсорных событий
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length !== 1 || !timelineRef.current || isAnimating) return;
+
+        const touch = e.touches[0];
+
+        // Останавливаем анимацию если она есть
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+            setIsAnimating(false);
+        }
+
+        setIsDragging(true);
+        setDragStartX(touch.clientX);
+        setDragStartOffset(timelineOffset);
+
+        e.preventDefault();
+    }, [timelineOffset, isAnimating]);
+
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        if (!isDragging || e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        handleDrag(touch.clientX);
+
+        e.preventDefault();
+    }, [isDragging, handleDrag]);
+
+    const handleTouchEnd = useCallback(() => {
+        if (isDragging) {
+            handleMouseUp();
+        }
+    }, [isDragging, handleMouseUp]);
+
+    // Очистка при размонтировании
+    useEffect(() => {
+        return () => {
             if (animationRef.current) {
                 cancelAnimationFrame(animationRef.current);
             }
+            if (updateTimeoutRef.current) {
+                clearTimeout(updateTimeoutRef.current);
+            }
         };
-    }, [isDragging, handleMouseMove, handleMouseUp]);
+    }, []);
 
-    // Генерируем временные метки и сегменты
+    // Генерируем временные метки
     const timelineMarks = generateTimelineMarks();
 
     return (
@@ -331,8 +412,10 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 className={`timeline-container ${isDragging ? 'dragging' : ''}`}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}
-                onMouseUp={handleMouseUp}
                 onClick={handleTimelineClick}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
             >
                 {/* Центральная область и фиксированный индикатор */}
                 <div className="timeline-center-area"></div>
@@ -351,7 +434,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                     className={`timeline-content ${isDragging ? 'dragging' : ''} ${isAnimating ? 'animating' : ''}`}
                     style={{
                         transform: `translateX(${timelineOffset}px)`,
-                        transition: isAnimating ? 'transform 0.3s cubic-bezier(0.23, 1, 0.32, 1)' : 'none'
+                        transition: isAnimating ? 'transform 0.2s ease-out' : 'none'
                     }}
                 >
                     <div className="timeline-marks">
