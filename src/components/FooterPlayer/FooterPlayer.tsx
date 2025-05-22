@@ -366,39 +366,24 @@ const FooterPlayer: React.FC = () => {
     const videoElement = getVideoElement();
     if (!videoElement) return;
 
-    const updateTimelinePosition = () => {
-      const { timelineVisibleRange } = useStore.getState();
+    const updateTimelineRange = () => {
       const currentTimeMs = activeRecording.startTime.getTime() + videoElement.currentTime * 1000;
-      const visibleStart = timelineVisibleRange.start.getTime();
-      const visibleEnd = timelineVisibleRange.end.getTime();
+      const { timelineVisibleRange } = useStore.getState();
+      const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
 
-      // Если текущее время выходит за пределы видимого диапазона, обновляем диапазон
-      if (currentTimeMs < visibleStart || currentTimeMs > visibleEnd) {
-        const visibleDuration = visibleEnd - visibleStart;
-        const halfDuration = visibleDuration / 2;
-
-        useStore.setState({
-          timelineVisibleRange: {
-            start: new Date(currentTimeMs - halfDuration),
-            end: new Date(currentTimeMs + halfDuration)
-          }
-        });
-      }
+      // Центрируем видимый диапазон вокруг текущего времени
+      useStore.setState({
+        timelineVisibleRange: {
+          start: new Date(currentTimeMs - visibleDuration / 2),
+          end: new Date(currentTimeMs + visibleDuration / 2)
+        }
+      });
     };
 
-    // Обновляем положение каждую секунду
-    const intervalId = setInterval(updateTimelinePosition, 1000);
-
-    // Обработчик события timeupdate
-    const handleTimeUpdate = () => {
-      updateTimelinePosition();
-    };
-
-    videoElement.addEventListener('timeupdate', handleTimeUpdate);
+    videoElement.addEventListener('seeking', updateTimelineRange);
 
     return () => {
-      clearInterval(intervalId);
-      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+      videoElement.removeEventListener('seeking', updateTimelineRange);
     };
   }, [useScalableTimeline, activeRecording]);
 
