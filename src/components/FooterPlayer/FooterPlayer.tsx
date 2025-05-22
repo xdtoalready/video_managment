@@ -366,39 +366,65 @@ const FooterPlayer: React.FC = () => {
     const videoElement = getVideoElement();
     if (!videoElement) return;
 
-    const updateTimelinePosition = () => {
-      const { timelineVisibleRange } = useStore.getState();
+    let lastUpdateTime = 0;
+    const UPDATE_INTERVAL = 500; // Обновляем реже, чтобы не конфликтовать с ScalableTimeline
+
+    const updateTimelineRange = () => {
+      const now = Date.now();
+
+      // Обновляем только периодически и только при больших изменениях времени
+      if (now - lastUpdateTime < UPDATE_INTERVAL) return;
+
       const currentTimeMs = activeRecording.startTime.getTime() + videoElement.currentTime * 1000;
-      const visibleStart = timelineVisibleRange.start.getTime();
-      const visibleEnd = timelineVisibleRange.end.getTime();
+      const { timelineVisibleRange } = useStore.getState();
+      const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
 
-      // Если текущее время выходит за пределы видимого диапазона, обновляем диапазон
-      if (currentTimeMs < visibleStart || currentTimeMs > visibleEnd) {
-        const visibleDuration = visibleEnd - visibleStart;
-        const halfDuration = visibleDuration / 2;
+      // Проверяем, не находится ли текущее время уже в видимом диапазоне
+      const currentTimeInRange = currentTimeMs >= timelineVisibleRange.start.getTime() &&
+          currentTimeMs <= timelineVisibleRange.end.getTime();
 
+      // Обновляем диапазон только если время вышло за пределы или при больших скачках
+      if (!currentTimeInRange || Math.abs(videoElement.currentTime - (lastUpdateTime / 1000)) > 10) {
         useStore.setState({
           timelineVisibleRange: {
-            start: new Date(currentTimeMs - halfDuration),
-            end: new Date(currentTimeMs + halfDuration)
+            start: new Date(currentTimeMs - visibleDuration / 2),
+            end: new Date(currentTimeMs + visibleDuration / 2)
           }
         });
+
+        lastUpdateTime = now;
       }
     };
 
-    // Обновляем положение каждую секунду
-    const intervalId = setInterval(updateTimelinePosition, 1000);
+    // Обработчик seeking - обновляем сразу
+    const handleSeeking = () => {
+      const currentTimeMs = activeRecording.startTime.getTime() + videoElement.currentTime * 1000;
+      const { timelineVisibleRange } = useStore.getState();
+      const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
 
-    // Обработчик события timeupdate
-    const handleTimeUpdate = () => {
-      updateTimelinePosition();
+      useStore.setState({
+        timelineVisibleRange: {
+          start: new Date(currentTimeMs - visibleDuration / 2),
+          end: new Date(currentTimeMs + visibleDuration / 2)
+        }
+      });
     };
 
-    videoElement.addEventListener('timeupdate', handleTimeUpdate);
+    // Обработчик воспроизведения
+    const handlePlay = () => {
+      updateTimelineRange();
+    };
+
+    // Интервал для периодического обновления
+    const intervalId = setInterval(updateTimelineRange, UPDATE_INTERVAL);
+
+    videoElement.addEventListener('seeking', handleSeeking);
+    videoElement.addEventListener('play', handlePlay);
 
     return () => {
       clearInterval(intervalId);
-      videoElement.removeEventListener('timeupdate', handleTimeUpdate);
+      videoElement.removeEventListener('seeking', handleSeeking);
+      videoElement.removeEventListener('play', handlePlay);
     };
   }, [useScalableTimeline, activeRecording]);
 

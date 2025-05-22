@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
-import Controls from './components/Controls/Controls.tsx'
 import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
 import CalendarModal from './components/Calendar/CalendarModal.tsx'
@@ -21,7 +20,6 @@ function App() {
         // Онлайн режим с прямой трансляцией
         <>
           <CameraGrid />
-          {!isGridView && <Controls />}
         </>
       ) : (
         // Архивный режим

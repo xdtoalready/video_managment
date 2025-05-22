@@ -1,4 +1,3 @@
-/* Общие стили */
 :root {
   --primary-color: #D3544A;
   --primary-hover: #d64550;
@@ -33,7 +32,6 @@ body {
   width: 100%;
 }
 
-/* Макет */
 .layout {
   display: flex;
   min-height: 100vh;
@@ -44,6 +42,7 @@ body {
   flex: 1;
   margin: 10px;
   overflow-y: auto;
+  height: calc(100vh + 280px);
 }
 
 .border-linebrake {
@@ -52,7 +51,6 @@ body {
   background-color: var(--light-bg);
 }
 
-/* Сайдбар */
 .sidebar {
   width: var(--sidebar-width);
   background-color: var(--white);
@@ -187,9 +185,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-left: 12px;
 }
 
-/* Список локаций */
+button:focus, button:focus-visible {
+  outline: none;
+}
+
 .location-list {
   list-style: none;
   padding: 0;
@@ -224,7 +226,6 @@ body {
   color: var(--white);
 }
 
-/* Хлебные крошки */
 .breadcrumb-navigation {
   display: flex;
   align-items: center;
@@ -261,9 +262,6 @@ body {
   margin-left: auto;
 }
 
-/* Добавим эти стили в App.css */
-
-/* Сетка камер */
 .camera-grid-container {
   padding: 1.5rem;
   background-color: var(--white);
@@ -287,7 +285,6 @@ body {
   font-style: italic;
 }
 
-/* Карточка камеры */
 .camera-card {
   width: 100%;
   position: relative;
@@ -301,7 +298,6 @@ body {
   background-color: var(--white);
 }
 
-/* Активная карточка камеры (не полноэкранная) */
 .camera-card.camera-active {
   width: 100%;
   max-width: 100%;
@@ -316,7 +312,6 @@ body {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Полноэкранная карточка камеры */
 .camera-card.fullscreen-camera {
   max-width: 100%;
   max-height: 100%;
@@ -433,7 +428,7 @@ body {
 }
 
 .camera-active .camera-view {
-  height: calc(100vh - 150px); /* Высота окна минус отступы */
+  height: calc(100vh - 150px);
   border-radius: var(--border-radius);
 }
 
@@ -446,6 +441,7 @@ body {
 
 .camera-view.active {
   border: 2px solid var(--primary-color);
+  height: 100%;
 }
 
 .camera-active .camera-view.active {
@@ -456,7 +452,6 @@ body {
   border: none;
 }
 
-/* Режим одной камеры (если нужен дополнительный контейнер) */
 .camera-single-view {
   height: 70vh;
   position: relative;
@@ -474,25 +469,6 @@ body {
   overflow: hidden;
 }
 
-.back-to-grid {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 10;
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.back-to-grid:hover {
-  background-color: var(--primary-hover);
-}
-
-/* Архивные индикаторы */
 .archive-indicator {
   position: absolute;
   top: 50px;
@@ -535,7 +511,6 @@ body {
   background-color: var(--primary-hover);
 }
 
-/* Состояния ошибки для камеры */
 .camera-error {
   position: absolute;
   top: 0;
@@ -629,7 +604,6 @@ body {
   border: 2px solid var(--primary-color);
 }
 
-/* Режим одной камеры */
 .camera-single-view {
   height: 70vh;
   position: relative;
@@ -647,25 +621,6 @@ body {
   overflow: hidden;
 }
 
-.back-to-grid {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 10;
-  background-color: var(--primary-color);
-  color: var(--white);
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.back-to-grid:hover {
-  background-color: var(--primary-hover);
-}
-
-/* Видеоплеер */
 .video-player-container {
   position: relative;
   width: 100%;
@@ -702,7 +657,6 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Элементы управления */
 .camera-controls-wrapper {
   margin-top: 1.5rem;
   background-color: var(--white);
@@ -766,7 +720,32 @@ body {
   transform: scale(0.95);
 }
 
-/* Адаптивность */
+.camera-single-view-container {
+  position: relative;
+}
+
+.back-to-grid {
+  outline: 1px solid var(--primary-hover);
+  position: absolute;
+  bottom: 50%;
+  transform: translate(0, 50%);
+  left: 0;
+  right: auto;
+  top: auto;
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: var(--white);
+  border: none;
+  border-radius: 0px 10px 10px 0px;
+  padding: 40px 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.back-to-grid:hover {
+  background-color: var(--primary-hover);
+}
+
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
@@ -789,5 +768,12 @@ body {
   .camera-controls {
     flex-direction: column;
     align-items: center;
+  }
+}
+
+
+@media (max-width: 600px) {
+  .archive-player-container {
+    aspect-ratio: auto !important;
   }
 }
