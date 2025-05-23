@@ -1,6 +1,6 @@
 // Дополнение к существующему хранилищу для управления глобальным плеером
 import { StateCreator } from 'zustand';
-import { Recording } from './types';
+import { _Recording } from './types';
 
 // Интерфейс состояния плеера
 export interface PlayerState {
@@ -100,7 +100,7 @@ export const createPlayerSlice: StateCreator<PlayerState> = (set, get) => ({
   },
   
   toggleMute: () => {
-    const { isMuted, playerVolume } = get();
+    const { isMuted, _playerVolume } = get();
     
     set({ isMuted: !isMuted });
     
