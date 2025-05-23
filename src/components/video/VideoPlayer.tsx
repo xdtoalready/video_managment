@@ -28,7 +28,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const connectionState = useStreamer(videoRef, {
     monitorId,
     preferLowRes: !isFullscreen,
-    streamUrl: streamUrl
   });
 
   const [isPlaying, setIsPlaying] = useState(true);

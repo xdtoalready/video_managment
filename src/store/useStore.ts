@@ -837,12 +837,12 @@ export const useStore = create<AppState>((set, get) => ({
     };
 
     set(state => ({
-      timelineBookmarksmarks: [...state.timelineBookmarksmarks, newBookmark]
+      timelineBookmarks: [...state.timelineBookmarks, newBookmark]
     }));
 
     try {
-      const { timelineBookmarksmarks } = get();
-      localStorage.setItem('timelineBookmarksmarks', JSON.stringify(timelineBookmarksmarks));
+      const { timelineBookmarks } = get();
+      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
     } catch (error) {
       console.error('Ошибка при сохранении закладок:', error);
     }
@@ -850,12 +850,12 @@ export const useStore = create<AppState>((set, get) => ({
 
   removeTimelineBookmark: (bookmarkId) => {
     set(state => ({
-      timelineBookmarksmarks: state.timelineBookmarksmarks.filter(bookmark => bookmark.id !== bookmarkId)
+      timelineBookmarks: state.timelineBookmarks.filter(bookmark => bookmark.id !== bookmarkId)
     }));
 
     try {
-      const { timelineBookmarksmarks } = get();
-      localStorage.setItem('timelineBookmarksmarks', JSON.stringify(timelineBookmarksmarks));
+      const { timelineBookmarks } = get();
+      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
     } catch (error) {
       console.error('Ошибка при сохранении закладок:', error);
     }
@@ -863,14 +863,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   updateTimelineBookmark: (bookmarkId, updates) => {
     set(state => ({
-      timelineBookmarksmarks: state.timelineBookmarksmarks.map(bookmark =>
+      timelineBookmarks: state.timelineBookmarks.map(bookmark =>
           bookmark.id === bookmarkId ? { ...bookmark, ...updates } : bookmark
       )
     }));
 
     try {
-      const { timelineBookmarksmarks } = get();
-      localStorage.setItem('timelineBookmarksmarks', JSON.stringify(timelineBookmarksmarks));
+      const { timelineBookmarks } = get();
+      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
     } catch (error) {
       console.error('Ошибка при сохранении закладок:', error);
     }

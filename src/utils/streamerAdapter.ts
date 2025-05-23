@@ -4,6 +4,7 @@ import { sentryshotAPI } from '../api/sentryshot';
 // Типы данных для работы со стримером
 export interface StreamerOptions {
   monitorId: string;
+  streamUrl?: string;
   preferLowRes?: boolean;
   autoReconnect?: boolean;
   maxReconnectAttempts?: number;

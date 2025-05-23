@@ -144,7 +144,11 @@ const RecordingsList: React.FC = () => {
 
     try {
       // Для SentryShot нужно построить правильный URL для скачивания
-      const downloadUrl = await archiveAPI.getDownloadUrl(recording.id);
+      const downloadUrl = sentryshotAPI.getVodUrl(
+          recording.cameraId,
+          new Date(recording.startTime),
+          new Date(recording.endTime)
+      );
 
       // Создаем временную ссылку для скачивания
       const link = document.createElement('a');
