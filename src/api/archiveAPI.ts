@@ -265,7 +265,7 @@ export const archiveAPI = {
       monitorId: string,
       startTime: Date,
       endTime: Date,
-      _title?: string
+      title?: string
   ): Promise<string | null> {
     try {
       // Используем VOD API для создания клипа

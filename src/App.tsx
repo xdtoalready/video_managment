@@ -176,7 +176,7 @@ function App() {
 
 // Компонент для отображения статуса системы
 const SystemStatusFooter: React.FC = () => {
-  const { connectionStatus, _isOnline, lastSync, username } = useStore();
+  const { connectionStatus, isOnline, lastSync, username } = useStore();
 
   const formatLastSync = (date: Date | null) => {
     if (!date) return 'Никогда';
