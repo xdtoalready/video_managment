@@ -28,6 +28,9 @@ const CameraView: React.FC<CameraViewProps> = ({
     connectionStatus
   } = useStore();
 
+  // Строка 30 - получаем локацию через store метод
+  const location = useStore(state => state.getLocationForCamera(monitorId));
+
   // Получаем данные о камере из хранилища
   const camera = useStore(state => state.cameras.find(cam => cam.id === monitorId));
 
@@ -134,9 +137,6 @@ const CameraView: React.FC<CameraViewProps> = ({
 
   // Определение, показывать ли камеру в активном режиме
   const isActiveView = isActive && !isGridView;
-
-  // Определение архивного режима
-  const isArchiveMode = camera?.isArchiveMode || false;
 
   // Определяем правильные классы для разных режимов
   let cardClass = 'camera-card';

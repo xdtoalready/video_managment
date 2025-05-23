@@ -470,10 +470,10 @@ if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
     connectionState,
     streamStats,
     forceReconnect,
-
-    // Утилиты
     isConnected: connectionState.active,
     hasError: !!connectionState.error,
-    isReconnecting: connectionState.reconnecting
+    isReconnecting: connectionState.reconnecting,
+    isConnecting: connectionState.reconnecting,
+    error: connectionState.error
   };
 }

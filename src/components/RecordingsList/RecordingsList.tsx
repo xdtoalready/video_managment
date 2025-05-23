@@ -39,15 +39,6 @@ const RecordingsList: React.FC = () => {
     loadData();
   }, [loadRecordings, archiveFilters]);
 
-  // Форматирование даты
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
   // Форматирование времени
   const formatTime = (date: Date): string => {
     return date.toLocaleString('ru-RU', {
@@ -71,8 +62,7 @@ const RecordingsList: React.FC = () => {
 
   // Генерация имени файла на основе данных записи
   const generateFileName = (recording: Recording): string => {
-    // Генерируем имя файла на основе временной метки и ID камеры
-    const startTimeStr = new Date(recording.startTime).toISOString().replace(/[:.]/g, '-');
+    const startTimeStr = recording.startTime.toISOString().replace(/[:.]/g, '-');
     return `${recording.monitorId}_${startTimeStr}`;
   };
 
@@ -147,10 +137,9 @@ const RecordingsList: React.FC = () => {
       // Для SentryShot нужно построить правильный URL для скачивания
       const downloadUrl = sentryshotAPI.getVodUrl(
           recording.monitorId,
-          new Date(recording.startTime),
-          new Date(recording.endTime)
+          recording.startTime,
+          recording.endTime
       );
-
       // Создаем временную ссылку для скачивания
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -269,13 +258,13 @@ const RecordingsList: React.FC = () => {
                     title={`Нажмите для просмотра записи ${recording.monitorName}`}
                 >
                   <div className="recording-cell">
-                   {formatDate(new Date(recording.startTime))}
+                    {formatDate(recording.startTime)}
                   </div>
                   <div className="recording-cell">
-                   {formatTime(new Date(recording.startTime))}
+                    {formatTime(recording.startTime)}
                   </div>
                   <div className="recording-cell">
-                   {formatTime(new Date(recording.endTime))}
+                    {formatTime(recording.endTime)}
                   </div>
                   <div className="recording-cell">
                     {formatDuration(recording.duration)}

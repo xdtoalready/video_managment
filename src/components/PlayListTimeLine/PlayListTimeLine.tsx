@@ -54,11 +54,11 @@ const PlaylistTimeline: React.FC = () => {
       const currentStart = recording.startTime;
       
       // Если есть пробел между записями
-if (new Date(currentStart).getTime() > new Date(prevEnd).getTime()) {
-const gapStart = calculatePosition(new Date(prevEnd));
-const gapEnd = calculatePosition(new Date(currentStart));
-        const gapWidth = gapEnd - gapStart;
-        
+        if (currentStart.getTime() > prevEnd.getTime()) {
+            const gapStart = calculatePosition(prevEnd);
+            const gapEnd = calculatePosition(currentStart);
+            const gapWidth = gapEnd - gapStart;
+
         return (
           <div 
             key={`gap-${index}`}
@@ -67,7 +67,7 @@ const gapEnd = calculatePosition(new Date(currentStart));
               left: `${gapStart}%`,
               width: `${gapWidth}%`
             }}
-title={`Пробел: ${formatTimeRange(new Date(prevEnd), new Date(currentStart))}`}
+            title={`Пробел: ${formatTimeRange(prevEnd, currentStart)}`}
           />
         );
       }
@@ -79,8 +79,8 @@ title={`Пробел: ${formatTimeRange(new Date(prevEnd), new Date(currentStart
   // Отрисовка записей
   const renderRecordings = () => {
     return playlist.items.map((recording: RecordingInfo, index: number) => {
-const startPos = calculatePosition(new Date(recording.startTime));
-      const width = calculateWidth(recording.duration);
+        const startPos = calculatePosition(recording.startTime);
+        const width = calculateWidth(recording.duration);
       
       return (
         <div 
@@ -90,7 +90,7 @@ const startPos = calculatePosition(new Date(recording.startTime));
             left: `${startPos}%`,
             width: `${width}%`
           }}
-title={`${recording.monitorName}: ${formatTimeRange(new Date(recording.startTime), new Date(recording.endTime))}`}
+          title={`${recording.monitorName}: ${formatTimeRange(recording.startTime, recording.endTime)}`}
         />
       );
     });

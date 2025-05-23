@@ -2,6 +2,7 @@ import React from 'react';
 import CameraView from './CameraView.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { locationNames } from '../../store/useStore.ts';
+import { getLocationForMonitor } from '../../constants/locationMapping';
 
 const CameraGrid: React.FC = () => {
   const { 
@@ -14,9 +15,12 @@ const CameraGrid: React.FC = () => {
   } = useStore();
   
   // Фильтруем камеры по выбранным локациям
-  const filteredCameras = selectedLocations.length > 0
-    ? cameras.filter(camera => selectedLocations.includes(camera.location))
-    : cameras;
+    const filteredCameras = selectedLocations.length > 0
+        ? cameras.filter(camera => {
+            const cameraLocation = getLocationForMonitor(camera.id);
+            return selectedLocations.includes(cameraLocation);
+        })
+        : cameras;
   
   // Если нет камер, показываем сообщение
   if (filteredCameras.length === 0) {

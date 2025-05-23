@@ -7,12 +7,12 @@ export interface RecordingInfo {
   monitorId: string;
   monitorName: string;
   location: LocationType;
-  startTime: string; // ISO формат времени начала
-  endTime: string;   // ISO формат времени окончания
-  duration: number;  // Длительность в секундах
-  fileUrl: string;   // URL для воспроизведения через VOD API
-  fileSize?: number; // Размер файла в байтах (опционально)
-  thumbnailUrl?: string; // URL превью (опционально)
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  fileUrl: string;
+  fileSize?: number;
+  thumbnailUrl?: string;
 }
 
 // Параметры для поиска записей
@@ -86,7 +86,9 @@ export const archiveAPI = {
             // Преобразуем в формат архивного API
             const archiveRecordings = filteredRecordings.map(recording => ({
               ...recording,
-              location: this._getLocationByMonitorId(monitor.id), // Определяем локацию
+              startTime: new Date(recording.startTime),
+              endTime: new Date(recording.endTime),
+              location: this._getLocationByMonitorId(monitor.id),
               fileUrl: sentryshotAPI.getVodUrl(
                   monitor.id,
                   new Date(recording.startTime),
@@ -106,7 +108,7 @@ export const archiveAPI = {
 
       // Сортируем записи по времени начала (от новых к старым)
       allRecordings.sort((a, b) =>
-          new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+          b.startTime.getTime() - a.startTime.getTime()
       );
 
       // Применяем пагинацию если указана
@@ -410,8 +412,8 @@ export const archiveAPI = {
           monitorId,
           monitorName: `Камера ${i + 1}`,
           location,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
+          startTime: startTime,
+          endTime: endTime,
           duration: (endTime.getTime() - startTime.getTime()) / 1000,
           fileUrl: sentryshotAPI.getVodUrl(monitorId, startTime, endTime),
           fileSize: Math.floor(Math.random() * 1000000000)

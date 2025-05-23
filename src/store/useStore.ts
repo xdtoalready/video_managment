@@ -42,13 +42,11 @@ export interface Camera {
   id: string;
   name: string;
   url: string;
-  location: LocationType;
+  // location: LocationType; <- Добавим отдельный маппинг
   isActive: boolean;
   isArchiveMode?: boolean;
   archiveStartDate?: Date | null;
   archiveEndDate?: Date | null;
-
-  // Дополнительные поля из SentryShot Monitor
   enable?: boolean;
   alwaysRecord?: boolean;
   videoLength?: number;
@@ -73,7 +71,7 @@ export type ArchiveViewMode = 'list' | 'single' | 'multi';
 export interface TimelineEvent {
   id: string;
   monitorId: string;
-  time: Date;
+  timestamp: Date;
   type: EventType;
   label: string;
   confidence?: number;
@@ -411,10 +409,8 @@ playlist: {
 
       const cameras = await sentryshotAPI.getCameras();
 
-      // Преобразуем мониторы в камеры с дополнительными полями
       const enhancedCameras = cameras.map(camera => ({
         ...camera,
-location: archiveAPI._getLocationByMonitorId(camera.id),
         isArchiveMode: false,
         archiveStartDate: null,
         archiveEndDate: null
@@ -541,6 +537,19 @@ location: archiveAPI._getLocationByMonitorId(camera.id),
   },
 
   // === АРХИВНЫЕ ЗАПИСИ ===
+
+  getLocationForCamera: (cameraId: string): LocationType => {
+    // Это маппинг должен храниться отдельно от API данных
+    const locationMap: Record<string, LocationType> = {
+      'monitor_1': 'street',
+      'monitor_2': 'house',
+      'monitor_3': 'playground',
+      'monitor_4': 'elevator',
+      'monitor_5': 'security',
+    };
+
+    return locationMap[cameraId] || 'unknown';
+  },
 
   loadRecordings: async () => {
     try {
@@ -838,7 +847,7 @@ location: archiveAPI._getLocationByMonitorId(camera.id),
       const timelineEvents = events.map(event => ({
         id: event.id,
         monitorId: event.monitorId,
-        time: event.timestamp,
+        timestamp: event.timestamp,
         type: event.type,
         label: event.label,
         confidence: event.confidence,
@@ -849,8 +858,8 @@ location: archiveAPI._getLocationByMonitorId(camera.id),
         timelineEvents: [
           ...state.timelineEvents.filter(event =>
               event.monitorId !== monitorId ||
-              event.time < timeRange.start ||
-              event.time > timeRange.end
+              event.timestamp < timeRange.start ||
+              event.timestamp > timeRange.end
           ),
           ...timelineEvents
         ]
