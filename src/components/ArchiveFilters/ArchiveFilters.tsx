@@ -243,6 +243,7 @@ const ArchiveFilters: React.FC = () => {
                             </svg>
                           </div>
                         </div>
+                        <span>Все локации</span>
                       </div>
                     </label>
                   </div>
@@ -291,24 +292,42 @@ const ArchiveFilters: React.FC = () => {
                 <div className="dropdown-content">
                   <div className="filter-option">
                     <label className="checkbox-label">
-                      <input
-                          type="checkbox"
-                          checked={selectedCameras.length === 0}
-                          onChange={() => setSelectedCameras([])}
-                      />
-                      <span>Все камеры</span>
+                      <div className="checkbox-wrapper">
+                        <input
+                            type="checkbox"
+                            checked={selectedCameras.length === 0}
+                            onChange={() => setSelectedCameras([])}
+                        />
+                        <div className="custom-checkbox">
+                          <div className="custom-checkbox-icon">
+                            <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <span>Все камеры</span>
+                      </div>
                     </label>
                   </div>
                   {filteredCameras.map((camera) => (
                       <div key={camera.id} className="filter-option">
                         <label className="checkbox-label">
-                          <input
-                              type="checkbox"
-                              checked={selectedCameras.includes(camera.id)}
-                              onChange={() => toggleCamera(camera.id)}
-                          />
-                          <span>{camera.name}</span>
-                          <small>({locationNames[camera.location]})</small>
+                          <div className="checkbox-wrapper">
+                            <input
+                                type="checkbox"
+                                checked={selectedCameras.includes(camera.id)}
+                                onChange={() => toggleCamera(camera.id)}
+                            />
+                            <div className="custom-checkbox">
+                              <div className="custom-checkbox-icon">
+                                <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                              </div>
+                            </div>
+                            <span>{camera.name}</span>
+                            <small>({locationNames[camera.location]})</small>
+                          </div>
                         </label>
                       </div>
                   ))}
