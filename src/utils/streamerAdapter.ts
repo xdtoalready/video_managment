@@ -4,6 +4,7 @@ import { sentryshotAPI } from '../api/sentryshot';
 // Типы данных для работы со стримером
 export interface StreamerOptions {
   monitorId: string;
+  streamUrl?: string;
   preferLowRes?: boolean;
   autoReconnect?: boolean;
   maxReconnectAttempts?: number;
@@ -62,7 +63,7 @@ export function useStreamer(
   // Рефы для отслеживания состояния
   const hlsRef = useRef<any>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const statsIntervalRef = useRef<NodeJS.Interval | null>(null);
+const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
 
   // Функция для обновления состояния подключения
@@ -139,16 +140,12 @@ export function useStreamer(
         // Сетевые настройки
         manifestLoadingTimeOut: 10000,
         manifestLoadingMaxRetry: 3,
-        segmentLoadingTimeOut: 8000,
-        segmentLoadingMaxRetry: 3,
+        fragLoadingTimeOut: 8000,
+        fragLoadingMaxRetry: 3,
 
         // Настройки для стабильности
         startLevel: preferLowRes ? 0 : -1,
-        capLevelToPlayerSize: true,
-
-        // Обработка ошибок
-        fragLoadingTimeOut: 10000,
-        fragLoadingMaxRetry: 3
+        capLevelToPlayerSize: true
       });
 
       hlsRef.current = hls;
@@ -327,7 +324,7 @@ export function useStreamer(
       error: errorMessage
     });
 
-    if (autoReconnect && error?.code === error.MEDIA_ERR_NETWORK) {
+if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
       scheduleReconnect();
     }
   };

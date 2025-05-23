@@ -71,9 +71,9 @@ const FooterPlayer: React.FC = () => {
     if (!videoElement) return;
 
     // Если выбранное время находится в текущей записи
-    if (time >= activeRecording.startTime && time <= activeRecording.endTime) {
+    if (time >= new Date(activeRecording.startTime) && time <= new Date(activeRecording.endTime)) {
       // Вычисляем смещение в секундах от начала записи
-      const offsetSeconds = (time.getTime() - activeRecording.startTime.getTime()) / 1000;
+      const offsetSeconds = (time.getTime() - new Date(activeRecording.startTime).getTime()) / 1000;
       videoElement.currentTime = offsetSeconds;
     }
   };
@@ -82,12 +82,12 @@ const FooterPlayer: React.FC = () => {
   useEffect(() => {
     if (activeRecording) {
       // Устанавливаем видимый диапазон вокруг текущей записи
-      const recordingDuration = activeRecording.endTime.getTime() - activeRecording.startTime.getTime();
+      const recordingDuration = new Date(activeRecording.endTime).getTime() - new Date(activeRecording.startTime).getTime();
       const padding = recordingDuration * 0.5; // 50% отступ с каждой стороны
 
       useStore.getState().setTimelineVisibleRange({
-        start: new Date(activeRecording.startTime.getTime() - padding),
-        end: new Date(activeRecording.endTime.getTime() + padding)
+        start: new Date(new Date(activeRecording.startTime).getTime() - padding),
+        end: new Date(new Date(activeRecording.endTime).getTime() + padding)
       });
     }
   }, [activeRecording]);
@@ -358,12 +358,12 @@ const FooterPlayer: React.FC = () => {
 
     try {
       // Создаем временные метки для SentryShot API
-      const startTime = new Date(activeRecording.startTime.getTime() + clipStart * 1000);
-      const endTime = new Date(activeRecording.startTime.getTime() + clipEnd * 1000);
+      const startTime = new Date(new Date(activeRecording.startTime).getTime() + clipStart * 1000);
+      const endTime = new Date(new Date(activeRecording.startTime).getTime() + clipEnd * 1000);
 
       // Получаем URL для скачивания через VOD API
       const downloadUrl = sentryShotConfig.getVodUrl(
-          activeRecording.cameraId,
+          activeRecording.monitorId,
           startTime,
           endTime,
           `clip_${Date.now()}`
@@ -372,7 +372,7 @@ const FooterPlayer: React.FC = () => {
       // Создаем скрытую ссылку для скачивания
       const downloadLink = document.createElement('a');
       downloadLink.href = downloadUrl;
-      downloadLink.download = `clip_${activeRecording.cameraName}_${formatTimeForFilename(clipStart)}-${formatTimeForFilename(clipEnd)}.mp4`;
+      downloadLink.download = `clip_${activeRecording.monitorName}_${formatTimeForFilename(clipStart)}-${formatTimeForFilename(clipEnd)}.mp4`;
 
       // Добавляем индикатор загрузки
       const loadingIndicator = document.createElement('div');
@@ -464,7 +464,7 @@ const FooterPlayer: React.FC = () => {
           <div className="controls-center">
             {/* Отображение названия камеры и записи */}
             <div className="camera-name badge-blue">
-              {activeRecording.cameraName}
+              {activeRecording.monitorName}
             </div>
 
             {/* Отображение текущего времени */}
@@ -472,7 +472,7 @@ const FooterPlayer: React.FC = () => {
               {formatTime(currentTime)} / {formatTime(duration)}
               <br />
               <small>
-                Запись: {activeRecording.startTime.toLocaleString('ru-RU')} — {activeRecording.endTime.toLocaleString('ru-RU')}
+		Запись: {new Date(activeRecording.startTime).toLocaleString('ru-RU')} — {new Date(activeRecording.endTime).toLocaleString('ru-RU')}
               </small>
             </div>
 

@@ -21,7 +21,7 @@ const BookmarksPanel: React.FC<BookmarksPanelProps> = ({ onSelectBookmark }) => 
 
     // Фильтруем закладки для текущей камеры
     const cameraBookmarks = activeRecording
-        ? timelineBookmarks.filter(bookmark => bookmark.cameraId === activeRecording.id)
+        ? timelineBookmarks.filter(bookmark => bookmark.monitorId === activeRecording.id)
         : [];
 
     // Сортируем закладки по времени (от новых к старым)

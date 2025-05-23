@@ -5,16 +5,16 @@ import { sentryshotAPI } from '../../api/sentryshot';
 
 interface CameraViewProps {
   streamUrl: string;
-  cameraName: string;
-  cameraId: string;
+  monitorName: string;
+  monitorId: string;
   isActive?: boolean;
   onClick?: () => void;
 }
 
 const CameraView: React.FC<CameraViewProps> = ({
    streamUrl,
-   cameraName,
-   cameraId,
+   monitorName,
+   monitorId,
    isActive = false,
    onClick
  }) => {
@@ -29,7 +29,7 @@ const CameraView: React.FC<CameraViewProps> = ({
   } = useStore();
 
   // Получаем данные о камере из хранилища
-  const camera = useStore(state => state.cameras.find(cam => cam.id === cameraId));
+  const camera = useStore(state => state.cameras.find(cam => cam.id === monitorId));
 
   const [error, setError] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(false);
@@ -46,26 +46,26 @@ const CameraView: React.FC<CameraViewProps> = ({
     // Если архивный режим, используем VOD
     if (camera.isArchiveMode && camera.archiveStartDate && camera.archiveEndDate) {
       return sentryshotAPI.getVodUrl(
-          cameraId,
+          monitorId,
           camera.archiveStartDate,
           camera.archiveEndDate
       );
     }
 
     // Для онлайн режима используем HLS поток
-    return sentryshotAPI.getStreamUrl(cameraId, false);
+    return sentryshotAPI.getStreamUrl(monitorId, false);
   };
 
   // Открыть календарь
   const handleOpenCalendar = (e: React.MouseEvent) => {
     e.stopPropagation();
-    openCalendar(cameraId);
+    openCalendar(monitorId);
   };
 
   // Выйти из режима архива
   const handleExitArchiveMode = (e: React.MouseEvent) => {
     e.stopPropagation();
-    exitArchiveMode(cameraId);
+    exitArchiveMode(monitorId);
   };
 
   // Обработчик клика для карточки камеры
@@ -90,7 +90,7 @@ const CameraView: React.FC<CameraViewProps> = ({
 
     try {
       const enable = !camera?.enable; // Инвертируем текущее состояние
-      const success = await toggleMotionDetection(cameraId, enable);
+      const success = await toggleMotionDetection(monitorId, enable);
 
       if (!success) {
         setError('Ошибка при управлении детектором движения');
@@ -109,7 +109,7 @@ const CameraView: React.FC<CameraViewProps> = ({
 
     try {
       const enable = !camera?.enable; // Инвертируем текущее состояние
-      const success = await toggleObjectDetection(cameraId, enable);
+      const success = await toggleObjectDetection(monitorId, enable);
 
       if (!success) {
         setError('Ошибка при управлении детектором объектов');
@@ -159,7 +159,7 @@ const CameraView: React.FC<CameraViewProps> = ({
       >
         <div className="camera-card-header">
           <div className="camera-header-left">
-            <span className="camera-card-title">{cameraName}</span>
+            <span className="camera-card-title">{monitorName}</span>
 
             {/* Индикаторы состояния */}
             <div className="camera-status-indicators">
@@ -254,7 +254,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                   isFullscreen={isActiveView}
                   isArchiveMode={isArchiveMode}
                   onVideoClick={handleVideoClick}
-                  monitorId={cameraId} // Передаем для правильной работы с SentryShot
+                  monitorId={monitorId} // Передаем для правильной работы с SentryShot
               />
           )}
 

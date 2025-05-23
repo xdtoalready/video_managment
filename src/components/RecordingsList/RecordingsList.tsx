@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore, Recording, locationNames } from '../../store/useStore.ts';
 import { archiveAPI } from '../../api/archiveAPI';
 import './RecordingsList.css';
+import { sentryshotAPI } from '../../api/sentryshot';
 
 const RecordingsList: React.FC = () => {
   const {
@@ -71,8 +72,8 @@ const RecordingsList: React.FC = () => {
   // Генерация имени файла на основе данных записи
   const generateFileName = (recording: Recording): string => {
     // Генерируем имя файла на основе временной метки и ID камеры
-    const startTimeStr = recording.startTime.toISOString().replace(/[:.]/g, '-');
-    return `${recording.cameraId}_${startTimeStr}`;
+    const startTimeStr = new Date(recording.startTime).toISOString().replace(/[:.]/g, '-');
+    return `${recording.monitorId}_${startTimeStr}`;
   };
 
   // Форматирование длительности
@@ -83,9 +84,9 @@ const RecordingsList: React.FC = () => {
   };
 
   // Получение имени камеры по ID
-  const getCameraName = (cameraId: string): string => {
-    const camera = cameras.find(cam => cam.id === cameraId);
-    return camera ? camera.name : `Камера ${cameraId}`;
+  const getCameraName = (monitorId: string): string => {
+    const camera = cameras.find(cam => cam.id === monitorId);
+    return camera ? camera.name : `Камера ${monitorId}`;
   };
 
   // Обработчик клика по записи
@@ -144,7 +145,11 @@ const RecordingsList: React.FC = () => {
 
     try {
       // Для SentryShot нужно построить правильный URL для скачивания
-      const downloadUrl = await archiveAPI.getDownloadUrl(recording.id);
+      const downloadUrl = sentryshotAPI.getVodUrl(
+          recording.monitorId,
+          new Date(recording.startTime),
+          new Date(recording.endTime)
+      );
 
       // Создаем временную ссылку для скачивания
       const link = document.createElement('a');
@@ -261,22 +266,22 @@ const RecordingsList: React.FC = () => {
                     key={recording.id}
                     className={`recording-row ${selectedItems.includes(recording.id) ? 'selected' : ''}`}
                     onClick={() => handleRecordingClick(recording)}
-                    title={`Нажмите для просмотра записи ${recording.cameraName}`}
+                    title={`Нажмите для просмотра записи ${recording.monitorName}`}
                 >
                   <div className="recording-cell">
-                    {formatDate(recording.startTime)}
+                   {formatDate(new Date(recording.startTime))}
                   </div>
                   <div className="recording-cell">
-                    {formatTime(recording.startTime)}
+                   {formatTime(new Date(recording.startTime))}
                   </div>
                   <div className="recording-cell">
-                    {formatTime(recording.endTime)}
+                   {formatTime(new Date(recording.endTime))}
                   </div>
                   <div className="recording-cell">
                     {formatDuration(recording.duration)}
                   </div>
                   <div className="recording-cell">
-                    {getCameraName(recording.cameraId)}
+                    {getCameraName(recording.monitorId)}
                   </div>
                   <div className="recording-cell">
                     {locationNames[recording.location]}

@@ -75,10 +75,10 @@ const ArchiveFilters: React.FC = () => {
   };
 
   // Переключение выбора камеры
-  const toggleCamera = (cameraId: string) => {
-    const newCameras = selectedCameras.includes(cameraId)
-        ? selectedCameras.filter(id => id !== cameraId)
-        : [...selectedCameras, cameraId];
+  const toggleCamera = (monitorId: string) => {
+    const newCameras = selectedCameras.includes(monitorId)
+        ? selectedCameras.filter(id => id !== monitorId)
+        : [...selectedCameras, monitorId];
 
     setSelectedCameras(newCameras);
   };

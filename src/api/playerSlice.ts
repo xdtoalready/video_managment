@@ -1,6 +1,5 @@
 // Дополнение к существующему хранилищу для управления глобальным плеером
 import { StateCreator } from 'zustand';
-import { Recording } from './types';
 
 // Интерфейс состояния плеера
 export interface PlayerState {

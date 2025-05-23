@@ -1,7 +1,6 @@
 import React from 'react';
-import VideoPlayer from './VideoPlayer';
+import VideoPlayer from '../video/VideoPlayer';
 import { useStore } from '../../store/useStore.ts';
-import './ArchiveGrid.css';
 
 interface ArchiveGridProps {
   // Можно добавить дополнительные пропсы если нужно
@@ -43,7 +42,7 @@ const ArchiveGrid: React.FC<ArchiveGridProps> = () => {
             onClick={() => selectRecording(recording.id)} // При клике выбираем одну запись
           >
             <div className="archive-item-header">
-              <span className="archive-item-title">{recording.cameraName}</span>
+              <span className="archive-item-title">{recording.monitorName}</span>
               <span className="archive-item-time">
                 {new Date(recording.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -53,6 +52,7 @@ const ArchiveGrid: React.FC<ArchiveGridProps> = () => {
               <VideoPlayer 
                 streamUrl={recording.fileUrl}
                 isArchiveMode={true}
+                monitorId={recording.monitorId}
               />
             </div>
           </div>

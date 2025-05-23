@@ -64,8 +64,9 @@ class AuthManager {
 
   async getModifyHeaders(): Promise<HeadersInit> {
     const headers = this.getAuthHeaders();
-    headers['X-CSRF-TOKEN'] = await this.getCsrfToken();
-    headers['Content-Type'] = 'application/json';
+    const headersObj = new Headers(headers);
+    headersObj.set('X-CSRF-TOKEN', await this.getCsrfToken());
+    headersObj.set('Content-Type', 'application/json');
     return headers;
   }
 }

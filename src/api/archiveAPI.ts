@@ -309,6 +309,23 @@ export const archiveAPI = {
     }
   },
 
+  async getDownloadUrl(recordingId: string): Promise<string> {
+    // Парсим ID чтобы получить monitorId и временные метки
+    const parts = recordingId.split('_');
+    if (parts.length < 2) {
+      throw new Error('Неверный формат ID записи');
+    }
+
+    const monitorId = parts[0];
+    // Используем данные из существующей записи
+    // В реальном приложении лучше передавать объект записи целиком
+    return sentryshotAPI.getVodUrl(
+        monitorId,
+        new Date(), // Заглушка - нужны реальные данные
+        new Date()
+    );
+  },
+
   // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
 
   // Определение локации по ID монитора (заглушка)

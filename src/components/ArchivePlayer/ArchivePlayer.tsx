@@ -64,12 +64,12 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
 
       try {
         // Получаем VOD URL от SentryShot API
-        const vodUrl = await sentryshotAPI.getVodUrl({
-          monitorId: recording.cameraId,
-          startTime: recording.startTime,
-          endTime: recording.endTime,
-          cacheId: `${recording.id}_${Date.now()}` // Уникальный ID кэша
-        });
+const vodUrl = await sentryshotAPI.getVodUrl(
+  recording.monitorId,
+  new Date(recording.startTime),
+  new Date(recording.endTime),
+Date.now()
+);
 
         console.log('VOD URL:', vodUrl);
 
@@ -101,14 +101,16 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
                   console.error('Ошибка сети при загрузке архивного видео');
                   // Для архивного видео пытаемся перезагрузить
                   setTimeout(() => {
-                    if (hls && !hls.destroyed) {
+                    if (hls) {
+                      hls.destroy();
                       hls.startLoad();
                     }
                   }, 1000);
                   break;
                 case Hls.ErrorTypes.MEDIA_ERROR:
                   console.error('Ошибка медиа в архивном видео');
-                  if (hls && !hls.destroyed) {
+                  if (hls) {
+                    hls.destroy();
                     hls.recoverMediaError();
                   }
                   break;
@@ -179,7 +181,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
 
     // Очистка при размонтировании
     return () => {
-      if (hls && !hls.destroyed) {
+      if (hls) {
         hls.destroy();
       }
       if (videoElement) {
@@ -290,7 +292,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
   const formatAbsoluteTime = (relativeTime: number) => {
     if (isNaN(relativeTime) || !recording) return '';
 
-    const absoluteTime = new Date(recording.startTime.getTime() + relativeTime * 1000);
+    const absoluteTime = new Date(new Date(recording.startTime).getTime() + relativeTime * 1000);
     return absoluteTime.toLocaleString('ru-RU', {
       hour: '2-digit',
       minute: '2-digit',
@@ -307,7 +309,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
               Загрузка архивного видео...
               <br />
               <small>
-                {recording.cameraName} | {recording.startTime.toLocaleString('ru-RU')}
+                {recording.monitorName} | {new Date(recording.startTime).toLocaleString('ru-RU')}
               </small>
             </div>
         )}

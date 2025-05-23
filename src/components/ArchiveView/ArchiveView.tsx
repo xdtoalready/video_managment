@@ -30,7 +30,7 @@ const ArchiveView: React.FC = () => {
     if (!videoElement || !activeRecording) return;
 
     // Вычисляем локальное время внутри записи
-    const localTime = (time.getTime() - activeRecording.startTime.getTime()) / 1000;
+    const localTime = (time.getTime() - new Date(activeRecording.startTime).getTime()) / 1000;
     if (localTime >= 0 && localTime <= videoElement.duration) {
       videoElement.currentTime = localTime;
 
@@ -61,7 +61,7 @@ const ArchiveView: React.FC = () => {
     if (!videoElement || !activeRecording) return;
 
     const currentLocalTime = videoElement.currentTime;
-    const globalTime = new Date(activeRecording.startTime.getTime() + currentLocalTime * 1000);
+    const globalTime = new Date(new Date(activeRecording.startTime).getTime() + currentLocalTime * 1000);
 
     // Запрашиваем у пользователя название закладки
     const label = prompt('Введите название закладки:');
@@ -70,7 +70,7 @@ const ArchiveView: React.FC = () => {
     // Добавляем закладку через хранилище
     const { addTimelineBookmark } = useStore.getState();
     addTimelineBookmark({
-      cameraId: activeRecording.id,
+      monitorId: activeRecording.id,
       time: globalTime,
       label,
       color: '#ffcc00' // Цвет по умолчанию
@@ -123,7 +123,7 @@ const ArchiveView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/*<h2 className="recording-title">{activeRecording.cameraName}</h2>*/}
+                  {/*<h2 className="recording-title">{activeRecording.monitorName}</h2>*/}
                   <ArchivePlayer recording={activeRecording} />
                 </div>
 
