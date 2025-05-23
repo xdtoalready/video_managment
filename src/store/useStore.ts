@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { sentryshotAPI, TimeUtils } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
+import { ArchiveEvent } from '../api/archiveAPI';
+
 
 // Типы локаций камер
 export type LocationType =
@@ -154,6 +156,21 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   selectedLocations: LocationType[]; // Массив для множественного выбора
   viewMode: ViewMode;
   isGridView: boolean;
+  _getLocationForCamera: (cameraId: string) => LocationType;
+
+playlist: {
+    items: RecordingInfo[];
+events: ArchiveEvent[];
+    timeRange: {
+      start: Date;
+      end: Date;
+    };
+    totalDuration: number;
+    currentItemIndex: number;
+    absolutePosition: number;
+  };
+  currentTime: number;
+  seekToAbsolutePosition: (position: number) => void;
 
   // Состояние календаря
   calendar: CalendarState;
@@ -220,7 +237,21 @@ export const locationNames: Record<LocationType, string> = {
 
 // Создание хранилища
 export const useStore = create<AppState>((set, get) => ({
-  // === НАЧАЛЬНОЕ СОСТОЯНИЕ ===
+playlist: {
+    items: [],
+    events: [],
+    timeRange: {
+      start: new Date(),
+      end: new Date()
+    },
+    totalDuration: 0,
+    currentItemIndex: -1,
+    absolutePosition: 0
+  },
+  currentTime: 0,
+  seekToAbsolutePosition: (position: number) => {
+    set({ currentTime: position });
+  },
 
   // Аутентификация
   isAuthenticated: false,
@@ -383,7 +414,7 @@ export const useStore = create<AppState>((set, get) => ({
       // Преобразуем мониторы в камеры с дополнительными полями
       const enhancedCameras = cameras.map(camera => ({
         ...camera,
-        location: get()._getLocationForCamera(camera.id),
+location: archiveAPI._getLocationByMonitorId(camera.id),
         isArchiveMode: false,
         archiveStartDate: null,
         archiveEndDate: null

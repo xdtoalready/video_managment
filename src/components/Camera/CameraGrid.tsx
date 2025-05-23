@@ -41,7 +41,7 @@ const CameraGrid: React.FC = () => {
           key={activeCamera.id}
           monitorId={activeCamera.id}
           streamUrl={activeCamera.url}
-          cameraName={activeCamera.name}
+          monitorName={activeCamera.name}
           isActive={true}
         />
         
@@ -87,7 +87,7 @@ const CameraGrid: React.FC = () => {
             key={camera.id}
             monitorId={camera.id}
             streamUrl={camera.url}
-            cameraName={camera.name}
+            monitorName={camera.name}
             isActive={camera.isActive}
             onClick={() => showSingleCamera(camera.id)}
           />

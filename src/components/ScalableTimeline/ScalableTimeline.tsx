@@ -66,7 +66,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const timelineRef = useRef<HTMLDivElement>(null);
     const timelineContentRef = useRef<HTMLDivElement>(null);
     const animationRef = useRef<number | null>(null);
-    const updateTimeoutRef = useRef<NodeJS.Timeout>();
+    const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Ref для плавного обновления без re-render
     const currentOffsetRef = useRef(0);
@@ -101,7 +101,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         if (!activeRecording || !timelineRef.current) return 0;
 
         const currentTime = getCurrentVideoTime();
-        const recordingStart = activeRecording.startTime.getTime();
+const recordingStart = new Date(activeRecording.startTime).getTime();
         const currentTimeMs = recordingStart + currentTime * 1000;
 
         const visibleStart = timelineVisibleRange.start.getTime();
@@ -209,7 +209,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const centerTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetFromCenterMs;
 
         // Рассчитываем локальное время внутри записи
-        const recordingStart = activeRecording.startTime.getTime();
+const recordingStart = new Date(activeRecording.startTime).getTime();
         const localTimeSeconds = (centerTimeMs - recordingStart) / 1000;
 
         // Обновляем время видео с ограничениями
@@ -278,7 +278,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
 
         if (activeRecording) {
-            const recordingStart = activeRecording.startTime.getTime();
+const recordingStart = new Date(activeRecording.startTime).getTime();
             const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
 
             if (isClipMode) {
@@ -294,7 +294,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                     }
                 } else {
                     if (onClipStartSet) onClipStartSet(localTimeSeconds);
-                    if (onClipEndSet) onClipEndSet(null);
+if (onClipEndSet) onClipEndSet(0);
                 }
             } else {
                 // Обычный режим - перемотка
@@ -506,7 +506,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
 
                 if (activeRecording) {
-                    const recordingStart = activeRecording.startTime.getTime();
+const recordingStart = new Date(activeRecording.startTime).getTime();
                     const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
 
                     if (localTimeSeconds >= 0) {
@@ -573,7 +573,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                     <div className="playhead-handle" />
                     <div className="playhead-time-label">
                         {activeRecording ?
-                            new Date(activeRecording.startTime.getTime() + getCurrentVideoTime() * 1000)
+new Date(new Date(activeRecording.startTime).getTime() + getCurrentVideoTime() * 1000)
                                 .toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'})
                             : ''}
                     </div>
@@ -612,7 +612,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                         <div
                             className="clip-marker start-marker"
                             style={{
-                                left: `${((activeRecording.startTime.getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
+left: `${((new Date(activeRecording.startTime).getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
                                     (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
                             }}
                         />
@@ -622,7 +622,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                         <div
                             className="clip-marker end-marker"
                             style={{
-                                left: `${((activeRecording.startTime.getTime() + clipEnd * 1000 - timelineVisibleRange.start.getTime()) /
+left: `${((new Date(activeRecording.startTime).getTime() + clipEnd * 1000 - timelineVisibleRange.start.getTime()) /
                                     (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
                             }}
                         />
@@ -632,7 +632,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                         <div
                             className="clip-selection"
                             style={{
-                                left: `${((activeRecording.startTime.getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
+left: `${((new Date(activeRecording.startTime).getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
                                     (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`,
                                 width: `${((clipEnd - clipStart) * 1000 /
                                     (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`

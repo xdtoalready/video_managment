@@ -64,12 +64,12 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
 
       try {
         // Получаем VOD URL от SentryShot API
-        const vodUrl = await sentryshotAPI.getVodUrl({
-          monitorId: recording.monitorId,
-          startTime: recording.startTime,
-          endTime: recording.endTime,
-          cacheId: `${recording.id}_${Date.now()}` // Уникальный ID кэша
-        });
+const vodUrl = await sentryshotAPI.getVodUrl(
+  recording.monitorId,
+  new Date(recording.startTime),
+  new Date(recording.endTime),
+Date.now()
+);
 
         console.log('VOD URL:', vodUrl);
 
@@ -309,7 +309,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
               Загрузка архивного видео...
               <br />
               <small>
-                {recording.cameraName} | {new Date(recording.startTime).toLocaleString('ru-RU')}
+                {recording.monitorName} | {new Date(recording.startTime).toLocaleString('ru-RU')}
               </small>
             </div>
         )}

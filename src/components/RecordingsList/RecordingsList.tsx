@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useStore, Recording, locationNames } from '../../store/useStore.ts';
 import { archiveAPI } from '../../api/archiveAPI';
 import './RecordingsList.css';
+import { sentryshotAPI } from '../../api/sentryshot';
 
 const RecordingsList: React.FC = () => {
   const {
@@ -71,7 +72,7 @@ const RecordingsList: React.FC = () => {
   // Генерация имени файла на основе данных записи
   const generateFileName = (recording: Recording): string => {
     // Генерируем имя файла на основе временной метки и ID камеры
-    const startTimeStr = recording.startTime.toISOString().replace(/[:.]/g, '-');
+    const startTimeStr = new Date(recording.startTime).toISOString().replace(/[:.]/g, '-');
     return `${recording.monitorId}_${startTimeStr}`;
   };
 
@@ -265,16 +266,16 @@ const RecordingsList: React.FC = () => {
                     key={recording.id}
                     className={`recording-row ${selectedItems.includes(recording.id) ? 'selected' : ''}`}
                     onClick={() => handleRecordingClick(recording)}
-                    title={`Нажмите для просмотра записи ${recording.cameraName}`}
+                    title={`Нажмите для просмотра записи ${recording.monitorName}`}
                 >
                   <div className="recording-cell">
-                    {formatDate(recording.startTime)}
+                   {formatDate(new Date(recording.startTime))}
                   </div>
                   <div className="recording-cell">
-                    {formatTime(recording.startTime)}
+                   {formatTime(new Date(recording.startTime))}
                   </div>
                   <div className="recording-cell">
-                    {formatTime(recording.endTime)}
+                   {formatTime(new Date(recording.endTime))}
                   </div>
                   <div className="recording-cell">
                     {formatDuration(recording.duration)}

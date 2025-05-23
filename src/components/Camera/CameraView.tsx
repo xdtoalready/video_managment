@@ -5,7 +5,7 @@ import { sentryshotAPI } from '../../api/sentryshot';
 
 interface CameraViewProps {
   streamUrl: string;
-  cameraName: string;
+  monitorName: string;
   monitorId: string;
   isActive?: boolean;
   onClick?: () => void;
@@ -13,7 +13,7 @@ interface CameraViewProps {
 
 const CameraView: React.FC<CameraViewProps> = ({
    streamUrl,
-   cameraName,
+   monitorName,
    monitorId,
    isActive = false,
    onClick
@@ -159,7 +159,7 @@ const CameraView: React.FC<CameraViewProps> = ({
       >
         <div className="camera-card-header">
           <div className="camera-header-left">
-            <span className="camera-card-title">{cameraName}</span>
+            <span className="camera-card-title">{monitorName}</span>
 
             {/* Индикаторы состояния */}
             <div className="camera-status-indicators">

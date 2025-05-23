@@ -372,7 +372,7 @@ const FooterPlayer: React.FC = () => {
       // Создаем скрытую ссылку для скачивания
       const downloadLink = document.createElement('a');
       downloadLink.href = downloadUrl;
-      downloadLink.download = `clip_${activeRecording.cameraName}_${formatTimeForFilename(clipStart)}-${formatTimeForFilename(clipEnd)}.mp4`;
+      downloadLink.download = `clip_${activeRecording.monitorName}_${formatTimeForFilename(clipStart)}-${formatTimeForFilename(clipEnd)}.mp4`;
 
       // Добавляем индикатор загрузки
       const loadingIndicator = document.createElement('div');
@@ -464,7 +464,7 @@ const FooterPlayer: React.FC = () => {
           <div className="controls-center">
             {/* Отображение названия камеры и записи */}
             <div className="camera-name badge-blue">
-              {activeRecording.cameraName}
+              {activeRecording.monitorName}
             </div>
 
             {/* Отображение текущего времени */}
@@ -472,7 +472,7 @@ const FooterPlayer: React.FC = () => {
               {formatTime(currentTime)} / {formatTime(duration)}
               <br />
               <small>
-                Запись: {activeRecording.startTime.toLocaleString('ru-RU')} — {activeRecording.endTime.toLocaleString('ru-RU')}
+		Запись: {new Date(activeRecording.startTime).toLocaleString('ru-RU')} — {new Date(activeRecording.endTime).toLocaleString('ru-RU')}
               </small>
             </div>
 

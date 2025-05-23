@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { useStore, ArchiveEvent } from '../../store/useStore.ts';
+import { useStore } from '../../store/useStore.ts';
+import { ArchiveEvent } from '../../api/archiveAPI';
 import './PlayListTimeLine.css';
+import { RecordingInfo } from '../../api/archiveAPI';
 
 const PlaylistTimeline: React.FC = () => {
   const { 
@@ -52,9 +54,9 @@ const PlaylistTimeline: React.FC = () => {
       const currentStart = recording.startTime;
       
       // Если есть пробел между записями
-      if (currentStart.getTime() > prevEnd.getTime()) {
-        const gapStart = calculatePosition(prevEnd);
-        const gapEnd = calculatePosition(currentStart);
+if (new Date(currentStart).getTime() > new Date(prevEnd).getTime()) {
+const gapStart = calculatePosition(new Date(prevEnd));
+const gapEnd = calculatePosition(new Date(currentStart));
         const gapWidth = gapEnd - gapStart;
         
         return (
@@ -65,7 +67,7 @@ const PlaylistTimeline: React.FC = () => {
               left: `${gapStart}%`,
               width: `${gapWidth}%`
             }}
-            title={`Пробел: ${formatTimeRange(prevEnd, currentStart)}`}
+title={`Пробел: ${formatTimeRange(new Date(prevEnd), new Date(currentStart))}`}
           />
         );
       }
@@ -77,7 +79,7 @@ const PlaylistTimeline: React.FC = () => {
   // Отрисовка записей
   const renderRecordings = () => {
     return playlist.items.map((recording: RecordingInfo, index: number) => {
-      const startPos = calculatePosition(recording.startTime);
+const startPos = calculatePosition(new Date(recording.startTime));
       const width = calculateWidth(recording.duration);
       
       return (
@@ -88,7 +90,7 @@ const PlaylistTimeline: React.FC = () => {
             left: `${startPos}%`,
             width: `${width}%`
           }}
-          title={`${recording.cameraName}: ${formatTimeRange(recording.startTime, recording.endTime)}`}
+title={`${recording.monitorName}: ${formatTimeRange(new Date(recording.startTime), new Date(recording.endTime))}`}
         />
       );
     });
@@ -96,7 +98,7 @@ const PlaylistTimeline: React.FC = () => {
   
   // Отрисовка событий
   const renderEvents = () => {
-    return playlist.events.map(event => {
+return playlist.events.map((event: ArchiveEvent) => {
       const eventPos = calculatePosition(event.timestamp);
       const eventWidth = event.duration ? calculateWidth(event.duration) : 0.5; // Минимальная ширина для точечных событий
       
