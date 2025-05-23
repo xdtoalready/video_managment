@@ -7,8 +7,8 @@ export interface RecordingInfo {
   monitorId: string;
   monitorName: string;
   location: LocationType;
-  startTime: string; // ISO формат времени начала
-  endTime: string;   // ISO формат времени окончания
+  startTime: Date; // ISO формат времени начала
+  endTime: Date;   // ISO формат времени окончания
   duration: number;  // Длительность в секундах
   fileUrl: string;   // URL для воспроизведения через VOD API
   fileSize?: number; // Размер файла в байтах (опционально)

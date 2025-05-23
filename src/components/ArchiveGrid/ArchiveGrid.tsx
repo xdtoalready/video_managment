@@ -1,7 +1,6 @@
 import React from 'react';
-import VideoPlayer from '../VideoPlayer/VideoPlayer';
+import VideoPlayer from '../video/VideoPlayer';
 import { useStore } from '../../store/useStore.ts';
-import './ArchiveGrid.css';
 
 interface ArchiveGridProps {
   // Можно добавить дополнительные пропсы если нужно

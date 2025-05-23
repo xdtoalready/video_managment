@@ -43,8 +43,8 @@ const PlaylistTimeline: React.FC = () => {
   // Отрисовка пробелов между записями
   const renderGaps = () => {
     if (!playlist.items.length) return null;
-    
-    return playlist.items.map((recording, index) => {
+
+    return playlist.items.map((recording: RecordingInfo, index: number) => {
       if (index === 0) return null;
       
       const prevRecording = playlist.items[index - 1];
@@ -76,7 +76,7 @@ const PlaylistTimeline: React.FC = () => {
   
   // Отрисовка записей
   const renderRecordings = () => {
-    return playlist.items.map((recording, index) => {
+    return playlist.items.map((recording: RecordingInfo, index: number) => {
       const startPos = calculatePosition(recording.startTime);
       const width = calculateWidth(recording.duration);
       

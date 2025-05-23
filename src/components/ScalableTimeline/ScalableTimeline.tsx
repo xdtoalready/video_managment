@@ -65,7 +65,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
     const timelineRef = useRef<HTMLDivElement>(null);
     const timelineContentRef = useRef<HTMLDivElement>(null);
-    const animationRef = useRef<number>();
+    const animationRef = useRef<number | null>(null);
     const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
     // Ref для плавного обновления без re-render

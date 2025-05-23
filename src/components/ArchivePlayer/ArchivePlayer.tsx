@@ -101,14 +101,16 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
                   console.error('Ошибка сети при загрузке архивного видео');
                   // Для архивного видео пытаемся перезагрузить
                   setTimeout(() => {
-                    if (hls && !hls.destroyed) {
+                    if (hls) {
+                      hls.destroy();
                       hls.startLoad();
                     }
                   }, 1000);
                   break;
                 case Hls.ErrorTypes.MEDIA_ERROR:
                   console.error('Ошибка медиа в архивном видео');
-                  if (hls && !hls.destroyed) {
+                  if (hls) {
+                    hls.destroy();
                     hls.recoverMediaError();
                   }
                   break;
@@ -179,7 +181,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
 
     // Очистка при размонтировании
     return () => {
-      if (hls && !hls.destroyed) {
+      if (hls) {
         hls.destroy();
       }
       if (videoElement) {
