@@ -290,7 +290,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
   const formatAbsoluteTime = (relativeTime: number) => {
     if (isNaN(relativeTime) || !recording) return '';
 
-    const absoluteTime = new Date(recording.startTime.getTime() + relativeTime * 1000);
+    const absoluteTime = new Date(new Date(recording.startTime).getTime() + relativeTime * 1000);
     return absoluteTime.toLocaleString('ru-RU', {
       hour: '2-digit',
       minute: '2-digit',
@@ -307,7 +307,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
               Загрузка архивного видео...
               <br />
               <small>
-                {recording.cameraName} | {recording.startTime.toLocaleString('ru-RU')}
+                {recording.cameraName} | {new Date(recording.startTime).toLocaleString('ru-RU')}
               </small>
             </div>
         )}

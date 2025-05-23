@@ -1,5 +1,5 @@
 import React from 'react';
-import VideoPlayer from './VideoPlayer';
+import VideoPlayer from '../VideoPlayer/VideoPlayer';
 import { useStore } from '../../store/useStore.ts';
 import './ArchiveGrid.css';
 

@@ -30,7 +30,7 @@ const ArchiveView: React.FC = () => {
     if (!videoElement || !activeRecording) return;
 
     // Вычисляем локальное время внутри записи
-    const localTime = (time.getTime() - activeRecording.startTime.getTime()) / 1000;
+    const localTime = (time.getTime() - new Date(activeRecording.startTime).getTime()) / 1000;
     if (localTime >= 0 && localTime <= videoElement.duration) {
       videoElement.currentTime = localTime;
 
@@ -61,7 +61,7 @@ const ArchiveView: React.FC = () => {
     if (!videoElement || !activeRecording) return;
 
     const currentLocalTime = videoElement.currentTime;
-    const globalTime = new Date(activeRecording.startTime.getTime() + currentLocalTime * 1000);
+    const globalTime = new Date(new Date(activeRecording.startTime).getTime() + currentLocalTime * 1000);
 
     // Запрашиваем у пользователя название закладки
     const label = prompt('Введите название закладки:');
