@@ -24,11 +24,8 @@ export const convertAPIRecording = (apiRecording: any): RecordingInfo => {
 // Безопасное форматирование даты
 export const safeFormatDate = (date: Date | string | null): string => {
     if (!date) return 'Н/Д';
-
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-
     if (isNaN(dateObj.getTime())) return 'Неверная дата';
-
     return dateObj.toLocaleDateString('ru-RU', {
         day: '2-digit',
         month: '2-digit',

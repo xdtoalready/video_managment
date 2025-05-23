@@ -608,7 +608,7 @@ if (onClipEndSet) onClipEndSet(0);
                     </div>
 
                     {/* Маркеры обрезки */}
-                    if (isClipMode && activeRecording && clipStart !== null && (
+                    {(isClipMode && activeRecording && clipStart !== null && (
                     <div
                         className="clip-marker start-marker"
                         style={{

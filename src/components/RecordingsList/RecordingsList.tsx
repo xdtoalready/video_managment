@@ -3,6 +3,7 @@ import { useStore, Recording, locationNames } from '../../store/useStore.ts';
 import { archiveAPI } from '../../api/archiveAPI';
 import './RecordingsList.css';
 import { sentryshotAPI } from '../../api/sentryshot';
+import {safeFormatDate} from "../../utils/recordingHelpers.ts";
 
 const RecordingsList: React.FC = () => {
   const {
@@ -258,7 +259,7 @@ const RecordingsList: React.FC = () => {
                     title={`Нажмите для просмотра записи ${recording.monitorName}`}
                 >
                   <div className="recording-cell">
-                    {formatDate(recording.startTime)}
+                    {safeFormatDate(recording.startTime)}
                   </div>
                   <div className="recording-cell">
                     {formatTime(recording.startTime)}
