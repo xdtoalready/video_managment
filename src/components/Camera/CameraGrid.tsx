@@ -39,7 +39,7 @@ const CameraGrid: React.FC = () => {
       <div className="camera-single-view-container">
         <CameraView 
           key={activeCamera.id}
-          cameraId={activeCamera.id}
+          monitorId={activeCamera.id}
           streamUrl={activeCamera.url}
           cameraName={activeCamera.name}
           isActive={true}
@@ -85,7 +85,7 @@ const CameraGrid: React.FC = () => {
         {filteredCameras.map(camera => (
           <CameraView 
             key={camera.id}
-            cameraId={camera.id}
+            monitorId={camera.id}
             streamUrl={camera.url}
             cameraName={camera.name}
             isActive={camera.isActive}

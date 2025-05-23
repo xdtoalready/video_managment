@@ -65,7 +65,7 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
       try {
         // Получаем VOD URL от SentryShot API
         const vodUrl = await sentryshotAPI.getVodUrl({
-          monitorId: recording.cameraId,
+          monitorId: recording.monitorId,
           startTime: recording.startTime,
           endTime: recording.endTime,
           cacheId: `${recording.id}_${Date.now()}` // Уникальный ID кэша

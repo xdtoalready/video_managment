@@ -41,7 +41,7 @@ const EventsSearch: React.FC<EventsSearchProps> = ({ onSelectEvent }) => {
 
         // Фильтруем события для текущей камеры
         let filteredEvents = timelineEvents.filter(event =>
-            event.cameraId === activeRecording.id
+            event.monitorId === activeRecording.id
         );
 
         // Фильтр по типам событий

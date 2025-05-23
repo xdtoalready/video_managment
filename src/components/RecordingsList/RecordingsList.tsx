@@ -72,7 +72,7 @@ const RecordingsList: React.FC = () => {
   const generateFileName = (recording: Recording): string => {
     // Генерируем имя файла на основе временной метки и ID камеры
     const startTimeStr = recording.startTime.toISOString().replace(/[:.]/g, '-');
-    return `${recording.cameraId}_${startTimeStr}`;
+    return `${recording.monitorId}_${startTimeStr}`;
   };
 
   // Форматирование длительности
@@ -83,9 +83,9 @@ const RecordingsList: React.FC = () => {
   };
 
   // Получение имени камеры по ID
-  const getCameraName = (cameraId: string): string => {
-    const camera = cameras.find(cam => cam.id === cameraId);
-    return camera ? camera.name : `Камера ${cameraId}`;
+  const getCameraName = (monitorId: string): string => {
+    const camera = cameras.find(cam => cam.id === monitorId);
+    return camera ? camera.name : `Камера ${monitorId}`;
   };
 
   // Обработчик клика по записи
@@ -145,7 +145,7 @@ const RecordingsList: React.FC = () => {
     try {
       // Для SentryShot нужно построить правильный URL для скачивания
       const downloadUrl = sentryshotAPI.getVodUrl(
-          recording.cameraId,
+          recording.monitorId,
           new Date(recording.startTime),
           new Date(recording.endTime)
       );
@@ -280,7 +280,7 @@ const RecordingsList: React.FC = () => {
                     {formatDuration(recording.duration)}
                   </div>
                   <div className="recording-cell">
-                    {getCameraName(recording.cameraId)}
+                    {getCameraName(recording.monitorId)}
                   </div>
                   <div className="recording-cell">
                     {locationNames[recording.location]}

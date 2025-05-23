@@ -363,7 +363,7 @@ const FooterPlayer: React.FC = () => {
 
       // Получаем URL для скачивания через VOD API
       const downloadUrl = sentryShotConfig.getVodUrl(
-          activeRecording.cameraId,
+          activeRecording.monitorId,
           startTime,
           endTime,
           `clip_${Date.now()}`

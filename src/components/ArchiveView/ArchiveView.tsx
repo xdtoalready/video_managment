@@ -70,7 +70,7 @@ const ArchiveView: React.FC = () => {
     // Добавляем закладку через хранилище
     const { addTimelineBookmark } = useStore.getState();
     addTimelineBookmark({
-      cameraId: activeRecording.id,
+      monitorId: activeRecording.id,
       time: globalTime,
       label,
       color: '#ffcc00' // Цвет по умолчанию

@@ -70,7 +70,7 @@ export type ArchiveViewMode = 'list' | 'single' | 'multi';
 // Интерфейс события
 export interface TimelineEvent {
   id: string;
-  cameraId: string;
+  monitorId: string;
   time: Date;
   type: EventType;
   label: string;
@@ -81,7 +81,7 @@ export interface TimelineEvent {
 // Интерфейс закладки
 export interface TimelineBookmark {
   id: string;
-  cameraId: string;
+  monitorId: string;
   time: Date;
   label: string;
   color: string;
@@ -167,21 +167,21 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   timelineBookmarks: TimelineBookmark[];
 
   // Методы для работы с событиями и закладками
-  fetchTimelineEvents: (cameraId: string, timeRange: { start: Date; end: Date }) => Promise<void>;
+  fetchTimelineEvents: (monitorId: string, timeRange: { start: Date; end: Date }) => Promise<void>;
   addTimelineBookmark: (bookmark: Omit<TimelineBookmark, 'id' | 'createdAt'>) => void;
   removeTimelineBookmark: (bookmarkId: string) => void;
   updateTimelineBookmark: (bookmarkId: string, updates: Partial<Omit<TimelineBookmark, 'id' | 'createdAt'>>) => void;
 
   // Методы для изменения состояния
-  setActiveCamera: (cameraId: string) => void;
+  setActiveCamera: (monitorId: string) => void;
   toggleGridView: () => void;
-  showSingleCamera: (cameraId: string) => void;
+  showSingleCamera: (monitorId: string) => void;
   showGridView: () => void;
   setViewMode: (mode: ViewMode) => void;
   toggleLocationSelection: (location: LocationType) => void;
   clearLocationSelections: () => void;
   addCamera: (camera: Omit<Camera, 'isActive'>) => void;
-  removeCamera: (cameraId: string) => void;
+  removeCamera: (monitorId: string) => void;
   loadCameras: () => Promise<void>;
 
   // Методы таймлайна
@@ -194,16 +194,16 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   generateTimelineMarks: () => TimelineMark[];
 
   // Методы для управления календарем
-  openCalendar: (cameraId: string) => void;
+  openCalendar: (monitorId: string) => void;
   closeCalendar: () => void;
   setCalendarDates: (startDate: Date, endDate: Date) => void;
   applyArchiveMode: () => void;
-  exitArchiveMode: (cameraId: string) => void;
+  exitArchiveMode: (monitorId: string) => void;
 
   // Методы управления мониторами
-  toggleMotionDetection: (cameraId: string, enable: boolean) => Promise<boolean>;
-  toggleObjectDetection: (cameraId: string, enable: boolean) => Promise<boolean>;
-  updateCameraSettings: (cameraId: string, settings: Partial<Camera>) => Promise<boolean>;
+  toggleMotionDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
+  toggleObjectDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
+  updateCameraSettings: (monitorId: string, settings: Partial<Camera>) => Promise<boolean>;
 }
 
 // Соответствие локаций и их русских названий
@@ -406,7 +406,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Определение локации для камеры (можно настроить в конфигурации)
-  _getLocationForCamera: (cameraId: string): LocationType => {
+  _getLocationForCamera: (monitorId: string): LocationType => {
     // Временная логика определения локации по ID
     const locationMap: Record<string, LocationType> = {
       '1': 'street',
@@ -417,7 +417,7 @@ export const useStore = create<AppState>((set, get) => ({
       // Добавьте больше маппингов по необходимости
     };
 
-    return locationMap[cameraId] || 'unknown';
+    return locationMap[monitorId] || 'unknown';
   },
 
   addCamera: async (camera: Omit<Camera, 'isActive'>) => {
@@ -455,14 +455,14 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  removeCamera: async (cameraId: string) => {
+  removeCamera: async (monitorId: string) => {
     try {
-      const success = await sentryshotAPI.deleteMonitor(cameraId);
+      const success = await sentryshotAPI.deleteMonitor(monitorId);
 
       if (success) {
         set(state => ({
-          cameras: state.cameras.filter(camera => camera.id !== cameraId),
-          activeCamera: state.activeCamera?.id === cameraId ? null : state.activeCamera
+          cameras: state.cameras.filter(camera => camera.id !== monitorId),
+          activeCamera: state.activeCamera?.id === monitorId ? null : state.activeCamera
         }));
         return true;
       }
@@ -474,30 +474,30 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  toggleMotionDetection: async (cameraId: string, enable: boolean) => {
+  toggleMotionDetection: async (monitorId: string, enable: boolean) => {
     try {
-      return await sentryshotAPI.toggleMotionDetection(cameraId, enable);
+      return await sentryshotAPI.toggleMotionDetection(monitorId, enable);
     } catch (error) {
       console.error('Ошибка управления детектором движения:', error);
       return false;
     }
   },
 
-  toggleObjectDetection: async (cameraId: string, enable: boolean) => {
+  toggleObjectDetection: async (monitorId: string, enable: boolean) => {
     try {
-      return await sentryshotAPI.toggleObjectDetection(cameraId, enable);
+      return await sentryshotAPI.toggleObjectDetection(monitorId, enable);
     } catch (error) {
       console.error('Ошибка управления детектором объектов:', error);
       return false;
     }
   },
 
-  updateCameraSettings: async (cameraId: string, settings: Partial<Camera>) => {
+  updateCameraSettings: async (monitorId: string, settings: Partial<Camera>) => {
     try {
       // Обновляем локально
       set(state => ({
         cameras: state.cameras.map(camera =>
-            camera.id === cameraId ? { ...camera, ...settings } : camera
+            camera.id === monitorId ? { ...camera, ...settings } : camera
         )
       }));
 
@@ -595,14 +595,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   // === ОСТАЛЬНЫЕ МЕТОДЫ (сохраняем как было, но адаптируем где нужно) ===
 
-  setActiveCamera: (cameraId: string) => {
+  setActiveCamera: (monitorId: string) => {
     set(state => {
       const updatedCameras = state.cameras.map(camera => ({
         ...camera,
-        isActive: camera.id === cameraId
+        isActive: camera.id === monitorId
       }));
 
-      const newActiveCamera = updatedCameras.find(camera => camera.id === cameraId) || null;
+      const newActiveCamera = updatedCameras.find(camera => camera.id === monitorId) || null;
 
       return {
         cameras: updatedCameras,
@@ -617,9 +617,9 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  showSingleCamera: (cameraId: string) => {
+  showSingleCamera: (monitorId: string) => {
     const setActiveCam = get().setActiveCamera;
-    setActiveCam(cameraId);
+    setActiveCam(monitorId);
     set({ isGridView: false });
   },
 
@@ -799,14 +799,14 @@ export const useStore = create<AppState>((set, get) => ({
 
   // === МЕТОДЫ СОБЫТИЙ И ЗАКЛАДОК ===
 
-  fetchTimelineEvents: async (cameraId, timeRange) => {
+  fetchTimelineEvents: async (monitorId, timeRange) => {
     try {
-      const events = await archiveAPI.getArchiveEvents(cameraId, timeRange.start, timeRange.end);
+      const events = await archiveAPI.getArchiveEvents(monitorId, timeRange.start, timeRange.end);
 
       // Преобразуем в формат TimelineEvent
       const timelineEvents = events.map(event => ({
         id: event.id,
-        cameraId: event.monitorId,
+        monitorId: event.monitorId,
         time: event.timestamp,
         type: event.type,
         label: event.label,
@@ -817,7 +817,7 @@ export const useStore = create<AppState>((set, get) => ({
       set(state => ({
         timelineEvents: [
           ...state.timelineEvents.filter(event =>
-              event.cameraId !== cameraId ||
+              event.monitorId !== monitorId ||
               event.time < timeRange.start ||
               event.time > timeRange.end
           ),
@@ -878,12 +878,12 @@ export const useStore = create<AppState>((set, get) => ({
 
   // === МЕТОДЫ КАЛЕНДАРЯ ===
 
-  openCalendar: (cameraId: string) => {
+  openCalendar: (monitorId: string) => {
     set(state => ({
       calendar: {
         ...state.calendar,
         isOpen: true,
-        activeCameraId: cameraId,
+        activeCameraId: monitorId,
         startDate: new Date(),
         endDate: new Date(new Date().getTime() + 3600000)
       }
@@ -929,10 +929,10 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   },
 
-  exitArchiveMode: (cameraId: string) => {
+  exitArchiveMode: (monitorId: string) => {
     set(state => ({
       cameras: state.cameras.map(camera =>
-          camera.id === cameraId ? {
+          camera.id === monitorId ? {
             ...camera,
             isArchiveMode: false,
             archiveStartDate: null,
