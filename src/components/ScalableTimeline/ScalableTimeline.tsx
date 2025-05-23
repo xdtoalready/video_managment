@@ -608,7 +608,7 @@ if (onClipEndSet) onClipEndSet(0);
                     </div>
 
                     {/* Маркеры обрезки */}
-                    {(isClipMode && activeRecording && clipStart !== null && (
+                    if (isClipMode && activeRecording && clipStart !== null && (
                     <div
                         className="clip-marker start-marker"
                         style={{
@@ -616,7 +616,7 @@ if (onClipEndSet) onClipEndSet(0);
                                 (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
                         }}
                     />
-                    )}
+                    )
 
                     {isClipMode && activeRecording && clipEnd !== null && (
                         <div
