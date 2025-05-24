@@ -612,8 +612,9 @@ if (onClipEndSet) onClipEndSet(0);
                     <div
                         className="clip-marker start-marker"
                         style={{
-                            left: `${((activeRecording?.startTime.getTime() + (clipStart || 0) * 1000 - timelineVisibleRange.start.getTime()) /
-                                (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
+                            left: `${activeRecording && timelineVisibleRange ?
+                                (((activeRecording.startTime.getTime() + (clipStart * 1000) - timelineVisibleRange.start.getTime()) /
+                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
                         }}
                     />
                     )
@@ -622,8 +623,9 @@ if (onClipEndSet) onClipEndSet(0);
                         <div
                             className="clip-marker end-marker"
                             style={{
-left: `${((new Date(activeRecording.startTime).getTime() + clipEnd * 1000 - timelineVisibleRange.start.getTime()) /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
+                                left: `${activeRecording && timelineVisibleRange ?
+                                    (((activeRecording.startTime.getTime() + (clipEnd * 1000) - timelineVisibleRange.start.getTime()) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
                             }}
                         />
                     )}
@@ -632,10 +634,12 @@ left: `${((new Date(activeRecording.startTime).getTime() + clipEnd * 1000 - time
                         <div
                             className="clip-selection"
                             style={{
-left: `${((new Date(activeRecording.startTime).getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`,
-                                width: `${((clipEnd - clipStart) * 1000 /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
+                                left: `${activeRecording && timelineVisibleRange ?
+                                    (((activeRecording.startTime.getTime() + (clipStart * 1000) - timelineVisibleRange.start.getTime()) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`,
+                                width: `${activeRecording && timelineVisibleRange ?
+                                    ((((clipEnd - clipStart) * 1000) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
                             }}
                         />
                     )}

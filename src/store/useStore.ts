@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { sentryshotAPI, TimeUtils } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
-import {getLocationForMonitor} from "../constants/locationMapping.ts";
+import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
 
 
 // Типы локаций камер
@@ -250,6 +250,10 @@ playlist: {
   currentTime: 0,
   seekToAbsolutePosition: (position: number) => {
     set({ currentTime: position });
+  },
+
+  getLocationForMonitor: (monitorId: string) => {
+    return getLocationFromMapping(monitorId);
   },
 
   // Аутентификация

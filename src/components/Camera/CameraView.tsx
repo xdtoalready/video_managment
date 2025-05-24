@@ -29,8 +29,7 @@ const CameraView: React.FC<CameraViewProps> = ({
     connectionStatus
   } = useStore();
 
-  // Строка 30 - получаем локацию через store метод
-    const location = getLocationForMonitor(monitorId);
+  const location = getLocationForMonitor(monitorId);
 
   // Получаем данные о камере из хранилища
   const camera = useStore(state => state.cameras.find(cam => cam.id === monitorId));
@@ -174,7 +173,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                 🔴
               </span>
               )}
-              {isArchiveMode && (
+              {camera?.isArchiveMode && (
                   <span className="status-indicator archive" title="Архивный режим">
                 📼
               </span>
@@ -185,7 +184,7 @@ const CameraView: React.FC<CameraViewProps> = ({
           {/* Меню управления камерой */}
           <div className="camera-header-right">
             {/* Кнопки управления детекторами (только для админов) */}
-            {showControls && isAuthenticated && !isArchiveMode && (
+            {showControls && isAuthenticated && !camera?.isArchiveMode && (
                 <div className="camera-controls">
                   <button
                       className="control-btn motion"
@@ -253,7 +252,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                   onError={handleVideoError}
                   className="camera-video"
                   isFullscreen={isActiveView}
-                  isArchiveMode={isArchiveMode}
+                  isArchiveMode={camera?.isArchiveMode}
                   onVideoClick={handleVideoClick}
                   monitorId={monitorId} // Передаем для правильной работы с SentryShot
               />
