@@ -26,18 +26,22 @@ src/
 ├── api/                    # API интеграция с SentryShot
 │   ├── sentryshot.ts      # Основной API клиент
 │   ├── archiveAPI.ts      # API для архивных записей
-│   └── authManager.ts     # Управление аутентификацией
+│   └── playerSlice.ts     # Слайс для управления плеером
 ├── components/            # React компоненты
-│   ├── Auth/              # Компоненты аутентификации
+│   ├── ArchiveFilters/    # Фильтры для архива
 │   ├── Camera/            # Компоненты камер
-│   ├── Video/             # Видеоплееры
-│   ├── Archive/           # Архивные компоненты
-│   └── Layout/            # Компоненты интерфейса
-├── config/                # Конфигурация
-│   └── sentryshot.ts      # Настройки SentryShot
+│   ├── ScalableTimeline/  # Масштабируемый таймлайн
+│   ├── EventsSearch/      # Поиск событий
+│   └── video/             # Видеоплееры
+├── constants/             # Константы и маппинги
+│   └── locationMapping.ts # Маппинг локаций камер
 ├── store/                 # Zustand state management
 │   └── useStore.ts        # Глобальное состояние
+├── types/                 # Типы и интерфейсы
+│   └── sentryshot.d.ts    # Типы для SentryShot API
 └── utils/                 # Утилиты
+    ├── dateHelpers.ts     # Утилиты для работы с датами
+    ├── recordingHelpers.ts # Утилиты для работы с записями
     └── streamerAdapter.ts # Адаптер для потокового видео
 ```
 
@@ -207,112 +211,163 @@ npm run build
 npm run preview
 ```
 
-## 🐳 Docker-compose для полного стека
+## 🔍 Архитектура и типы данных
 
-Создайте `docker-compose.yml` для запуска полного стека:
+### Ключевые типы и интерфейсы
 
-```yaml
-version: '3.8'
+#### Camera и Monitor
 
-services:
-  # SentryShot Backend
-  sentryshot:
-    image: codeberg.org/sentryshot/sentryshot:latest
-    container_name: sentryshot-backend
-    ports:
-      - "2020:2020"
-      - "2021:2021"
-    volumes:
-      - ./sentryshot-config:/config
-      - ./recordings:/recordings
-    restart: unless-stopped
-    networks:
-      - surveillance-net
+```typescript
+// Интерфейс Camera (без поля location)
+export interface Camera {
+  id: string;
+  name: string;
+  url: string;
+  isActive: boolean;
+  isArchiveMode?: boolean;
+  archiveStartDate?: Date | null;
+  archiveEndDate?: Date | null;
+  enable?: boolean;
+  alwaysRecord?: boolean;
+  videoLength?: number;
+  hasSubStream?: boolean;
+}
 
-  # React Frontend
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: surveillance-frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - sentryshot
-    environment:
-      - VITE_SENTRYSHOT_URL=http://sentryshot:2020
-    networks:
-      - surveillance-net
-
-  # Тестовая камера (опционально)
-  test-camera:
-    image: jrottenberg/ffmpeg:4.4-ubuntu
-    container_name: test-camera-stream
-    command: >
-      -re -f lavfi -i testsrc=size=1280x720:rate=30 
-      -c:v libx264 -preset ultrafast -tune zerolatency 
-      -f rtsp rtsp://0.0.0.0:8554/test
-    ports:
-      - "8554:8554"
-    networks:
-      - surveillance-net
-
-networks:
-  surveillance-net:
-    driver: bridge
-
-volumes:
-  recordings:
-  sentryshot-config:
+// Интерфейс Monitor (из SentryShot API)
+export interface Monitor {
+  id: string;
+  name: string;
+  enable: boolean;
+  source: {
+    rtsp: {
+      protocol: 'TCP' | 'UDP';
+      mainInput: string;
+      subInput?: string;
+    };
+  };
+  alwaysRecord: boolean;
+  videoLength: number;
+}
 ```
 
-Запуск полного стека:
+#### Локации и маппинг
 
-```bash
-docker-compose up -d
+```typescript
+// Типы локаций (в useStore.ts)
+export type LocationType =
+  | 'street'       // Улица
+  | 'house'        // Дом
+  | 'elevator'     // Лифт
+  | 'utility'      // Бытовка
+  | 'security'     // Комната охранника
+  | 'playground'   // Детская площадка
+  | 'parking'      // Парковка
+  | 'unknown';     // Неизвестная
+
+// Маппинг локаций (в locationMapping.ts)
+export const MONITOR_LOCATION_MAP: Record<string, LocationType> = {
+  '1': 'street',
+  '2': 'house',
+  '3': 'playground',
+  '4': 'elevator',
+  '5': 'security',
+  '6': 'parking',
+  '7': 'utility',
+  'monitor_1': 'street',
+  'monitor_2': 'house',
+  // ...
+};
+
+// Функция получения локации по ID монитора
+export const getLocationForMonitor = (monitorId: string): LocationType => {
+  return MONITOR_LOCATION_MAP[monitorId] || 'unknown';
+};
+
+// Функция получения названия локации
+export const getLocationNameForMonitor = (monitorId: string): string => {
+  const location = getLocationForMonitor(monitorId);
+  return locationNames[location];
+};
 ```
 
-## 🔧 Конфигурация камер
+#### Записи и события
 
-### Поддерживаемые форматы
-- **RTSP** (рекомендуется)
-- **HTTP/HTTPS** потоки
-- **ONVIF** устройства
-- **USB** камеры (только локально)
+```typescript
+// Интерфейс RecordingInfo
+export interface RecordingInfo {
+  id: string;
+  monitorId: string;
+  monitorName: string;
+  startTime: Date;  // Всегда Date, не string
+  endTime: Date;    // Всегда Date, не string
+  duration: number;
+  fileUrl: string;
+  fileSize?: number;
+  thumbnailUrl?: string;
+}
 
-### Пример конфигурации камер в SentryShot
+// Интерфейс ArchiveEvent
+export interface ArchiveEvent {
+  id: string;
+  monitorId: string;
+  timestamp: Date;  // Используется timestamp вместо time
+  type: 'motion' | 'object' | 'alarm' | 'custom';
+  label: string;
+  confidence: number;
+  duration?: number;
+  data?: any;
+  color: string;
+}
+```
 
-```toml
-# IP-камера
-[[monitors]]
-id = "outdoor_cam_1"
-name = "Уличная камера 1"
-enable = true
+### Работа с локациями
 
-[monitors.source]
-type = "rtsp"
-main = "rtsp://admin:password@192.168.1.100:554/h264Preview_01_main"
-sub = "rtsp://admin:password@192.168.1.100:554/h264Preview_01_sub"
+В проекте используется функциональный подход к работе с локациями камер. Вместо хранения локации как свойства объекта Camera, используется функция `getLocationForMonitor(monitorId)` для получения локации по ID камеры/монитора.
 
-# USB-камера
-[[monitors]]
-id = "usb_cam_1"
-name = "USB камера"
-enable = true
+#### Пример использования в компонентах:
 
-[monitors.source]
-type = "v4l2"
-main = "/dev/video0"
+```typescript
+// Получение локации камеры
+import { getLocationForMonitor } from '../../constants/locationMapping';
 
-# HTTP поток
-[[monitors]]
-id = "http_cam_1"
-name = "HTTP камера"
-enable = true
+// В компоненте
+const location = getLocationForMonitor(camera.id);
 
-[monitors.source]
-type = "http"
-main = "http://192.168.1.101:8080/video"
+// Получение названия локации
+import { getLocationNameForMonitor } from '../../constants/locationMapping';
+
+// В компоненте
+<span>{getLocationNameForMonitor(camera.id)}</span>
+```
+
+#### Фильтрация камер по локациям:
+
+```typescript
+// Получение доступных локаций
+const availableLocations = Array.from(
+  new Set(cameras.map(camera => getLocationForMonitor(camera.id)))
+) as LocationType[];
+
+// Фильтрация камер по выбранным локациям
+const filteredCameras = selectedLocations.length > 0
+  ? cameras.filter(camera => selectedLocations.includes(getLocationForMonitor(camera.id)))
+  : cameras;
+```
+
+### Работа с датами
+
+Все временные поля в интерфейсе `RecordingInfo` используют тип `Date`, а не `string`. При получении данных от API, строковые представления дат конвертируются в объекты Date:
+
+```typescript
+// Преобразование записи из API
+export const convertRecordingFromAPI = (apiRecording: any): RecordingInfo => {
+  return {
+    ...apiRecording,
+    startTime: new Date(apiRecording.startTime),
+    endTime: new Date(apiRecording.endTime),
+    location: getLocationForMonitor(apiRecording.monitorId)
+  };
+};
 ```
 
 ## 🎮 Управление
@@ -369,6 +424,28 @@ curl -u admin:password http://localhost:2020/api/monitors
 
 # Проверьте RTSP поток напрямую
 ffplay rtsp://admin:password@192.168.1.100:554/stream
+```
+
+### Проблемы с типами и компиляцией
+
+**Ошибки с типами Date/string**:
+- Убедитесь, что все поля `startTime` и `endTime` в `RecordingInfo` используют тип `Date`
+- При создании мок-данных используйте объекты Date напрямую, без вызова `.toISOString()`
+
+**Ошибки с локациями камер**:
+- Не обращайтесь к `camera.location` напрямую, используйте `getLocationForMonitor(camera.id)`
+- Для отображения названия локации используйте `getLocationNameForMonitor(camera.id)`
+
+**Ошибки с null/undefined**:
+- Добавляйте проверки на null/undefined при работе с объектами:
+```typescript
+// Пример безопасного доступа
+{activeRecording && timelineVisibleRange && (
+  <div style={{
+    left: `${((activeRecording.startTime.getTime() + (clipStart || 0) * 1000 - timelineVisibleRange.start.getTime()) /
+      (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
+  }}/>
+)}
 ```
 
 ### Проблемы с производительностью
@@ -453,14 +530,69 @@ server {
 ### Структура проекта
 - `src/api/` - Интеграция с SentryShot API
 - `src/components/` - React компоненты
+- `src/constants/` - Константы и маппинги
 - `src/store/` - Zustand state management
-- `src/config/` - Конфигурационные файлы
+- `src/utils/` - Утилиты и хелперы
 
 ### Добавление новых камер
 
 1. Добавьте камеру в конфигурацию SentryShot
 2. Перезапустите SentryShot
 3. Камера автоматически появится в интерфейсе
+
+### Добавление новых локаций
+
+1. Добавьте новый тип локации в `LocationType` в `useStore.ts`
+2. Добавьте название локации в `locationNames` в `useStore.ts`
+3. Добавьте маппинг ID монитора к локации в `MONITOR_LOCATION_MAP` в `locationMapping.ts`
+
+```typescript
+// В useStore.ts
+export type LocationType =
+  | 'street'
+  | 'house'
+  // ...
+  | 'new_location';  // Новая локация
+
+export const locationNames: Record<LocationType, string> = {
+  // ...
+  new_location: 'Новая локация'
+};
+
+// В locationMapping.ts
+export const MONITOR_LOCATION_MAP: Record<string, LocationType> = {
+  // ...
+  'monitor_new': 'new_location'
+};
+```
+
+### Оптимизация сборки
+
+Для уменьшения размера бандла и улучшения производительности:
+
+1. Используйте динамический импорт для компонентов, которые не нужны при первой загрузке:
+```javascript
+const SomeComponent = React.lazy(() => import('./SomeComponent'));
+```
+
+2. Настройте ручное разделение чанков через `build.rollupOptions.output.manualChunks` в vite.config.js:
+```javascript
+// vite.config.js
+export default defineConfig({
+  // ...
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'zustand'],
+          player: ['hls.js'],
+          ui: ['./src/components/layout']
+        }
+      }
+    }
+  }
+});
+```
 
 ### Кастомизация интерфейса
 
@@ -481,6 +613,7 @@ server {
 - [SentryShot Documentation](https://codeberg.org/SentryShot/sentryshot)
 - [React Documentation](https://react.dev)
 - [HLS.js Documentation](https://github.com/video-dev/hls.js/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 
 ### Сообщения об ошибках
 При обнаружении проблем создайте issue с указанием:
@@ -495,4 +628,4 @@ MIT License - детали в файле LICENSE
 
 ---
 
-**Примечание**: Данная система предназначена для профессионального использования с SentryShot backend. Убедитесь, что у вас есть все необходимые разрешения для видеонаблюдения.
+**Примечание**: Данная система предназначена для профессионального использования. Убедитесь, что у вас есть все необходимые разрешения для трансляции видеонаблюдения.
