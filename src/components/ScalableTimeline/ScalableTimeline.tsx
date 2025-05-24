@@ -613,7 +613,7 @@ if (onClipEndSet) onClipEndSet(0);
                         className="clip-marker start-marker"
                         style={{
                             left: `${activeRecording && timelineVisibleRange ?
-                                (((activeRecording.startTime.getTime() + (clipStart * 1000) - timelineVisibleRange.start.getTime()) /
+                                (((activeRecording.startTime.getTime() + (clipStart as number * 1000) - timelineVisibleRange.start.getTime()) /
                                     (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
                         }}
                     />
