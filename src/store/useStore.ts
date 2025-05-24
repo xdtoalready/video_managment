@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { sentryshotAPI, TimeUtils } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
+import {getLocationForMonitor} from "../constants/locationMapping.ts";
 
 
 // Типы локаций камер
@@ -151,10 +152,10 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   // Данные
   cameras: Camera[];
   activeCamera: Camera | null;
-  selectedLocations: LocationType[]; // Массив для множественного выбора
+  selectedLocations: LocationType[];
   viewMode: ViewMode;
   isGridView: boolean;
-  _getLocationForCamera: (cameraId: string) => LocationType;
+  getLocationForMonitor: (monitorId: string) => LocationType;
 
 playlist: {
     items: RecordingInfo[];
@@ -432,21 +433,6 @@ playlist: {
     }
   },
 
-  // Определение локации для камеры (можно настроить в конфигурации)
-  _getLocationForCamera: (monitorId: string): LocationType => {
-    // Временная логика определения локации по ID
-    const locationMap: Record<string, LocationType> = {
-      '1': 'street',
-      '2': 'house',
-      '3': 'playground',
-      '4': 'elevator',
-      '5': 'security',
-      // Добавьте больше маппингов по необходимости
-    };
-
-    return locationMap[monitorId] || 'unknown';
-  },
-
   addCamera: async (camera: Omit<Camera, 'isActive'>) => {
     try {
       // Создаем монитор в SentryShot
@@ -537,19 +523,6 @@ playlist: {
   },
 
   // === АРХИВНЫЕ ЗАПИСИ ===
-
-  getLocationForCamera: (cameraId: string): LocationType => {
-    // Это маппинг должен храниться отдельно от API данных
-    const locationMap: Record<string, LocationType> = {
-      'monitor_1': 'street',
-      'monitor_2': 'house',
-      'monitor_3': 'playground',
-      'monitor_4': 'elevator',
-      'monitor_5': 'security',
-    };
-
-    return locationMap[cameraId] || 'unknown';
-  },
 
   loadRecordings: async () => {
     try {

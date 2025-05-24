@@ -1,4 +1,4 @@
-import { LocationType } from '../store/useStore';
+import { LocationType, locationNames } from '../store/useStore';
 
 // Централизованный маппинг монитор ID -> локация
 export const MONITOR_LOCATION_MAP: Record<string, LocationType> = {
@@ -16,6 +16,11 @@ export const MONITOR_LOCATION_MAP: Record<string, LocationType> = {
     'monitor_5': 'security',
     'monitor_6': 'parking',
     'monitor_7': 'utility',
+};
+
+export const getLocationNameForMonitor = (monitorId: string): string => {
+    const location = getLocationForMonitor(monitorId);
+    return locationNames[location];
 };
 
 export const getLocationForMonitor = (monitorId: string): LocationType => {

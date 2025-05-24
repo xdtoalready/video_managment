@@ -282,7 +282,7 @@ const EventsSearch: React.FC<EventsSearchProps> = ({ onSelectEvent }) => {
                             <li
                                 key={event.id}
                                 className={`event-item event-type-${event.type}`}
-                                onClick={() => handleEventClick(event.time)}
+                                onClick={() => handleEventClick(event.timestamp)}
                             >
                                 <div className="event-icon">{getEventTypeIcon(event.type)}</div>
                                 <div className="event-content">

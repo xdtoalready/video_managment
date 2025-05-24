@@ -612,7 +612,7 @@ if (onClipEndSet) onClipEndSet(0);
                     <div
                         className="clip-marker start-marker"
                         style={{
-                            left: `${((activeRecording.startTime.getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
+                            left: `${((activeRecording?.startTime.getTime() + (clipStart || 0) * 1000 - timelineVisibleRange.start.getTime()) /
                                 (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
                         }}
                     />

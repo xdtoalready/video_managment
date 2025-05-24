@@ -31,7 +31,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     hasError,
     isReconnecting,
     error
-  } = useStreamer(videoRef, {
+  } = useStreamer(videoRef as RefObject<HTMLVideoElement>, {
     monitorId,
     preferLowRes: !isFullscreen,
   });

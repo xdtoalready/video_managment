@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import VideoPlayer from '../video/VideoPlayer.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
+import { getLocationForMonitor } from '../../constants/locationMapping';
 
 interface CameraViewProps {
   streamUrl: string;
@@ -29,7 +30,7 @@ const CameraView: React.FC<CameraViewProps> = ({
   } = useStore();
 
   // Строка 30 - получаем локацию через store метод
-  const location = useStore(state => state.getLocationForCamera(monitorId));
+    const location = getLocationForMonitor(monitorId);
 
   // Получаем данные о камере из хранилища
   const camera = useStore(state => state.cameras.find(cam => cam.id === monitorId));

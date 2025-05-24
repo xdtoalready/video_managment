@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useStore, LocationType, locationNames } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
-import { getLocationForMonitor } from '../../constants/locationMapping';
+import { getLocationForMonitor, getLocationNameForMonitor } from '../constants/locationMapping';
 import './ArchiveFilters.css';
 
 const ArchiveFilters: React.FC = () => {
@@ -150,12 +150,12 @@ const ArchiveFilters: React.FC = () => {
 
   // Получаем доступные локации из камер
   const availableLocations = Array.from(
-      new Set(cameras.map(camera => camera.location))
+      new Set(cameras.map(camera => getLocationForMonitor(camera.id)))
   ) as LocationType[];
 
   // Фильтрация камер по выбранным локациям
   const filteredCameras = selectedLocations.length > 0
-      ? cameras.filter(camera => selectedLocations.includes(camera.location))
+      ? cameras.filter(camera => selectedLocations.includes(getLocationForMonitor(camera.id)))
       : cameras;
 
   return (
@@ -265,7 +265,7 @@ const ArchiveFilters: React.FC = () => {
                               </div>
                             </div>
                             <span>{locationNames[location]}</span>
-                            <small>({cameras.filter(cam => cam.location === location).length})</small>
+                            <small>({cameras.filter(cam => getLocationForMonitor(cam.id) === location).length})</small>
                           </div>
                         </label>
                       </div>
@@ -327,7 +327,7 @@ const ArchiveFilters: React.FC = () => {
                               </div>
                             </div>
                             <span>{camera.name}</span>
-                            <small>({locationNames[camera.location]})</small>
+                            <small>({getLocationNameForMonitor(camera.id)})</small>
                           </div>
                         </label>
                       </div>

@@ -99,8 +99,8 @@ export interface RecordingInfo {
   id: string;
   monitorId: string;
   monitorName: string;
-  startTime: string;
-  endTime: string;
+  startTime: Date;
+  endTime: Date;
   duration: number;
   fileUrl: string;
   fileSize?: number;
