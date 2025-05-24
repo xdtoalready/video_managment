@@ -1,8 +1,7 @@
-// src/components/ArchiveFilters/ArchiveFilters.tsx - Обновленный для SentryShot API
 import React, { useEffect, useState } from 'react';
 import { useStore, LocationType, locationNames } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
-import { getLocationForMonitor, getLocationNameForMonitor } from '../constants/locationMapping';
+import { getLocationForMonitor, getLocationNameForMonitor } from '../../constants/locationMapping';
 import './ArchiveFilters.css';
 
 const ArchiveFilters: React.FC = () => {
