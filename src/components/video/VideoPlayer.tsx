@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, RefObject } from 'react';
 import { useStreamer } from '../../utils/streamerAdapter';
 import './VideoPlayer.css';
 
@@ -25,7 +25,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
   // Используем обновленный streamer adapter
-const connectionState = useStreamer(videoRef as React.RefObject<HTMLVideoElement>, {
+  const {
+    connectionState,
+    isConnected,
+    hasError,
+    isReconnecting,
+    error
+  } = useStreamer(videoRef as RefObject<HTMLVideoElement>, {
     monitorId,
     preferLowRes: !isFullscreen,
   });
@@ -92,10 +98,10 @@ const connectionState = useStreamer(videoRef as React.RefObject<HTMLVideoElement
 
   // Сообщаем об ошибках родительскому компоненту
   useEffect(() => {
-    if (connectionState.hasError && onError) {
-onError("Ошибка соединения");
+    if (hasError && onError && error) {
+      onError(error);
     }
-}, [connectionState.hasError, onError]);
+  }, [hasError, error, onError]);
 
   // Функции управления
   const togglePlay = (e?: React.MouseEvent) => {
@@ -179,14 +185,14 @@ onError("Ошибка соединения");
             }
           }}
       >
-{!connectionState.isConnected && !connectionState.hasError && (
+        {!isConnected && !hasError && (
             <div className="video-loading">Подключение к потоку...</div>
         )}
 
-{connectionState.hasError && (
+        {hasError && (
             <div className="video-error">
               <div>Ошибка подключения</div>
-<small>Ошибка соединения</small>
+              <small>{error || 'Неизвестная ошибка'}</small>
             </div>
         )}
 

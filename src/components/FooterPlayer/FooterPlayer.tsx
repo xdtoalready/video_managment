@@ -82,12 +82,12 @@ const FooterPlayer: React.FC = () => {
   useEffect(() => {
     if (activeRecording) {
       // Устанавливаем видимый диапазон вокруг текущей записи
-      const recordingDuration = new Date(activeRecording.endTime).getTime() - new Date(activeRecording.startTime).getTime();
+      const recordingDuration = activeRecording.endTime.getTime() - activeRecording.startTime.getTime();
       const padding = recordingDuration * 0.5; // 50% отступ с каждой стороны
 
       useStore.getState().setTimelineVisibleRange({
-        start: new Date(new Date(activeRecording.startTime).getTime() - padding),
-        end: new Date(new Date(activeRecording.endTime).getTime() + padding)
+        start: new Date(activeRecording.startTime.getTime() - padding),
+        end: new Date(activeRecording.endTime.getTime() + padding)
       });
     }
   }, [activeRecording]);
@@ -358,8 +358,8 @@ const FooterPlayer: React.FC = () => {
 
     try {
       // Создаем временные метки для SentryShot API
-      const startTime = new Date(new Date(activeRecording.startTime).getTime() + clipStart * 1000);
-      const endTime = new Date(new Date(activeRecording.startTime).getTime() + clipEnd * 1000);
+      const startTime = new Date(activeRecording.startTime.getTime() + clipStart * 1000);
+      const endTime = new Date(activeRecording.startTime.getTime() + clipEnd * 1000);
 
       // Получаем URL для скачивания через VOD API
       const downloadUrl = sentryShotConfig.getVodUrl(
@@ -472,7 +472,7 @@ const FooterPlayer: React.FC = () => {
               {formatTime(currentTime)} / {formatTime(duration)}
               <br />
               <small>
-		Запись: {new Date(activeRecording.startTime).toLocaleString('ru-RU')} — {new Date(activeRecording.endTime).toLocaleString('ru-RU')}
+                Запись: {activeRecording.startTime.toLocaleString('ru-RU')} — {activeRecording.endTime.toLocaleString('ru-RU')}
               </small>
             </div>
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import VideoPlayer from '../video/VideoPlayer.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
+import { getLocationForMonitor } from '../../constants/locationMapping';
 
 interface CameraViewProps {
   streamUrl: string;
@@ -27,6 +28,8 @@ const CameraView: React.FC<CameraViewProps> = ({
     isAuthenticated,
     connectionStatus
   } = useStore();
+
+  const location = getLocationForMonitor(monitorId);
 
   // Получаем данные о камере из хранилища
   const camera = useStore(state => state.cameras.find(cam => cam.id === monitorId));
@@ -135,9 +138,6 @@ const CameraView: React.FC<CameraViewProps> = ({
   // Определение, показывать ли камеру в активном режиме
   const isActiveView = isActive && !isGridView;
 
-  // Определение архивного режима
-  const isArchiveMode = camera?.isArchiveMode || false;
-
   // Определяем правильные классы для разных режимов
   let cardClass = 'camera-card';
   if (!isGridView && isActive) {
@@ -173,7 +173,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                 🔴
               </span>
               )}
-              {isArchiveMode && (
+              {camera?.isArchiveMode && (
                   <span className="status-indicator archive" title="Архивный режим">
                 📼
               </span>
@@ -184,7 +184,7 @@ const CameraView: React.FC<CameraViewProps> = ({
           {/* Меню управления камерой */}
           <div className="camera-header-right">
             {/* Кнопки управления детекторами (только для админов) */}
-            {showControls && isAuthenticated && !isArchiveMode && (
+            {showControls && isAuthenticated && !camera?.isArchiveMode && (
                 <div className="camera-controls">
                   <button
                       className="control-btn motion"
@@ -252,7 +252,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                   onError={handleVideoError}
                   className="camera-video"
                   isFullscreen={isActiveView}
-                  isArchiveMode={isArchiveMode}
+                  isArchiveMode={camera?.isArchiveMode}
                   onVideoClick={handleVideoClick}
                   monitorId={monitorId} // Передаем для правильной работы с SentryShot
               />

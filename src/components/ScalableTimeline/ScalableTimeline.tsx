@@ -209,7 +209,7 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
         const centerTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetFromCenterMs;
 
         // Рассчитываем локальное время внутри записи
-const recordingStart = new Date(activeRecording.startTime).getTime();
+        const recordingStart = activeRecording.startTime.getTime();
         const localTimeSeconds = (centerTimeMs - recordingStart) / 1000;
 
         // Обновляем время видео с ограничениями
@@ -278,7 +278,7 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
         const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
 
         if (activeRecording) {
-const recordingStart = new Date(activeRecording.startTime).getTime();
+            const recordingStart = activeRecording.startTime.getTime();
             const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
 
             if (isClipMode) {
@@ -506,7 +506,7 @@ if (onClipEndSet) onClipEndSet(0);
                 const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
 
                 if (activeRecording) {
-const recordingStart = new Date(activeRecording.startTime).getTime();
+                    const recordingStart = activeRecording.startTime.getTime();
                     const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
 
                     if (localTimeSeconds >= 0) {
@@ -573,7 +573,7 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
                     <div className="playhead-handle" />
                     <div className="playhead-time-label">
                         {activeRecording ?
-new Date(new Date(activeRecording.startTime).getTime() + getCurrentVideoTime() * 1000)
+                            new Date(activeRecording.startTime.getTime() + getCurrentVideoTime() * 1000)
                                 .toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'})
                             : ''}
                     </div>
@@ -608,22 +608,24 @@ new Date(new Date(activeRecording.startTime).getTime() + getCurrentVideoTime() *
                     </div>
 
                     {/* Маркеры обрезки */}
-                    {isClipMode && activeRecording && clipStart !== null && (
-                        <div
-                            className="clip-marker start-marker"
-                            style={{
-left: `${((new Date(activeRecording.startTime).getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
-                            }}
-                        />
-                    )}
+                    if (isClipMode && activeRecording && clipStart !== null && (
+                    <div
+                        className="clip-marker start-marker"
+                        style={{
+                            left: `${activeRecording && timelineVisibleRange ?
+                                (((activeRecording.startTime.getTime() + (clipStart as number * 1000) - timelineVisibleRange.start.getTime()) /
+                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
+                        }}
+                    />
+                    )
 
                     {isClipMode && activeRecording && clipEnd !== null && (
                         <div
                             className="clip-marker end-marker"
                             style={{
-left: `${((new Date(activeRecording.startTime).getTime() + clipEnd * 1000 - timelineVisibleRange.start.getTime()) /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
+                                left: `${activeRecording && timelineVisibleRange ?
+                                    (((activeRecording.startTime.getTime() + (clipEnd * 1000) - timelineVisibleRange.start.getTime()) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
                             }}
                         />
                     )}
@@ -632,10 +634,12 @@ left: `${((new Date(activeRecording.startTime).getTime() + clipEnd * 1000 - time
                         <div
                             className="clip-selection"
                             style={{
-left: `${((new Date(activeRecording.startTime).getTime() + clipStart * 1000 - timelineVisibleRange.start.getTime()) /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`,
-                                width: `${((clipEnd - clipStart) * 1000 /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100}%`
+                                left: `${activeRecording && timelineVisibleRange ?
+                                    (((activeRecording.startTime.getTime() + (clipStart * 1000) - timelineVisibleRange.start.getTime()) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`,
+                                width: `${activeRecording && timelineVisibleRange ?
+                                    ((((clipEnd - clipStart) * 1000) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
                             }}
                         />
                     )}

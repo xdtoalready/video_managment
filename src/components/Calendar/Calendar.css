@@ -46,7 +46,7 @@
 }
 
 .current-date-selector {
-	background-color(--color-main2);
+  background-color: var(--color-main2);
 }
 
 .dropdown-arrow {

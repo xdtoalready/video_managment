@@ -91,7 +91,7 @@ export interface Camera {
   id: string;
   name: string;
   url: string;
-  location?: string;
+  // location?: string; <- Не понятно будет ли добавлен?
   isActive: boolean;
 }
 
@@ -99,9 +99,9 @@ export interface RecordingInfo {
   id: string;
   monitorId: string;
   monitorName: string;
-  startTime: string; // ISO строка
-  endTime: string;   // ISO строка
-  duration: number;  // в секундах
+  startTime: Date;
+  endTime: Date;
+  duration: number;
   fileUrl: string;
   fileSize?: number;
   thumbnailUrl?: string;
@@ -175,8 +175,7 @@ export const sentryshotAPI = {
       return monitors.map(monitor => ({
         id: monitor.id,
         name: monitor.name,
-        url: monitor.source.rtsp.mainInput,
-        location: 'unknown', // SentryShot не хранит локации в мониторах
+        url: `/stream/${monitor.id}/index.m3u8`,
         isActive: monitor.enable
       }));
     } catch (error) {
@@ -317,7 +316,6 @@ export const sentryshotAPI = {
 
     const recordings: RecordingInfo[] = [];
 
-    // Генерируем несколько записей в течение дня
     for (let hour = 8; hour < 20; hour += 2) {
       const startTime = new Date(baseTime);
       startTime.setHours(hour, Math.floor(Math.random() * 60), 0, 0);
@@ -329,11 +327,11 @@ export const sentryshotAPI = {
         id: `${monitorId}_${startTime.getTime()}`,
         monitorId,
         monitorName: `Monitor ${monitorId}`,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
+        startTime: startTime,
+        endTime: endTime,
         duration: (endTime.getTime() - startTime.getTime()) / 1000,
         fileUrl: this.getVodUrl(monitorId, startTime, endTime),
-        fileSize: Math.floor(Math.random() * 1000000000), // Случайный размер
+        fileSize: Math.floor(Math.random() * 1000000000),
       });
     }
 

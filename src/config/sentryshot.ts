@@ -185,7 +185,7 @@ export class SentryShotConfigManager {
     }
 
     public getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId?: string): string {
-        const startNano = startTime.getTime() * 1000000; // Конвертируем в наносекунды
+        const startNano = startTime.getTime() * 1000000; // Убрали toISOString()
         const endNano = endTime.getTime() * 1000000;
         const cache = cacheId || `${monitorId}_${Date.now()}`;
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { sentryshotAPI, TimeUtils } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
+import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
 
 
 // Типы локаций камер
@@ -42,13 +43,11 @@ export interface Camera {
   id: string;
   name: string;
   url: string;
-  location: LocationType;
+  // location: LocationType; <- Добавим отдельный маппинг
   isActive: boolean;
   isArchiveMode?: boolean;
   archiveStartDate?: Date | null;
   archiveEndDate?: Date | null;
-
-  // Дополнительные поля из SentryShot Monitor
   enable?: boolean;
   alwaysRecord?: boolean;
   videoLength?: number;
@@ -73,7 +72,7 @@ export type ArchiveViewMode = 'list' | 'single' | 'multi';
 export interface TimelineEvent {
   id: string;
   monitorId: string;
-  time: Date;
+  timestamp: Date;
   type: EventType;
   label: string;
   confidence?: number;
@@ -153,10 +152,10 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   // Данные
   cameras: Camera[];
   activeCamera: Camera | null;
-  selectedLocations: LocationType[]; // Массив для множественного выбора
+  selectedLocations: LocationType[];
   viewMode: ViewMode;
   isGridView: boolean;
-  _getLocationForCamera: (cameraId: string) => LocationType;
+  getLocationForMonitor: (monitorId: string) => LocationType;
 
 playlist: {
     items: RecordingInfo[];
@@ -251,6 +250,10 @@ playlist: {
   currentTime: 0,
   seekToAbsolutePosition: (position: number) => {
     set({ currentTime: position });
+  },
+
+  getLocationForMonitor: (monitorId: string) => {
+    return getLocationFromMapping(monitorId);
   },
 
   // Аутентификация
@@ -411,10 +414,8 @@ playlist: {
 
       const cameras = await sentryshotAPI.getCameras();
 
-      // Преобразуем мониторы в камеры с дополнительными полями
       const enhancedCameras = cameras.map(camera => ({
         ...camera,
-location: archiveAPI._getLocationByMonitorId(camera.id),
         isArchiveMode: false,
         archiveStartDate: null,
         archiveEndDate: null
@@ -434,21 +435,6 @@ location: archiveAPI._getLocationByMonitorId(camera.id),
         isOnline: false
       });
     }
-  },
-
-  // Определение локации для камеры (можно настроить в конфигурации)
-  _getLocationForCamera: (monitorId: string): LocationType => {
-    // Временная логика определения локации по ID
-    const locationMap: Record<string, LocationType> = {
-      '1': 'street',
-      '2': 'house',
-      '3': 'playground',
-      '4': 'elevator',
-      '5': 'security',
-      // Добавьте больше маппингов по необходимости
-    };
-
-    return locationMap[monitorId] || 'unknown';
   },
 
   addCamera: async (camera: Omit<Camera, 'isActive'>) => {
@@ -838,7 +824,7 @@ location: archiveAPI._getLocationByMonitorId(camera.id),
       const timelineEvents = events.map(event => ({
         id: event.id,
         monitorId: event.monitorId,
-        time: event.timestamp,
+        timestamp: event.timestamp,
         type: event.type,
         label: event.label,
         confidence: event.confidence,
@@ -849,8 +835,8 @@ location: archiveAPI._getLocationByMonitorId(camera.id),
         timelineEvents: [
           ...state.timelineEvents.filter(event =>
               event.monitorId !== monitorId ||
-              event.time < timeRange.start ||
-              event.time > timeRange.end
+              event.timestamp < timeRange.start ||
+              event.timestamp > timeRange.end
           ),
           ...timelineEvents
         ]

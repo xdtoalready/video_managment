@@ -62,18 +62,18 @@ const EventsSearch: React.FC<EventsSearchProps> = ({ onSelectEvent }) => {
         // Фильтр по временному диапазону
         if (dateRange.start) {
             filteredEvents = filteredEvents.filter(event =>
-                event.time >= dateRange.start!
+                event.timestamp >= dateRange.start!
             );
         }
 
         if (dateRange.end) {
             filteredEvents = filteredEvents.filter(event =>
-                event.time <= dateRange.end!
+                event.timestamp <= dateRange.end!
             );
         }
 
         // Сортируем по времени (от новых к старым)
-        filteredEvents.sort((a, b) => b.time.getTime() - a.time.getTime());
+        filteredEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
         setSearchResults(filteredEvents);
     }, [
@@ -129,8 +129,8 @@ const EventsSearch: React.FC<EventsSearchProps> = ({ onSelectEvent }) => {
     };
 
     // Обработчик клика по событию
-    const handleEventClick = (time: Date) => {
-        onSelectEvent(time);
+    const handleEventClick = (timestamp: Date) => {
+        onSelectEvent(timestamp);
     };
 
     // Форматирование даты и времени
@@ -282,7 +282,7 @@ const EventsSearch: React.FC<EventsSearchProps> = ({ onSelectEvent }) => {
                             <li
                                 key={event.id}
                                 className={`event-item event-type-${event.type}`}
-                                onClick={() => handleEventClick(event.time)}
+                                onClick={() => handleEventClick(event.timestamp)}
                             >
                                 <div className="event-icon">{getEventTypeIcon(event.type)}</div>
                                 <div className="event-content">
@@ -290,7 +290,7 @@ const EventsSearch: React.FC<EventsSearchProps> = ({ onSelectEvent }) => {
                                         <span className="event-label">{event.label}</span>
                                         <span className="event-type-badge">{getEventTypeName(event.type)}</span>
                                     </div>
-                                    <div className="event-time">{formatDateTime(event.time)}</div>
+                                    <div className="event-time">{formatDateTime(event.timestamp)}</div>
                                 </div>
                             </li>
                         ))}
