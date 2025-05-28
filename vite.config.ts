@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react( )],
   base: '/', // Базовый путь для всех ассетов
   build: {
-    outDir: '/dist', // Выходная директория для сборки
+    outDir: 'dist', // Выходная директория для сборки
     emptyOutDir: true, // Очистка директории перед сборкой
     assetsDir: 'assets', // Директория для ассетов внутри outDir
     sourcemap: false, // Отключаем sourcemaps для production
