@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react( )],
   base: '/', // Базовый путь для всех ассетов
   build: {
-    outDir: '../sentryshot-react-fork/web/react-ui/dist', // Выходная директория для сборки
+    outDir: '/dist', // Выходная директория для сборки
     emptyOutDir: true, // Очистка директории перед сборкой
     assetsDir: 'assets', // Директория для ассетов внутри outDir
     sourcemap: false, // Отключаем sourcemaps для production
