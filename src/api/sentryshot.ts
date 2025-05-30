@@ -43,7 +43,7 @@ class AuthManager {
     }
 
     try {
-      const response = await fetch('/api/account/my-token', {
+      const response = await fetch(`${API_BASE_URL}/api/account/my-token`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       });
@@ -151,7 +151,7 @@ export const sentryshotAPI = {
 
   async getMonitors(): Promise<Monitor[]> {
     try {
-      const response = await fetch('/api/monitors', {
+      const response = await fetch(`${API_BASE_URL}/api/monitors`, {
         method: 'GET',
         headers: this.auth.getAuthHeaders()
       });
@@ -175,7 +175,7 @@ export const sentryshotAPI = {
       return monitors.map(monitor => ({
         id: monitor.id,
         name: monitor.name,
-        url: `/stream/${monitor.id}/index.m3u8`,
+        url: `${STREAM_BASE_URL}/stream/${monitor.id}/index.m3u8`,
         isActive: monitor.enable
       }));
     } catch (error) {
@@ -186,7 +186,7 @@ export const sentryshotAPI = {
 
   async createOrUpdateMonitor(monitor: Monitor): Promise<boolean> {
     try {
-      const response = await fetch('/api/monitor', {
+      const response = await fetch(`${API_BASE_URL}/api/monitor`, {
         method: 'PUT',
         headers: await this.auth.getModifyHeaders(),
         body: JSON.stringify(monitor)
@@ -201,7 +201,7 @@ export const sentryshotAPI = {
 
   async deleteMonitor(monitorId: string): Promise<boolean> {
     try {
-      const response = await fetch(`/api/monitor?id=${monitorId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}`, {
         method: 'DELETE',
         headers: await this.auth.getModifyHeaders()
       });
@@ -217,7 +217,7 @@ export const sentryshotAPI = {
   async toggleMotionDetection(monitorId: string, enable: boolean): Promise<boolean> {
     try {
       const action = enable ? 'enable' : 'disable';
-      const response = await fetch(`/api/monitor/${monitorId}/motion/${action}`, {
+      const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}/motion/${action}`, {
         method: 'PATCH',
         headers: await this.auth.getModifyHeaders()
       });
@@ -232,7 +232,7 @@ export const sentryshotAPI = {
   async toggleObjectDetection(monitorId: string, enable: boolean): Promise<boolean> {
     try {
       const action = enable ? 'enable' : 'disable';
-      const response = await fetch(`/api/monitor/${monitorId}/tflite/${action}`, {
+      const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}/tflite/${action}`, {
         method: 'PATCH',
         headers: await this.auth.getModifyHeaders()
       });
@@ -246,22 +246,35 @@ export const sentryshotAPI = {
 
   // === ПОТОКОВОЕ ВИДЕО ===
 
-  // Получение URL потокового видео (HLS)
+  // Получение URL потокового видео
   getStreamUrl(monitorId: string, useSubStream = false): string {
-    // SentryShot использует /stream без префикса /api
-    const baseUrl = `/stream/${monitorId}`;
+    // SentryShot использует /stream или /hls без префикса /api для HLS
+    // STREAM_BASE_URL должен быть пустым или указывать на корень сервера, например, '' или 'http://localhost:2020'
+    // Конфигурация base URL для стримов должна быть отдельной от API_BASE_URL
+    const streamBase = STREAM_BASE_URL || ''; // Если STREAM_BASE_URL не определен, используем относительный путь
+    let streamPath = `/stream/${monitorId}/index.m3u8`; // Путь по умолчанию для SentryShot HLS через его встроенный /stream/
+                                                         // или если используется внешний HLS сервер на /hls/
+
+    // Проверяем, соответствует ли стандартный бэкенд SentryShot HLS
+    // Если бэкенд сконфигурирован на /hls/, а не /stream/
+    // const backendHlsPath = "/hls/"; // Это нужно будет выяснить из конфигурации бэкенда
+    // streamPath = `${backendHlsPath}${monitorId}/index.m3u8`;
+
 
     if (useSubStream) {
-      // Для sub-потока можно добавить параметр (если поддерживается)
-      return `${baseUrl}/index.m3u8?quality=sub`;
+      return `${streamBase}${streamPath}?quality=sub`; // Параметр ?quality=sub может быть специфичен для реализации
     }
 
-    return `${baseUrl}/index.m3u8`;
+    return `${streamBase}${streamPath}`;
   },
 
-  // Получение URL прямого потока (не HLS)
+  // Получение URL прямого потока (не HLS) - этот метод может быть не актуален для SentryShot
+  // или должен быть адаптирован под SP стример (/api/streamer/play)
   getDirectStreamUrl(monitorId: string): string {
-    return `/stream/${monitorId}`;
+    // Для SP стримера этот URL должен указывать на /api/streamer/play с параметрами сессии.
+    // Для HLS это может быть тот же URL, что и getStreamUrl.
+    // В текущей реализации SentryShot, "прямой" поток обычно HLS.
+    return `${STREAM_BASE_URL || ''}/stream/${monitorId}`; // Пример, если бэкенд отдает MP4 напрямую по этому пути, что маловероятно для SentryShot
   },
 
   // === АРХИВНЫЕ ЗАПИСИ ===
@@ -270,39 +283,67 @@ export const sentryshotAPI = {
   getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId = 1): string {
     const start = TimeUtils.isoToUnixNano(startTime.toISOString());
     const end = TimeUtils.isoToUnixNano(endTime.toISOString());
-
-    return `/vod?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheId}`;
+    // VOD эндпоинт в SentryShot обычно /vod/vod.mp4 и находится НЕ под /api/
+    // STREAM_BASE_URL должен быть пустым или указывать на корень сервера
+    const vodBase = STREAM_BASE_URL || '';
+    return `${vodBase}/vod/vod.mp4?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheId}`;
   },
 
-  // Получение списка записей (этот эндпоинт может потребовать дополнительной реализации на бэкенде)
+  // Получение списка записей
   async getRecordings(monitorId: string, date: Date): Promise<RecordingInfo[]> {
     try {
-      // Пытаемся использовать предполагаемый эндпоинт
-      const formattedDate = date.toISOString().split('T')[0];
-      const response = await fetch(`/api/recordings/${monitorId}?date=${formattedDate}`, {
+      const queryParams = new URLSearchParams({
+        monitors: monitorId,
+        // Примечание: Фильтрация по 'date' требует преобразования в параметры,
+        // которые понимает /api/recording/query (например, 'recording-id' для пагинации,
+        // или бэкенд должен поддерживать фильтрацию по временному диапазону).
+        // Для простоты, можно запросить все записи для монитора и фильтровать на клиенте,
+        // либо передать параметры 'limit' и 'reverse: true', чтобы получить последние.
+        // Здесь мы просто передаем дату, ожидая, что бэкенд сможет это обработать или это будет доработано.
+        // Для примера, если бы мы хотели получить записи за весь день:
+        // const dayStart = new Date(date); dayStart.setHours(0,0,0,0);
+        // const dayEnd = new Date(date); dayEnd.setHours(23,59,59,999);
+        // queryParams.set('start_time_ge', TimeUtils.isoToUnixNano(dayStart.toISOString()).toString());
+        // queryParams.set('start_time_le', TimeUtils.isoToUnixNano(dayEnd.toISOString()).toString());
+        // Однако, стандартный SentryShot /api/recording/query не имеет таких параметров.
+        // Он использует 'recording-id' для пагинации.
+        // Возможно, потребуется несколько запросов или доработка бэкенда для эффективной фильтрации по дате.
+        "include-data": "true", // Обычно нужно для получения startTime, endTime
+        reverse: "true" // Получить последние записи первыми
+      });
+
+      // Если хотим ограничить количество записей, можно добавить:
+      // queryParams.set('limit', '100');
+
+      const response = await fetch(`${API_BASE_URL}/api/recording/query?${queryParams.toString()}`, {
         headers: this.auth.getAuthHeaders()
       });
 
       if (!response.ok) {
-        console.warn('Эндпоинт recordings не найден, используем мок-данные');
-        // Возвращаем мок-данные как fallback
+        console.warn(`Эндпоинт /api/recording/query вернул ошибку ${response.status}, используем мок-данные`);
         return this._getMockRecordings(monitorId, date);
       }
 
-      const recordings = await response.json();
+      const backendRecordings = await response.json();
 
       // Преобразуем в нужный формат, если необходимо
-      return recordings.map((rec: any) => ({
-        id: rec.id,
-        monitorId: rec.monitorId || monitorId,
-        monitorName: rec.monitorName || `Monitor ${monitorId}`,
-        startTime: rec.startTime,
-        endTime: rec.endTime,
-        duration: rec.duration,
-        fileUrl: this.getVodUrl(monitorId, new Date(rec.startTime), new Date(rec.endTime)),
-        fileSize: rec.fileSize,
-        thumbnailUrl: rec.thumbnailUrl
-      }));
+      return Object.values(backendRecordings || {}).map((rec: any) => {
+        // Backend присылает объект, где ключи - это ID записей
+        const videoId = rec.id; // ID самой записи
+        const recMonitorId = videoId.slice(20); // ID монитора извлекается из ID записи в старом SentryShot
+
+        return {
+          id: videoId,
+          monitorId: recMonitorId, // Используем ID монитора из записи
+          monitorName: rec.data?.monitorName || `Monitor ${recMonitorId}`, // Имя монитора может быть в data
+          startTime: new Date(TimeUtils.unixNanoToIso(rec.data.start)), // Время начала из data
+          endTime: new Date(TimeUtils.unixNanoToIso(rec.data.end)),     // Время конца из data
+          duration: (rec.data.end - rec.data.start) / 1_000_000_000, // Длительность в секундах
+          fileUrl: this.getVodUrl(recMonitorId, new Date(TimeUtils.unixNanoToIso(rec.data.start)), new Date(TimeUtils.unixNanoToIso(rec.data.end)), videoId),
+          fileSize: rec.data?.sizeBytes, // Размер файла, если есть
+          thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${videoId}` // URL для миниатюры
+        };
+      });
     } catch (error) {
       console.error('Ошибка при получении записей:', error);
       return this._getMockRecordings(monitorId, date);
@@ -370,7 +411,7 @@ export const sentryshotAPI = {
         queryParams.set('limit', params.limit.toString());
       }
 
-      const response = await fetch(`/api/log/query?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/api/log/query?${queryParams.toString()}`, {
         headers: this.auth.getAuthHeaders()
       });
 
@@ -410,7 +451,7 @@ export const sentryshotAPI = {
 
       // Определяем протокол WebSocket на основе текущего протокола
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/logs?${queryParams}`;
+      const wsUrl = `${protocol}//${window.location.host}${API_BASE_URL}/api/log/feed?${queryParams.toString()}`;
 
       const ws = new WebSocket(wsUrl);
 
@@ -431,7 +472,7 @@ export const sentryshotAPI = {
   // Проверка доступности API
   async checkHealth(): Promise<boolean> {
     try {
-      const response = await fetch('/api/monitors', {
+      const response = await fetch(`${API_BASE_URL}/api/monitors`, {
         method: 'HEAD',
         headers: this.auth.getAuthHeaders()
       });
@@ -447,7 +488,7 @@ export const sentryshotAPI = {
   async getSystemInfo(): Promise<any> {
     try {
       // Этот эндпоинт может не существовать в SentryShot
-      const response = await fetch('/api/system/info', {
+      const response = await fetch(`${API_BASE_URL}/api/system/info`, {
         headers: this.auth.getAuthHeaders()
       });
 
