@@ -1573,3 +1573,7 @@ button:focus, button:focus-visible {
   justify-content: space-between;
   padding: 16px !important;
 }
+
+.camera-retry-btn {
+  margin-top: 24px;
+}
