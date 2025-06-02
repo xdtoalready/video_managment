@@ -37,7 +37,7 @@
 }
 
 .camera-status-indicators .status-indicator {
-  padding: 0;
+  padding: 0 !important;
 }
 
 .camera-header-left {
@@ -77,7 +77,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 16px !important;
 }
 
 .camera-active .camera-card-header {
