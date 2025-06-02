@@ -36,8 +36,18 @@
   background-color: var(--white);
 }
 
+.camera-status-indicators .status-indicator {
+  padding: 0;
+}
+
 .camera-header-left {
   display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.camera-retry-btn {
+  margin-top: 12px;
 }
 
 .camera-card:hover {
@@ -67,7 +77,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
+  padding: 16px;
 }
 
 .camera-active .camera-card-header {
