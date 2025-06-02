@@ -23,19 +23,19 @@ const CameraView: React.FC<CameraViewProps> = ({
     openCalendar,
     exitArchiveMode,
     isGridView,
-    toggleMotionDetection,
-    toggleObjectDetection,
     isAuthenticated,
-    connectionStatus
+    connectionStatus,
+    cameras
   } = useStore();
 
   const location = getLocationForMonitor(monitorId);
 
   // Получаем данные о камере из хранилища
-  const camera = useStore(state => state.cameras.find(cam => cam.id === monitorId));
+  const camera = cameras.find(cam => cam.id === monitorId);
 
   const [error, setError] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(false);
+  const [isTogglingCamera, setIsTogglingCamera] = useState(false);
 
   // Обработчик ошибок видеоплеера
   const handleVideoError = (errorMessage: string) => {
@@ -85,41 +85,54 @@ const CameraView: React.FC<CameraViewProps> = ({
     }
   };
 
-  // Переключение детектора движения
-  const handleToggleMotion = async (e: React.MouseEvent) => {
+  // Включение/отключение камеры (через обновление монитора)
+  const handleToggleCamera = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !camera) return;
+
+    setIsTogglingCamera(true);
+    setError(null);
 
     try {
-      const enable = !camera?.enable; // Инвертируем текущее состояние
-      const success = await toggleMotionDetection(monitorId, enable);
+      // Получаем текущую конфигурацию монитора
+      const monitors = await sentryshotAPI.getMonitors();
+      const currentMonitor = monitors.find(m => m.id === monitorId);
+      
+      if (!currentMonitor) {
+        setError('Монитор не найден');
+        return;
+      }
 
-      if (!success) {
-        setError('Ошибка при управлении детектором движения');
+      // Создаем обновленную конфигурацию
+      const updatedMonitor = {
+        ...currentMonitor,
+        enable: !currentMonitor.enable
+      };
+
+      console.log(`${currentMonitor.enable ? 'Отключение' : 'Включение'} камеры ${monitorId}`);
+
+      // Отправляем обновленную конфигурацию
+      const success = await sentryshotAPI.createOrUpdateMonitor(updatedMonitor);
+
+      if (success) {
+        // Обновляем локальное состояние
+        const { updateCameraSettings } = useStore.getState();
+        await updateCameraSettings(monitorId, { isActive: !currentMonitor.enable });
+        
+        // Перезагружаем список камер для обновления состояния
+        const { loadCameras } = useStore.getState();
+        await loadCameras();
+        
+        console.log(`Камера ${monitorId} ${!currentMonitor.enable ? 'включена' : 'отключена'}`);
+      } else {
+        setError('Ошибка при изменении состояния камеры');
       }
     } catch (error) {
-      console.error('Ошибка управления детектором:', error);
-      setError('Ошибка при управлении детектором движения');
-    }
-  };
-
-  // Переключение детектора объектов
-  const handleToggleObjects = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (!isAuthenticated) return;
-
-    try {
-      const enable = !camera?.enable; // Инвертируем текущее состояние
-      const success = await toggleObjectDetection(monitorId, enable);
-
-      if (!success) {
-        setError('Ошибка при управлении детектором объектов');
-      }
-    } catch (error) {
-      console.error('Ошибка управления детектором:', error);
-      setError('Ошибка при управлении детектором объектов');
+      console.error('Ошибка управления камерой:', error);
+      setError('Ошибка при управлении камерой');
+    } finally {
+      setIsTogglingCamera(false);
     }
   };
 
@@ -146,8 +159,9 @@ const CameraView: React.FC<CameraViewProps> = ({
     cardClass = 'camera-card';
   }
 
-  // Показываем индикатор отключения если камера неактивна
-  const isCameraOffline = connectionStatus !== 'connected' || !camera?.enable;
+  // Определяем состояние камеры
+  const isCameraOffline = connectionStatus !== 'connected' || !camera?.isActive;
+  const isCameraEnabled = camera?.isActive || false;
 
   return (
       <div
@@ -163,19 +177,33 @@ const CameraView: React.FC<CameraViewProps> = ({
 
             {/* Индикаторы состояния */}
             <div className="camera-status-indicators">
-              {isCameraOffline && (
-                  <span className="status-indicator offline" title="Камера отключена">
-                ⭕
+              {connectionStatus !== 'connected' && (
+                  <span className="status-indicator server-offline" title="Нет соединения с сервером">
+                🔴 Сервер
               </span>
               )}
-              {camera?.alwaysRecord && (
+              
+              {connectionStatus === 'connected' && !isCameraEnabled && (
+                  <span className="status-indicator camera-disabled" title="Камера отключена">
+                ⭕ Отключена
+              </span>
+              )}
+              
+              {connectionStatus === 'connected' && isCameraEnabled && (
+                  <span className="status-indicator camera-online" title="Камера работает">
+                🟢 Онлайн
+              </span>
+              )}
+              
+              {camera?.alwaysRecord && isCameraEnabled && (
                   <span className="status-indicator recording" title="Идет запись">
-                🔴
+                🔴 Запись
               </span>
               )}
+              
               {camera?.isArchiveMode && (
                   <span className="status-indicator archive" title="Архивный режим">
-                📼
+                📼 Архив
               </span>
               )}
             </div>
@@ -183,28 +211,12 @@ const CameraView: React.FC<CameraViewProps> = ({
 
           {/* Меню управления камерой */}
           <div className="camera-header-right">
-            {/* Кнопки управления детекторами (только для админов) */}
-            {showControls && isAuthenticated && !camera?.isArchiveMode && (
-                <div className="camera-controls">
-                  <button
-                      className="control-btn motion"
-                      onClick={handleToggleMotion}
-                      title="Детектор движения"
-                  >
-                    🏃
-                  </button>
-                  <button
-                      className="control-btn objects"
-                      onClick={handleToggleObjects}
-                      title="Детектор объектов"
-                  >
-                    👤
-                  </button>
-                </div>
-            )}
-
-            {/* Основное меню */}
-            <button className="camera-menu-button" onClick={handleOpenCalendar}>
+            {/* Основное меню (календарь) */}
+            <button 
+                className="camera-menu-button" 
+                onClick={handleOpenCalendar}
+                title="Открыть архив"
+            >
               <span className="menu-button-circle"></span>
               <span className="menu-button-circle"></span>
               <span className="menu-button-circle"></span>
@@ -213,22 +225,30 @@ const CameraView: React.FC<CameraViewProps> = ({
         </div>
 
         <div className={`camera-view ${isActive ? 'active' : ''}`}>
-          {/* Индикатор отключенной камеры */}
-          {isCameraOffline ? (
+          {/* Показываем сообщение если нет соединения с сервером */}
+          {connectionStatus !== 'connected' ? (
+              <div className="camera-offline">
+                <div className="camera-offline-icon">🌐</div>
+                <div className="camera-offline-message">
+                  Нет соединения с сервером SentryShot
+                </div>
+                <div className="camera-offline-details">
+                  Статус: {connectionStatus}
+                </div>
+              </div>
+          ) : !isCameraEnabled ? (
               <div className="camera-offline">
                 <div className="camera-offline-icon">📷</div>
                 <div className="camera-offline-message">
-                  {connectionStatus !== 'connected' ? 'Нет соединения с сервером' : 'Камера отключена'}
+                  Камера отключена
                 </div>
-                {connectionStatus === 'connected' && (
+                {isAuthenticated && (
                     <button
                         className="camera-enable-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Здесь можно добавить логику включения камеры
-                        }}
+                        onClick={handleToggleCamera}
+                        disabled={isTogglingCamera}
                     >
-                      Включить камеру
+                      {isTogglingCamera ? 'Включение...' : 'Включить камеру'}
                     </button>
                 )}
               </div>
@@ -254,7 +274,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                   isFullscreen={isActiveView}
                   isArchiveMode={camera?.isArchiveMode}
                   onVideoClick={handleVideoClick}
-                  monitorId={monitorId} // Передаем для правильной работы с SentryShot
+                  monitorId={monitorId}
               />
           )}
 
@@ -275,18 +295,27 @@ const CameraView: React.FC<CameraViewProps> = ({
               </>
           )}
 
-          {/* Индикатор качества соединения */}
-          {!isCameraOffline && showControls && (
+          {/* Индикатор качества соединения (только для онлайн режима) */}
+          {isCameraEnabled && !camera?.isArchiveMode && showControls && (
               <div className="stream-quality-indicator">
                 <div className="quality-bars">
-                  <div className="quality-bar active"></div>
-                  <div className="quality-bar active"></div>
+                  <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>
+                  <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>
                   <div className="quality-bar"></div>
                   <div className="quality-bar"></div>
                 </div>
               </div>
           )}
         </div>
+
+        {/* Информация о камере (показываем при наведении) */}
+        {showControls && (
+            <div className="camera-info-tooltip">
+              <div>ID: {monitorId}</div>
+              <div>Статус: {isCameraEnabled ? 'Включена' : 'Отключена'}</div>
+              {camera?.alwaysRecord && <div>Запись: Включена</div>}
+            </div>
+        )}
       </div>
   );
 };
