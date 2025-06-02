@@ -318,6 +318,10 @@
   color: var(--text-color);
 }
 
+.info-value.connection-status {
+  margin-bottom: 0;
+}
+
 .connection-status.connected {
   color: #4caf50;
 }
@@ -487,11 +491,11 @@
   background-color: #f8f9fa;
 }
 
-.checkbox-label {
+/* .checkbox-label {
   display: block;
   cursor: pointer;
   width: 100%;
-}
+} */
 
 .checkbox-wrapper {
   display: flex;
