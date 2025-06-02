@@ -36,16 +36,6 @@
   background-color: var(--white);
 }
 
-.camera-status-indicators .status-indicator {
-  padding: 0 !important;
-}
-
-.camera-header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 .camera-retry-btn {
   margin-top: 12px;
 }
@@ -70,28 +60,9 @@
   box-shadow: none;
 }
 
-.camera-card-header {
-  z-index: 50;
-  width: 100%;
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px !important;
-}
-
 .camera-active .camera-card-header {
   padding: 15px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
-}
-
-.camera-card-title,
-.badge-sticker {
-  font-weight: 500;
-  color: #333333;
-  padding: 4px 8px;
-  background-color: #F2F3F7;
-  border-radius: 10px;
 }
 
 .camera-active .camera-card-title {

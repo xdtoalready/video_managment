@@ -1544,3 +1544,32 @@ button:focus, button:focus-visible {
 /*    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);*/
 /*  }*/
 /*}*/
+
+.camera-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.camera-status-indicators .status-indicator {
+  padding: 0 !important;
+}
+
+.camera-card-title,
+.badge-sticker {
+  font-weight: 500;
+  color: #333333;
+  padding: 4px 8px;
+  background-color: #F2F3F7;
+  border-radius: 10px;
+}
+
+.camera-card-header {
+  z-index: 50;
+  width: 100%;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px !important;
+}
