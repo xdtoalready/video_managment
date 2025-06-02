@@ -78,7 +78,7 @@ export interface Monitor {
   enable: boolean;
   source: {
     rtsp: {
-      protocol: 'TCP' | 'UDP';
+      protocol: 'TCP' | 'UDP' | 'tcp' | 'udp';
       mainInput: string;
       subInput?: string;
     };
@@ -161,8 +161,35 @@ export const sentryshotAPI = {
       }
 
       const data = await response.json();
-      console.log('Получены мониторы:', data);
-      return data;
+      console.log('Получены мониторы (сырые данные):', data);
+
+      // SentryShot возвращает объект, где ключи - это ID мониторов
+      // Преобразуем объект в массив
+      if (typeof data === 'object' && data !== null) {
+        const monitorsArray = Object.entries(data).map(([monitorId, monitorData]: [string, any]) => {
+          // Нормализуем структуру монитора
+          return {
+            id: monitorId,
+            name: monitorData.name || `Monitor ${monitorId}`,
+            enable: monitorData.enable || false,
+            source: {
+              rtsp: {
+                protocol: monitorData.source?.rtsp?.protocol || 'TCP',
+                mainInput: monitorData.source?.rtsp?.mainStream || monitorData.source?.rtsp?.mainInput || '',
+                subInput: monitorData.source?.rtsp?.subStream || monitorData.source?.rtsp?.subInput || undefined
+              }
+            },
+            alwaysRecord: monitorData.alwaysRecord || false,
+            videoLength: monitorData.videoLength || 60
+          } as Monitor;
+        });
+        
+        console.log('Преобразованные мониторы:', monitorsArray);
+        return monitorsArray;
+      } else {
+        console.warn('Неожиданный формат данных мониторов:', data);
+        return [];
+      }
     } catch (error) {
       console.error('Ошибка при получении мониторов:', error);
       return [];
@@ -173,13 +200,39 @@ export const sentryshotAPI = {
   async getCameras(): Promise<Camera[]> {
     try {
       const monitors = await this.getMonitors();
+      console.log('Преобразование мониторов в камеры, количество мониторов:', monitors.length);
 
-      return monitors.map(monitor => ({
-        id: monitor.id,
-        name: monitor.name,
-        url: `${STREAM_BASE_URL}/stream/${monitor.id}/index.m3u8`,
-        isActive: monitor.enable
-      }));
+      if (!Array.isArray(monitors)) {
+        console.error('getMonitors() не вернул массив:', monitors);
+        return [];
+      }
+
+      const cameras = monitors.map(monitor => {
+        // Создаем URL потока, учитывая различные варианты структуры данных
+        let streamUrl = `${STREAM_BASE_URL}/stream/${monitor.id}/index.m3u8`;
+        
+        // Проверяем, есть ли HLS эндпоинт в конфигурации
+        // (это может варьироваться в зависимости от настроек SentryShot)
+        if (STREAM_BASE_URL) {
+          streamUrl = `${STREAM_BASE_URL}/stream/${monitor.id}/index.m3u8`;
+        } else {
+          // Относительный путь для случаев когда фронтенд и бэкенд на одном домене
+          streamUrl = `/stream/${monitor.id}/index.m3u8`;
+        }
+
+        const camera: Camera = {
+          id: monitor.id,
+          name: monitor.name,
+          url: streamUrl,
+          isActive: monitor.enable
+        };
+
+        console.log(`Создана камера: ${camera.name} (${camera.id}) - ${camera.isActive ? 'активна' : 'неактивна'}`);
+        return camera;
+      });
+
+      console.log(`Успешно преобразовано ${cameras.length} мониторов в камеры`);
+      return cameras;
     } catch (error) {
       console.error('Ошибка при получении камер:', error);
       return [];
@@ -267,7 +320,7 @@ export const sentryshotAPI = {
 
   // === АРХИВНЫЕ ЗАПИСИ ===
 
-  // Получение архивного видео через VOD API
+  // Получение архивного видео через VOD API (ИСПРАВЛЕНО)
   getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId: string | number = Date.now()): string {
     const start = TimeUtils.isoToUnixNano(startTime.toISOString());
     const end = TimeUtils.isoToUnixNano(endTime.toISOString());
