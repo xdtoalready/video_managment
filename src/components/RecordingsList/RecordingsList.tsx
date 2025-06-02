@@ -285,24 +285,6 @@ const RecordingsList: React.FC = () => {
               <li>Проблемы с доступом к архиву на сервере</li>
             </ul>
           </div>
-          
-          <div className="empty-actions">
-            <button onClick={refreshRecordings} className="refresh-button">
-              Обновить
-            </button>
-          </div>
-          
-          {/* Текущие фильтры */}
-          <div className="current-filters">
-            <h4>Текущие фильтры:</h4>
-            <div>Период: {archiveFilters.dateRange.start.toLocaleDateString()} - {archiveFilters.dateRange.end.toLocaleDateString()}</div>
-            {archiveFilters.cameras.length > 0 && (
-              <div>Камеры: {archiveFilters.cameras.length} выбрано</div>
-            )}
-            {archiveFilters.locations.length > 0 && (
-              <div>Локации: {archiveFilters.locations.map(loc => locationNames[loc]).join(', ')}</div>
-            )}
-          </div>
         </div>
       </div>
     );
@@ -321,24 +303,6 @@ const RecordingsList: React.FC = () => {
           >
             {isLoading ? 'Обновление...' : 'Обновить'}
           </button>
-
-          {/* Мультиселект временно отключен */}
-          {/*<button
-            className={`multi-select-btn ${isMultiSelectMode ? 'active' : ''}`} 
-            onClick={toggleMultiSelectMode}
-          >
-            {isMultiSelectMode ? 'Отменить выбор' : 'Выбрать несколько'}
-          </button>
-          
-          {isMultiSelectMode && (
-            <button 
-              className="view-selected-btn" 
-              onClick={handleViewMultiple}
-              disabled={selectedItems.length === 0}
-            >
-              Просмотреть выбранные ({selectedItems.length})
-            </button>
-          )}*/}
         </div>
       </div>
 
