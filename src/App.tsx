@@ -23,27 +23,42 @@ function App() {
   const connectingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Инициализация приложения
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // Проверяем статус аутентификации при загрузке
-        if (isAuthenticated) {
-          await checkAuthStatus();
-
-          // Загружаем камеры только если подключение активно
-          if (connectionStatus === 'connected') {
-            await loadCameras();
+useEffect(() => {
+  const initializeApp = async () => {
+    try {
+      // Пытаемся восстановить аутентификацию
+      const savedAuth = localStorage.getItem('sentryshot_auth');
+      if (savedAuth) {
+        try {
+          const authData = JSON.parse(savedAuth);
+          // Проверяем, что данные не старше 24 часов
+          if (Date.now() - authData.timestamp < 24 * 60 * 60 * 1000) {
+            // Восстанавливаем сессию
+            const success = await login(authData.username, authData.password);
+            if (success) {
+              console.log('Сессия восстановлена');
+            } else {
+              console.log('Не удалось восстановить сессию');
+              localStorage.removeItem('sentryshot_auth');
+            }
+          } else {
+            // Данные устарели
+            localStorage.removeItem('sentryshot_auth');
           }
+        } catch (e) {
+          console.error('Ошибка парсинга сохраненной аутентификации');
+          localStorage.removeItem('sentryshot_auth');
         }
-      } catch (error) {
-        console.error('Ошибка инициализации приложения:', error);
-      } finally {
-        setIsInitializing(false);
       }
-    };
+    } catch (error) {
+      console.error('Ошибка инициализации приложения:', error);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
 
-    initializeApp();
-  }, [isAuthenticated, checkAuthStatus, loadCameras, connectionStatus]);
+  initializeApp();
+}, []); // ПУСТОЙ массив зависимостей - выполняется только один раз!
 
   // Логика управления отображением постоянного блока подключения
   useEffect(() => {
@@ -79,15 +94,17 @@ function App() {
     if (!isAuthenticated) return;
 
     const healthCheckInterval = setInterval(async () => {
-      try {
-        await checkAuthStatus();
-      } catch (error) {
-        console.error('Ошибка проверки состояния:', error);
+      if (connectionStatus !== 'connecting') {
+        try {
+          await checkAuthStatus();
+        } catch (error) {
+          console.error('Ошибка проверки состояния:', error);
+        }
       }
-    }, 30000); // Проверяем каждые 30 секунд
+    }, 120000); // Проверяем каждые 2 МИНУТЫ вместо 30 секунд
 
     return () => clearInterval(healthCheckInterval);
-  }, [isAuthenticated, checkAuthStatus]);
+  }, [isAuthenticated]); // Только одна зависимость
 
   // Показываем загрузку во время инициализации
   if (isInitializing) {

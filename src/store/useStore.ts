@@ -102,6 +102,46 @@ interface AuthState {
   checkAuthStatus: () => Promise<boolean>;
 }
 
+const STORAGE_KEYS = {
+  AUTH: 'sentryshot_auth',
+  USER_PREFS: 'sentryshot_preferences'
+};
+
+// Сохранение аутентификации
+const saveAuthToStorage = (username: string, password: string) => {
+  try {
+    const authData = { username, password, timestamp: Date.now() };
+    localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData));
+  } catch (error) {
+    console.error('Ошибка сохранения аутентификации:', error);
+  }
+};
+
+// Загрузка аутентификации
+const loadAuthFromStorage = (): { username: string; password: string } | null => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.AUTH);
+    if (saved) {
+      const authData = JSON.parse(saved);
+      // Проверяем, что данные не старше 24 часов
+      if (Date.now() - authData.timestamp < 24 * 60 * 60 * 1000) {
+        return { username: authData.username, password: authData.password };
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки аутентификации:', error);
+  }
+  return null;
+};
+
+const clearAuthFromStorage = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.AUTH);
+  } catch (error) {
+    console.error('Ошибка очистки аутентификации:', error);
+  }
+};
+
 // Дополнительные поля для состояния архива
 interface ArchiveState {
   // Текущий режим отображения архива
@@ -309,24 +349,37 @@ playlist: {
 
   login: async (username: string, password: string) => {
     try {
+      set({ connectionStatus: 'connecting' });
+
       // Инициализируем API с учетными данными
       sentryshotAPI.initialize(username, password);
 
-      // Проверяем подключение, пытаясь получить список мониторов
+      // Проверяем подключение
       const health = await sentryshotAPI.checkHealth();
 
       if (health) {
+        // Сохраняем в localStorage
+        try {
+          localStorage.setItem('sentryshot_auth', JSON.stringify({
+            username,
+            password,
+            timestamp: Date.now()
+          }));
+        } catch (e) {
+          console.warn('Не удалось сохранить аутентификацию');
+        }
+        
         set({
           isAuthenticated: true,
           username,
-          hasAdminRights: true, // В SentryShot пока считаем всех админами
+          hasAdminRights: true,
           connectionStatus: 'connected',
           isOnline: true,
           lastSync: new Date()
         });
 
-        // Загружаем камеры после успешной аутентификации
-        get().loadCameras();
+        // Загружаем камеры
+        await get().loadCameras();
 
         return true;
       } else {
@@ -334,6 +387,8 @@ playlist: {
       }
     } catch (error) {
       console.error('Ошибка аутентификации:', error);
+      // Очищаем localStorage при ошибке
+      localStorage.removeItem('sentryshot_auth');
       set({
         isAuthenticated: false,
         username: '',
@@ -344,29 +399,38 @@ playlist: {
     }
   },
 
-  logout: () => {
-    set({
-      isAuthenticated: false,
-      username: '',
-      hasAdminRights: false,
-      connectionStatus: 'disconnected',
-      cameras: [],
-      activeCamera: null
-    });
-  },
+
+logout: () => {
+  // Очищаем localStorage
+  localStorage.removeItem('sentryshot_auth');
+  set({
+    isAuthenticated: false,
+    username: '',
+    hasAdminRights: false,
+    connectionStatus: 'disconnected',
+    cameras: [],
+    activeCamera: null
+  });
+},
 
   checkAuthStatus: async () => {
+    const currentStatus = get().connectionStatus;
+    if (currentStatus === 'connecting') {
+      return false; // Уже идет проверка
+    }
+
     try {
       const health = await sentryshotAPI.checkHealth();
 
       set({
         isOnline: health,
-        connectionStatus: health ? 'connected' : 'disconnected',
+        connectionStatus: health ? 'connected' : 'error',
         lastSync: new Date()
       });
 
       return health;
     } catch (error) {
+      console.error('Ошибка проверки статуса:', error);
       set({
         isOnline: false,
         connectionStatus: 'error'
