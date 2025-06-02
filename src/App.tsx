@@ -15,7 +15,8 @@ function App() {
     checkAuthStatus,
     loadCameras,
     connectionStatus,
-    isOnline
+    isOnline,
+    login
   } = useStore();
 
   const [isInitializing, setIsInitializing] = useState(true);
