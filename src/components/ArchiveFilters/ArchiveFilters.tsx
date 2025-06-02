@@ -354,6 +354,8 @@ const ArchiveFilters: React.FC = () => {
                 </label>
               </div>
               {availableLocations.map((location) => {
+                const camerasInLocation = cameras.filter(cam => getLocationForMonitor(cam.id) === location);
+                
                 return (
                   <div key={location} className="filter-option">
                     <label className="checkbox-label">

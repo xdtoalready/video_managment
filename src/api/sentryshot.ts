@@ -268,11 +268,15 @@ export const sentryshotAPI = {
   // === АРХИВНЫЕ ЗАПИСИ ===
 
   // Получение архивного видео через VOD API
-  getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId = 1): string {
+  getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId: string | number = Date.now()): string {
     const start = TimeUtils.isoToUnixNano(startTime.toISOString());
     const end = TimeUtils.isoToUnixNano(endTime.toISOString());
     const vodBase = STREAM_BASE_URL || '';
-    return `${vodBase}/vod/vod.mp4?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheId}`;
+    
+    // Преобразуем cacheId в строку если это число
+    const cacheIdStr = typeof cacheId === 'number' ? cacheId.toString() : cacheId;
+    
+    return `${vodBase}/vod/vod.mp4?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheIdStr}`;
   },
 
   // Получение списка записей (ОБНОВЛЕНО)
