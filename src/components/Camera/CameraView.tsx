@@ -178,31 +178,31 @@ const CameraView: React.FC<CameraViewProps> = ({
             {/* Индикаторы состояния */}
             <div className="camera-status-indicators">
               {connectionStatus !== 'connected' && (
-                  <span className="status-indicator server-offline" title="Нет соединения с сервером">
+                  <span className="status-indicator server-offline badge-sticker" title="Нет соединения с сервером">
                 🔴 Сервер
               </span>
               )}
               
               {connectionStatus === 'connected' && !isCameraEnabled && (
-                  <span className="status-indicator camera-disabled" title="Камера отключена">
+                  <span className="status-indicator camera-disabled badge-sticker" title="Камера отключена">
                 ⭕ Отключена
               </span>
               )}
               
               {connectionStatus === 'connected' && isCameraEnabled && (
-                  <span className="status-indicator camera-online" title="Камера работает">
+                  <span className="status-indicator camera-online badge-sticker" title="Камера работает">
                 🟢 Онлайн
               </span>
               )}
               
               {camera?.alwaysRecord && isCameraEnabled && (
-                  <span className="status-indicator recording" title="Идет запись">
+                  <span className="status-indicator recording badge-sticker" title="Идет запись">
                 🔴 Запись
               </span>
               )}
               
               {camera?.isArchiveMode && (
-                  <span className="status-indicator archive" title="Архивный режим">
+                  <span className="status-indicator archive badge-sticker" title="Архивный режим">
                 📼 Архив
               </span>
               )}
@@ -307,15 +307,6 @@ const CameraView: React.FC<CameraViewProps> = ({
               </div>
           )}
         </div>
-
-        {/* Информация о камере (показываем при наведении) */}
-        {showControls && (
-            <div className="camera-info-tooltip">
-              <div>ID: {monitorId}</div>
-              <div>Статус: {isCameraEnabled ? 'Включена' : 'Отключена'}</div>
-              {camera?.alwaysRecord && <div>Запись: Включена</div>}
-            </div>
-        )}
       </div>
   );
 };

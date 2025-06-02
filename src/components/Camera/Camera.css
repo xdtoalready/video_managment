@@ -85,7 +85,8 @@
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
 }
 
-.camera-card-title {
+.camera-card-title,
+.badge-sticker {
   font-weight: 500;
   color: #333333;
   padding: 4px 8px;
