@@ -1552,7 +1552,7 @@ button:focus, button:focus-visible {
 }
 
 .camera-status-indicators .status-indicator {
-  padding: 0 !important;
+  padding: 4px 8px !important;
 }
 
 .camera-card-title,
