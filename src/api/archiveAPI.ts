@@ -53,13 +53,27 @@ export const archiveAPI = {
 
   async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
     try {
+      console.log('Запрос записей с параметрами:', params);
+
       // Получаем все мониторы для фильтрации
       const monitors = await sentryshotAPI.getMonitors();
-      const filteredMonitors = params.monitors?.length
-          ? monitors.filter(m => params.monitors!.includes(m.id))
-          : monitors;
+      let filteredMonitors = monitors;
+
+      // Фильтрация по выбранным мониторам
+      if (params.monitors?.length) {
+        filteredMonitors = monitors.filter(m => params.monitors!.includes(m.id));
+      }
+
+      // Фильтрация по локациям (если указаны)
+      if (params.locations?.length) {
+        filteredMonitors = filteredMonitors.filter(m => {
+          const location = this._getLocationByMonitorId(m.id);
+          return params.locations!.includes(location);
+        });
+      }
 
       if (filteredMonitors.length === 0) {
+        console.log('Нет мониторов для запроса записей');
         return [];
       }
 
@@ -67,6 +81,8 @@ export const archiveAPI = {
 
       // Получаем записи для каждого монитора
       for (const monitor of filteredMonitors) {
+        console.log(`Получение записей для монитора ${monitor.id} (${monitor.name})`);
+        
         // Итерируем по дням в заданном диапазоне
         const currentDate = new Date(params.startDate);
         const endDate = new Date(params.endDate);
@@ -74,8 +90,9 @@ export const archiveAPI = {
         while (currentDate <= endDate) {
           try {
             const dayRecordings = await sentryshotAPI.getRecordings(monitor.id, currentDate);
+            console.log(`Получено ${dayRecordings.length} записей для ${monitor.id} за ${currentDate.toDateString()}`);
 
-            // Фильтруем записи по времени
+            // Фильтруем записи по точному времени
             const filteredRecordings = dayRecordings.filter(recording => {
               const recordingStart = new Date(recording.startTime);
               const recordingEnd = new Date(recording.endTime);
@@ -86,19 +103,19 @@ export const archiveAPI = {
             // Преобразуем в формат архивного API
             const archiveRecordings = filteredRecordings.map(recording => ({
               ...recording,
-              startTime: new Date(recording.startTime),
-              endTime: new Date(recording.endTime),
               location: this._getLocationByMonitorId(monitor.id),
+              monitorName: monitor.name, // Используем реальное имя монитора
               fileUrl: sentryshotAPI.getVodUrl(
-                  monitor.id,
-                  new Date(recording.startTime),
-                  new Date(recording.endTime)
+                monitor.id,
+                new Date(recording.startTime),
+                new Date(recording.endTime)
               )
             }));
 
             allRecordings.push(...archiveRecordings);
           } catch (error) {
             console.warn(`Ошибка получения записей для монитора ${monitor.id} за ${currentDate.toDateString()}:`, error);
+            // Продолжаем для других дней
           }
 
           // Переходим к следующему дню
@@ -108,8 +125,10 @@ export const archiveAPI = {
 
       // Сортируем записи по времени начала (от новых к старым)
       allRecordings.sort((a, b) =>
-          b.startTime.getTime() - a.startTime.getTime()
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
       );
+
+      console.log(`Всего найдено записей: ${allRecordings.length}`);
 
       // Применяем пагинацию если указана
       if (params.page && params.limit) {
@@ -121,50 +140,66 @@ export const archiveAPI = {
       return allRecordings;
     } catch (error) {
       console.error('Ошибка при получении архивных записей:', error);
-
-      // Возвращаем мок-данные в случае ошибки
-      return this._getMockRecordings(params);
+      
+      // Временно возвращаем пустой массив вместо моков
+      return [];
     }
   },
 
   // Получение записей для конкретного монитора и временного диапазона
   async getRecordingsForMonitor(
-      monitorId: string,
-      startTime: Date,
-      endTime: Date
+    monitorId: string,
+    startTime: Date,
+    endTime: Date
   ): Promise<RecordingInfo[]> {
     try {
+      console.log(`Получение записей для монитора ${monitorId} с ${startTime.toISOString()} по ${endTime.toISOString()}`);
+      
+      // Получаем информацию о мониторе
+      const monitors = await sentryshotAPI.getMonitors();
+      const monitor = monitors.find(m => m.id === monitorId);
+      
+      if (!monitor) {
+        console.warn(`Монитор ${monitorId} не найден`);
+        return [];
+      }
+
       // Получаем записи по дням
       const recordings: RecordingInfo[] = [];
       const currentDate = new Date(startTime);
       currentDate.setHours(0, 0, 0, 0);
 
       while (currentDate <= endTime) {
-        const dayRecordings = await sentryshotAPI.getRecordings(monitorId, currentDate);
+        try {
+          const dayRecordings = await sentryshotAPI.getRecordings(monitorId, currentDate);
 
-        // Фильтруем по точному временному диапазону
-        const filteredRecordings = dayRecordings.filter(recording => {
-          const recordingStart = new Date(recording.startTime);
-          const recordingEnd = new Date(recording.endTime);
+          // Фильтруем по точному временному диапазону
+          const filteredRecordings = dayRecordings.filter(recording => {
+            const recordingStart = new Date(recording.startTime);
+            const recordingEnd = new Date(recording.endTime);
 
-          return recordingStart <= endTime && recordingEnd >= startTime;
-        });
+            return recordingStart <= endTime && recordingEnd >= startTime;
+          });
 
-        recordings.push(...filteredRecordings.map(rec => ({
-          ...rec,
-          location: this._getLocationByMonitorId(monitorId),
-          fileUrl: sentryshotAPI.getVodUrl(
+          recordings.push(...filteredRecordings.map(rec => ({
+            ...rec,
+            location: this._getLocationByMonitorId(monitorId),
+            monitorName: monitor.name,
+            fileUrl: sentryshotAPI.getVodUrl(
               monitorId,
               new Date(rec.startTime),
               new Date(rec.endTime)
-          )
-        })));
+            )
+          })));
+        } catch (error) {
+          console.warn(`Ошибка получения записей для ${monitorId} за ${currentDate.toDateString()}:`, error);
+        }
 
         currentDate.setDate(currentDate.getDate() + 1);
       }
 
       return recordings.sort((a, b) =>
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       );
     } catch (error) {
       console.error('Ошибка при получении записей для монитора:', error);
@@ -175,11 +210,13 @@ export const archiveAPI = {
   // === СОБЫТИЯ В АРХИВЕ ===
 
   async getArchiveEvents(
-      monitorId: string,
-      startTime: Date,
-      endTime: Date
+    monitorId: string,
+    startTime: Date,
+    endTime: Date
   ): Promise<ArchiveEvent[]> {
     try {
+      console.log(`Получение событий для монитора ${monitorId} с ${startTime.toISOString()} по ${endTime.toISOString()}`);
+      
       // Получаем события через API логов с фильтрацией
       const startTimeUnix = Math.floor(startTime.getTime() * 1000); // микросекунды
       const logs = await sentryshotAPI.getLogs({
@@ -189,32 +226,34 @@ export const archiveAPI = {
         limit: 1000
       });
 
+      console.log(`Получено ${logs.length} событий из логов`);
+
       // Преобразуем логи в события архива
       return logs
-          .filter(log => {
-            const logTime = new Date(TimeUtils.unixMicroToIso(log.time));
-            return logTime >= startTime && logTime <= endTime;
-          })
-          .map(log => ({
-            id: `${log.monitorID}_${log.time}`,
-            monitorId: log.monitorID,
-            timestamp: new Date(TimeUtils.unixMicroToIso(log.time)),
-            type: this._mapLogToEventType(log.src),
-            label: log.msg,
-            confidence: this._extractConfidenceFromMessage(log.msg),
-            color: this._getEventColor(this._mapLogToEventType(log.src))
-          }));
+        .filter(log => {
+          const logTime = new Date(TimeUtils.unixMicroToIso(log.time));
+          return logTime >= startTime && logTime <= endTime;
+        })
+        .map(log => ({
+          id: `${log.monitorID}_${log.time}`,
+          monitorId: log.monitorID,
+          timestamp: new Date(TimeUtils.unixMicroToIso(log.time)),
+          type: this._mapLogToEventType(log.src),
+          label: log.msg,
+          confidence: this._extractConfidenceFromMessage(log.msg),
+          color: this._getEventColor(this._mapLogToEventType(log.src))
+        }));
     } catch (error) {
       console.error('Ошибка при получении событий архива:', error);
-      return this._getMockEvents(monitorId, startTime, endTime);
+      return [];
     }
   },
 
   // === СТАТИСТИКА ===
 
   async getRecordingStats(
-      monitorId: string,
-      period: 'day' | 'week' | 'month'
+    monitorId: string,
+    period: 'day' | 'week' | 'month'
   ): Promise<RecordingStats> {
     try {
       const endDate = new Date();
@@ -250,12 +289,12 @@ export const archiveAPI = {
     } catch (error) {
       console.error('Ошибка при получении статистики записей:', error);
 
-      // Возвращаем мок-статистику
+      // Возвращаем нулевую статистику при ошибке
       return {
-        totalRecordings: 24,
-        totalDuration: 3600,
-        averageDuration: 150,
-        recordingsSize: 1024000000,
+        totalRecordings: 0,
+        totalDuration: 0,
+        averageDuration: 0,
+        recordingsSize: 0,
         period
       };
     }
@@ -264,18 +303,14 @@ export const archiveAPI = {
   // === СОЗДАНИЕ КЛИПОВ ===
 
   async createClip(
-      monitorId: string,
-      startTime: Date,
-      endTime: Date,
-      title?: string
+    monitorId: string,
+    startTime: Date,
+    endTime: Date,
+    title?: string
   ): Promise<string | null> {
     try {
       // Используем VOD API для создания клипа
       const clipUrl = sentryshotAPI.getVodUrl(monitorId, startTime, endTime);
-
-      // В реальной реализации здесь может быть дополнительная логика
-      // для создания постоянного клипа или его сохранения
-
       return clipUrl;
     } catch (error) {
       console.error('Ошибка при создании клипа:', error);
@@ -285,10 +320,10 @@ export const archiveAPI = {
 
   // Скачивание клипа
   async downloadClip(
-      monitorId: string,
-      startTime: Date,
-      endTime: Date,
-      filename?: string
+    monitorId: string,
+    startTime: Date,
+    endTime: Date,
+    filename?: string
   ): Promise<boolean> {
     try {
       const clipUrl = sentryshotAPI.getVodUrl(monitorId, startTime, endTime);
@@ -298,8 +333,6 @@ export const archiveAPI = {
       link.href = clipUrl;
       link.download = filename || this._generateClipFilename(monitorId, startTime, endTime);
 
-      // Добавляем аутентификацию к запросу
-      // Примечание: это может не работать для всех браузеров из-за CORS
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -319,29 +352,17 @@ export const archiveAPI = {
     }
 
     const monitorId = parts[0];
-    // Используем данные из существующей записи
-    // В реальном приложении лучше передавать объект записи целиком
-    return sentryshotAPI.getVodUrl(
-        monitorId,
-        new Date(), // Заглушка - нужны реальные данные
-        new Date()
-    );
+    // Для реального использования нужно получить данные записи
+    throw new Error('Метод требует доработки для получения временных меток из ID записи');
   },
 
   // === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
 
-  // Определение локации по ID монитора (заглушка)
+  // Определение локации по ID монитора
   _getLocationByMonitorId(monitorId: string): LocationType {
-    // В реальной реализации это должно браться из конфигурации или базы данных
-    const locationMap: Record<string, LocationType> = {
-      '1': 'street',
-      '2': 'house',
-      '3': 'playground',
-      '4': 'elevator',
-      '5': 'security'
-    };
-
-    return locationMap[monitorId] || 'house';
+    // Импортируем функцию из locationMapping
+    const { getLocationForMonitor } = require('../constants/locationMapping');
+    return getLocationForMonitor(monitorId);
   },
 
   // Преобразование источника лога в тип события
@@ -383,90 +404,8 @@ export const archiveAPI = {
   // Генерация имени файла для клипа
   _generateClipFilename(monitorId: string, startTime: Date, endTime: Date): string {
     const formatTime = (date: Date) =>
-        date.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      date.toISOString().replace(/[:.]/g, '-').slice(0, -5);
 
     return `clip_${monitorId}_${formatTime(startTime)}_${formatTime(endTime)}.mp4`;
-  },
-
-  // Мок-данные для записей (fallback)
-  _getMockRecordings(params: RecordingsSearchParams): RecordingInfo[] {
-    const recordings: RecordingInfo[] = [];
-    const locations: LocationType[] = ['street', 'house', 'playground'];
-
-    // Генерируем мок-записи для диапазона дат
-    const currentDate = new Date(params.startDate);
-
-    while (currentDate <= params.endDate) {
-      for (let i = 0; i < 3; i++) {
-        const startTime = new Date(currentDate);
-        startTime.setHours(8 + i * 4, Math.floor(Math.random() * 60));
-
-        const endTime = new Date(startTime);
-        endTime.setMinutes(endTime.getMinutes() + 30 + Math.floor(Math.random() * 60));
-
-        const monitorId = `monitor_${i + 1}`;
-        const location = locations[i % locations.length];
-
-        recordings.push({
-          id: `${monitorId}_${startTime.getTime()}`,
-          monitorId,
-          monitorName: `Камера ${i + 1}`,
-          location,
-          startTime: startTime,
-          endTime: endTime,
-          duration: (endTime.getTime() - startTime.getTime()) / 1000,
-          fileUrl: sentryshotAPI.getVodUrl(monitorId, startTime, endTime),
-          fileSize: Math.floor(Math.random() * 1000000000)
-        });
-      }
-
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return recordings.sort((a, b) =>
-        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-    );
-  },
-
-  // Мок-события (fallback)
-  _getMockEvents(monitorId: string, startTime: Date, endTime: Date): ArchiveEvent[] {
-    const events: ArchiveEvent[] = [];
-    const eventTypes: ArchiveEvent['type'][] = ['motion', 'object', 'alarm'];
-
-    const timeDiff = endTime.getTime() - startTime.getTime();
-    const eventCount = Math.floor(timeDiff / (1000 * 60 * 15)); // Событие каждые 15 минут
-
-    for (let i = 0; i < eventCount; i++) {
-      const eventTime = new Date(startTime.getTime() + (timeDiff / eventCount) * i);
-      const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-
-      events.push({
-        id: `${monitorId}_${eventTime.getTime()}`,
-        monitorId,
-        timestamp: eventTime,
-        type,
-        label: this._getEventLabel(type),
-        confidence: 50 + Math.floor(Math.random() * 50),
-        color: this._getEventColor(type)
-      });
-    }
-
-    return events;
-  },
-
-  // Получение описания события
-  _getEventLabel(type: ArchiveEvent['type']): string {
-    switch (type) {
-      case 'motion':
-        return 'Обнаружено движение';
-      case 'object':
-        return 'Обнаружен объект';
-      case 'alarm':
-        return 'Тревожное событие';
-      case 'custom':
-        return 'Пользовательское событие';
-      default:
-        return 'Неизвестное событие';
-    }
   }
 };

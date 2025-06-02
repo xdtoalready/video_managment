@@ -594,16 +594,53 @@ logout: () => {
 
   loadRecordings: async () => {
     try {
-      const { archiveFilters } = get();
+      const { archiveFilters, cameras } = get();
+      
+      console.log('Загрузка записей с фильтрами:', archiveFilters);
+      
+      // Показываем статус загрузки
+      set({ connectionStatus: 'connecting' });
+
+      // Определяем мониторы для запроса
+      let monitorIds: string[] = [];
+      
+      if (archiveFilters.cameras.length > 0) {
+        // Используем выбранные камеры
+        monitorIds = archiveFilters.cameras;
+      } else if (archiveFilters.locations.length > 0) {
+        // Фильтруем камеры по локациям
+        monitorIds = cameras
+          .filter(camera => {
+            const location = get().getLocationForMonitor(camera.id);
+            return archiveFilters.locations.includes(location);
+          })
+          .map(camera => camera.id);
+      } else {
+        // Используем все доступные камеры
+        monitorIds = cameras.map(camera => camera.id);
+      }
+
+      if (monitorIds.length === 0) {
+        console.log('Нет камер для запроса записей');
+        set({ 
+          recordings: [], 
+          connectionStatus: 'connected' 
+        });
+        return;
+      }
+
+      console.log(`Запрос записей для ${monitorIds.length} мониторов:`, monitorIds);
 
       const recordings = await archiveAPI.getRecordings({
         startDate: archiveFilters.dateRange.start,
         endDate: archiveFilters.dateRange.end,
-        monitors: archiveFilters.cameras.length > 0 ? archiveFilters.cameras : undefined,
+        monitors: monitorIds,
         locations: archiveFilters.locations.length > 0 ? archiveFilters.locations : undefined
       });
 
-      // Определяем минимальное и максимальное время из записей
+      console.log(`Получено ${recordings.length} записей`);
+
+      // Обновляем видимый диапазон таймлайна на основе найденных записей
       if (recordings.length > 0) {
         let minTime = new Date(recordings[0].startTime).getTime();
         let maxTime = new Date(recordings[0].endTime).getTime();
@@ -618,60 +655,144 @@ logout: () => {
 
         // Добавляем отступ (10% от общей длительности)
         const totalDuration = maxTime - minTime;
-        const padding = totalDuration * 0.1;
+        const padding = Math.max(totalDuration * 0.1, 3600000); // Минимум 1 час отступа
 
-        // Устанавливаем видимый диапазон
         set({
+          recordings,
           timelineVisibleRange: {
             start: new Date(minTime - padding),
             end: new Date(maxTime + padding)
           },
-          recordings
+          connectionStatus: 'connected'
         });
       } else {
-        set({ recordings });
+        // Если записей нет, устанавливаем диапазон на основе фильтров
+        set({
+          recordings: [],
+          timelineVisibleRange: {
+            start: archiveFilters.dateRange.start,
+            end: archiveFilters.dateRange.end
+          },
+          connectionStatus: 'connected'
+        });
       }
     } catch (error) {
       console.error('Ошибка при загрузке записей:', error);
+      set({ 
+        recordings: [], 
+        connectionStatus: 'error' 
+      });
+      
+      // Показываем уведомление пользователю
+      if (error instanceof Error) {
+        // Можно добавить toast уведомление
+        console.error('Детали ошибки:', error.message);
+      }
     }
   },
 
   selectRecording: (recordingId: string) => {
     const { recordings } = get();
-    const recording = recordings.find(r => r.id === recordingId) || null;
+    const recording = recordings.find(r => r.id === recordingId);
+
+    if (!recording) {
+      console.error(`Запись с ID ${recordingId} не найдена`);
+      return;
+    }
+
+    console.log('Выбрана запись:', recording);
 
     set({
       activeRecording: recording,
       selectedRecordings: [recordingId],
       archiveViewMode: 'single'
     });
+
+    // Обновляем видимый диапазон таймлайна для просмотра записи
+    const recordingDuration = recording.endTime.getTime() - recording.startTime.getTime();
+    const padding = Math.max(recordingDuration * 0.5, 1800000); // Минимум 30 минут отступа
+
+    set({
+      timelineVisibleRange: {
+        start: new Date(recording.startTime.getTime() - padding),
+        end: new Date(recording.endTime.getTime() + padding)
+      }
+    });
   },
 
   selectMultipleRecordings: (recordingIds: string[]) => {
+    const { recordings } = get();
+    const selectedRecordings = recordings.filter(r => recordingIds.includes(r.id));
+
+    if (selectedRecordings.length === 0) {
+      console.error('Ни одна из указанных записей не найдена');
+      return;
+    }
+
+    console.log(`Выбрано ${selectedRecordings.length} записей`);
+
+    // Для множественного просмотра берем первую запись как активную
+    const activeRecording = selectedRecordings[0];
+
     set({
       selectedRecordings: recordingIds,
+      activeRecording,
       archiveViewMode: 'multi'
+    });
+
+    // Вычисляем общий временной диапазон всех записей
+    let minTime = selectedRecordings[0].startTime.getTime();
+    let maxTime = selectedRecordings[0].endTime.getTime();
+
+    selectedRecordings.forEach(recording => {
+      const startTime = recording.startTime.getTime();
+      const endTime = recording.endTime.getTime();
+
+      if (startTime < minTime) minTime = startTime;
+      if (endTime > maxTime) maxTime = endTime;
+    });
+
+    const totalDuration = maxTime - minTime;
+    const padding = Math.max(totalDuration * 0.1, 1800000);
+
+    set({
+      timelineVisibleRange: {
+        start: new Date(minTime - padding),
+        end: new Date(maxTime + padding)
+      }
     });
   },
 
   clearSelectedRecordings: () => {
     set({
       selectedRecordings: [],
-      activeRecording: null
+      activeRecording: null,
+      archiveViewMode: 'list'
     });
   },
 
   setArchiveViewMode: (mode: ArchiveViewMode) => {
+    console.log('Переключение режима архива на:', mode);
     set({ archiveViewMode: mode });
   },
 
   updateArchiveFilters: (filters) => {
-    set(state => ({
-      archiveFilters: {
-        ...state.archiveFilters,
-        ...filters
-      }
-    }));
+    const currentFilters = get().archiveFilters;
+    const newFilters = {
+      ...currentFilters,
+      ...filters
+    };
+    
+    console.log('Обновление фильтров архива:', newFilters);
+    
+    set({
+      archiveFilters: newFilters
+    });
+
+    // Валидация временного диапазона
+    if (newFilters.dateRange.start >= newFilters.dateRange.end) {
+      console.warn('Некорректный временной диапазон в фильтрах');
+    }
   },
 
   // === ОСТАЛЬНЫЕ МЕТОДЫ (сохраняем как было, но адаптируем где нужно) ===
@@ -882,7 +1003,11 @@ logout: () => {
 
   fetchTimelineEvents: async (monitorId, timeRange) => {
     try {
+      console.log(`Загрузка событий для монитора ${monitorId}`, timeRange);
+      
       const events = await archiveAPI.getArchiveEvents(monitorId, timeRange.start, timeRange.end);
+      
+      console.log(`Получено ${events.length} событий`);
 
       // Преобразуем в формат TimelineEvent
       const timelineEvents = events.map(event => ({
@@ -897,11 +1022,13 @@ logout: () => {
 
       set(state => ({
         timelineEvents: [
+          // Убираем старые события для этого монитора в данном диапазоне
           ...state.timelineEvents.filter(event =>
-              event.monitorId !== monitorId ||
-              event.timestamp < timeRange.start ||
-              event.timestamp > timeRange.end
+            event.monitorId !== monitorId ||
+            event.timestamp < timeRange.start ||
+            event.timestamp > timeRange.end
           ),
+          // Добавляем новые события
           ...timelineEvents
         ]
       }));
@@ -917,41 +1044,66 @@ logout: () => {
       createdAt: new Date()
     };
 
+    console.log('Добавление новой закладки:', newBookmark);
+
     set(state => ({
       timelineBookmarks: [...state.timelineBookmarks, newBookmark]
     }));
 
+    // Сохраняем в localStorage
     try {
       const { timelineBookmarks } = get();
-      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
+      const bookmarksToSave = timelineBookmarks.map(bookmark => ({
+        ...bookmark,
+        time: bookmark.time.toISOString(),
+        createdAt: bookmark.createdAt.toISOString()
+      }));
+      localStorage.setItem('timelineBookmarks', JSON.stringify(bookmarksToSave));
+      console.log('Закладки сохранены в localStorage');
     } catch (error) {
       console.error('Ошибка при сохранении закладок:', error);
     }
   },
 
   removeTimelineBookmark: (bookmarkId) => {
+    console.log('Удаление закладки:', bookmarkId);
+    
     set(state => ({
       timelineBookmarks: state.timelineBookmarks.filter(bookmark => bookmark.id !== bookmarkId)
     }));
 
+    // Обновляем localStorage
     try {
       const { timelineBookmarks } = get();
-      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
+      const bookmarksToSave = timelineBookmarks.map(bookmark => ({
+        ...bookmark,
+        time: bookmark.time.toISOString(),
+        createdAt: bookmark.createdAt.toISOString()
+      }));
+      localStorage.setItem('timelineBookmarks', JSON.stringify(bookmarksToSave));
     } catch (error) {
       console.error('Ошибка при сохранении закладок:', error);
     }
   },
 
   updateTimelineBookmark: (bookmarkId, updates) => {
+    console.log('Обновление закладки:', bookmarkId, updates);
+    
     set(state => ({
       timelineBookmarks: state.timelineBookmarks.map(bookmark =>
-          bookmark.id === bookmarkId ? { ...bookmark, ...updates } : bookmark
+        bookmark.id === bookmarkId ? { ...bookmark, ...updates } : bookmark
       )
     }));
 
+    // Обновляем localStorage
     try {
       const { timelineBookmarks } = get();
-      localStorage.setItem('timelineBookmarks', JSON.stringify(timelineBookmarks));
+      const bookmarksToSave = timelineBookmarks.map(bookmark => ({
+        ...bookmark,
+        time: bookmark.time.toISOString(),
+        createdAt: bookmark.createdAt.toISOString()
+      }));
+      localStorage.setItem('timelineBookmarks', JSON.stringify(bookmarksToSave));
     } catch (error) {
       console.error('Ошибка при сохранении закладок:', error);
     }

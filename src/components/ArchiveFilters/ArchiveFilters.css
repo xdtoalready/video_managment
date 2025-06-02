@@ -159,3 +159,407 @@
     width: 100%;
   }
 }
+
+
+
+
+
+/* Дополнительные стили для ArchiveFilters.css */
+
+/* Заголовок фильтров */
+.filters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.filters-changed-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ff9800;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.change-indicator {
+  color: #ff9800;
+  font-size: 12px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Улучшенные секции фильтров */
+.filter-section h4 {
+  color: var(--text-color);
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Пресеты времени */
+.time-presets {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.preset-button {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preset-button:hover:not(:disabled) {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.preset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Информация о диапазоне дат */
+.date-range-info {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1976d2;
+}
+
+/* Группировка камер */
+.camera-group {
+  border-left: 2px solid #e0e0e0;
+  margin-left: 10px;
+  padding-left: 15px;
+  margin-bottom: 10px;
+}
+
+.camera-group-header {
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-size: 14px;
+  padding: 4px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.camera-option {
+  padding-left: 20px;
+}
+
+.camera-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.status-indicator {
+  font-size: 10px;
+}
+
+.status-indicator.online {
+  color: #4caf50;
+}
+
+.status-indicator.offline {
+  color: #f44336;
+}
+
+/* Информация о поиске */
+.search-options {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.search-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #666;
+}
+
+.info-value {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.connection-status.connected {
+  color: #4caf50;
+}
+
+.connection-status.connecting {
+  color: #ff9800;
+}
+
+.connection-status.error {
+  color: #f44336;
+}
+
+.connection-status.disconnected {
+  color: #9e9e9e;
+}
+
+/* Советы для поиска */
+.search-tips {
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  margin-bottom: 15px;
+}
+
+.search-tips h5 {
+  margin: 0 0 10px 0;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.search-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.search-tips li {
+  margin: 5px 0;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Предупреждения */
+.search-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.warning-icon {
+  font-size: 16px;
+}
+
+.connection-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 6px;
+  color: #c62828;
+  font-size: 14px;
+}
+
+.error-icon {
+  font-size: 16px;
+}
+
+/* Кнопки фильтров */
+.filter-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.apply-button.has-changes {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px rgba(211, 84, 74, 0.3);
+  animation: subtle-glow 2s ease-in-out infinite;
+}
+
+.apply-button.has-changes:hover {
+  background: #c53030;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(211, 84, 74, 0.4);
+}
+
+@keyframes subtle-glow {
+  0%, 100% { box-shadow: 0 2px 8px rgba(211, 84, 74, 0.3); }
+  50% { box-shadow: 0 2px 12px rgba(211, 84, 74, 0.5); }
+}
+
+.loading-spinner-small {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #ffffff30;
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+/* Информация о последнем поиске */
+.last-search-info {
+  margin-top: 15px;
+  padding: 10px;
+  background: #f0f8ff;
+  border-radius: 4px;
+  text-align: center;
+  border: 1px solid #b3d9ff;
+}
+
+.last-search-info small {
+  color: #1976d2;
+  font-style: italic;
+}
+
+/* Улучшенные выпадающие списки */
+.dropdown-content {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+.dropdown-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dropdown-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Улучшенные чекбоксы */
+.filter-option {
+  padding: 8px 16px;
+  transition: background-color 0.2s ease;
+}
+
+.filter-option:hover {
+  background-color: #f8f9fa;
+}
+
+.checkbox-label {
+  display: block;
+  cursor: pointer;
+  width: 100%;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.custom-checkbox {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #d1d5db;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.filter-option input[type="checkbox"]:checked + .custom-checkbox {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.custom-checkbox-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.filter-option input[type="checkbox"]:checked + .custom-checkbox .custom-checkbox-icon {
+  opacity: 1;
+}
+
+.filter-option input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .filters-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .time-presets {
+    justify-content: center;
+  }
+  
+  .preset-button {
+    flex: 1;
+    min-width: 100px;
+  }
+  
+  .search-info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-buttons {
+    flex-direction: column;
+  }
+  
+  .dropdown-content {
+    max-height: 250px;
+  }
+}
