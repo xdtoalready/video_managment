@@ -272,7 +272,6 @@ const RecordingsList: React.FC = () => {
           </button>
         </div>
         <div className="recordings-empty">
-          <div className="empty-icon">📹</div>
           <h3>Записи не найдены</h3>
           <p>Нет записей в указанном временном диапазоне.</p>
           
