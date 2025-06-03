@@ -1556,6 +1556,11 @@ button:focus, button:focus-visible {
   padding: 4px 8px !important;
 }
 
+.camera-status-indicators {
+  display: flex;
+  gap: 12px;
+}
+
 .camera-card-title,
 .badge-sticker {
   font-weight: 500;

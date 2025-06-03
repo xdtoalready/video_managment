@@ -123,7 +123,6 @@ const ArchiveView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/*<h2 className="recording-title">{activeRecording.monitorName}</h2>*/}
                   <ArchivePlayer recording={activeRecording} />
                 </div>
 

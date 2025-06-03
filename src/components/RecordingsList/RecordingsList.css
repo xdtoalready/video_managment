@@ -87,10 +87,6 @@
   background-color: var(--light-bg);
 }
 
-.recording-row.selected {
-  background-color: rgba(65, 117, 212, 0.1);
-}
-
 .recording-cell {
 color: var(--gray2-color);
   flex: 1;
@@ -466,11 +462,6 @@ color: var(--gray2-color);
   background-color: #f8f9fa;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.recording-row.selected {
-  background-color: #e3f2fd;
-  border-left: 4px solid var(--color-main2);
 }
 
 .camera-name {

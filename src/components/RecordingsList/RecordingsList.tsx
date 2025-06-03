@@ -9,15 +9,12 @@ const RecordingsList: React.FC = () => {
     recordings,
     loadRecordings,
     selectRecording,
-    selectMultipleRecordings,
     archiveFilters,
     updateArchiveFilters,
     cameras,
     connectionStatus
   } = useStore();
 
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<string>('');
@@ -98,37 +95,7 @@ const RecordingsList: React.FC = () => {
 
   // Обработчик клика по записи
   const handleRecordingClick = (recording: Recording) => {
-    if (isMultiSelectMode) {
-      // В режиме множественного выбора
-      const newSelected = [...selectedItems];
-      const recordingIndex = newSelected.indexOf(recording.id);
-
-      if (recordingIndex === -1) {
-        newSelected.push(recording.id);
-      } else {
-        newSelected.splice(recordingIndex, 1);
-      }
-
-      setSelectedItems(newSelected);
-    } else {
-      // Режим одиночного просмотра
-      selectRecording(recording.id);
-    }
-  };
-
-  // Обработчик кнопки просмотра нескольких записей
-  const handleViewMultiple = () => {
-    if (selectedItems.length > 0) {
-      selectMultipleRecordings(selectedItems);
-    }
-  };
-
-  // Переключение режима множественного выбора
-  const toggleMultiSelectMode = () => {
-    setIsMultiSelectMode(!isMultiSelectMode);
-    if (!isMultiSelectMode) {
-      setSelectedItems([]);
-    }
+    selectRecording(recording.id);
   };
 
   // Обновление фильтра и загрузка новых данных
@@ -352,7 +319,7 @@ const RecordingsList: React.FC = () => {
           {recordings.map(recording => (
             <div
               key={recording.id}
-              className={`recording-row ${selectedItems.includes(recording.id) ? 'selected' : ''}`}
+              className="recording-row"
               onClick={() => handleRecordingClick(recording)}
               title={`Нажмите для просмотра записи ${recording.monitorName}`}
             >

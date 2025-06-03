@@ -21,8 +21,6 @@ export interface RecordingsSearchParams {
   endDate: Date;
   monitors?: string[];
   locations?: LocationType[];
-  page?: number;
-  limit?: number;
 }
 
 // Статистика записей
@@ -129,13 +127,6 @@ export const archiveAPI = {
       );
 
       console.log(`Всего найдено записей: ${allRecordings.length}`);
-
-      // Применяем пагинацию если указана
-      if (params.page && params.limit) {
-        const startIndex = (params.page - 1) * params.limit;
-        const endIndex = startIndex + params.limit;
-        return allRecordings.slice(startIndex, endIndex);
-      }
 
       return allRecordings;
     } catch (error) {

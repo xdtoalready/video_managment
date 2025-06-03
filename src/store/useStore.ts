@@ -66,7 +66,7 @@ interface CalendarState {
 export type Recording = RecordingInfo;
 
 // Режим отображения архива
-export type ArchiveViewMode = 'list' | 'single' | 'multi';
+export type ArchiveViewMode = 'list' | 'single';
 
 // Интерфейс события
 export interface TimelineEvent {
@@ -150,9 +150,6 @@ interface ArchiveState {
   // Список найденных записей
   recordings: Recording[];
 
-  // Записи, выбранные для просмотра
-  selectedRecordings: string[];
-
   // Текущая активная запись
   activeRecording: Recording | null;
 
@@ -169,8 +166,6 @@ interface ArchiveState {
   // Методы управления архивом
   loadRecordings: () => Promise<void>;
   selectRecording: (recordingId: string) => void;
-  selectMultipleRecordings: (recordingIds: string[]) => void;
-  clearSelectedRecordings: () => void;
   setArchiveViewMode: (mode: ArchiveViewMode) => void;
   updateArchiveFilters: (filters: Partial<ArchiveState['archiveFilters']>) => void;
 }
@@ -334,7 +329,6 @@ playlist: {
   // Архив
   archiveViewMode: 'list',
   recordings: [],
-  selectedRecordings: [],
   activeRecording: null,
   archiveFilters: {
     dateRange: {
@@ -704,7 +698,6 @@ logout: () => {
 
     set({
       activeRecording: recording,
-      selectedRecordings: [recordingId],
       archiveViewMode: 'single'
     });
 
@@ -717,57 +710,6 @@ logout: () => {
         start: new Date(recording.startTime.getTime() - padding),
         end: new Date(recording.endTime.getTime() + padding)
       }
-    });
-  },
-
-  selectMultipleRecordings: (recordingIds: string[]) => {
-    const { recordings } = get();
-    const selectedRecordings = recordings.filter(r => recordingIds.includes(r.id));
-
-    if (selectedRecordings.length === 0) {
-      console.error('Ни одна из указанных записей не найдена');
-      return;
-    }
-
-    console.log(`Выбрано ${selectedRecordings.length} записей`);
-
-    // Для множественного просмотра берем первую запись как активную
-    const activeRecording = selectedRecordings[0];
-
-    set({
-      selectedRecordings: recordingIds,
-      activeRecording,
-      archiveViewMode: 'multi'
-    });
-
-    // Вычисляем общий временной диапазон всех записей
-    let minTime = selectedRecordings[0].startTime.getTime();
-    let maxTime = selectedRecordings[0].endTime.getTime();
-
-    selectedRecordings.forEach(recording => {
-      const startTime = recording.startTime.getTime();
-      const endTime = recording.endTime.getTime();
-
-      if (startTime < minTime) minTime = startTime;
-      if (endTime > maxTime) maxTime = endTime;
-    });
-
-    const totalDuration = maxTime - minTime;
-    const padding = Math.max(totalDuration * 0.1, 1800000);
-
-    set({
-      timelineVisibleRange: {
-        start: new Date(minTime - padding),
-        end: new Date(maxTime + padding)
-      }
-    });
-  },
-
-  clearSelectedRecordings: () => {
-    set({
-      selectedRecordings: [],
-      activeRecording: null,
-      archiveViewMode: 'list'
     });
   },
 
