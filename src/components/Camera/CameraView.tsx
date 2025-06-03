@@ -21,7 +21,6 @@ const CameraView: React.FC<CameraViewProps> = ({
  }) => {
   const {
     openCalendar,
-    exitArchiveMode,
     isGridView,
     isAuthenticated,
     connectionStatus,
@@ -42,20 +41,8 @@ const CameraView: React.FC<CameraViewProps> = ({
     setError(errorMessage);
   };
 
-  // Получение правильного URL потока для SentryShot
+  // Получение URL потока (всегда live stream, убираем VOD логику)
   const getStreamUrl = (): string => {
-    if (!camera) return streamUrl;
-
-    // Если архивный режим, используем VOD
-    if (camera.isArchiveMode && camera.archiveStartDate && camera.archiveEndDate) {
-      return sentryshotAPI.getVodUrl(
-          monitorId,
-          camera.archiveStartDate,
-          camera.archiveEndDate
-      );
-    }
-
-    // Для онлайн режима используем HLS поток
     return sentryshotAPI.getStreamUrl(monitorId, false);
   };
 
@@ -65,22 +52,16 @@ const CameraView: React.FC<CameraViewProps> = ({
     openCalendar(monitorId);
   };
 
-  // Выйти из режима архива
-  const handleExitArchiveMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    exitArchiveMode(monitorId);
-  };
-
   // Обработчик клика для карточки камеры
   const handleCardClick = (e: React.MouseEvent) => {
-    if (onClick && !camera?.isArchiveMode) {
+    if (onClick) {
       onClick();
     }
   };
 
   // Обработчик клика на видео
   const handleVideoClick = () => {
-    if (onClick && !camera?.isArchiveMode) {
+    if (onClick) {
       onClick();
     }
   };
@@ -136,18 +117,6 @@ const CameraView: React.FC<CameraViewProps> = ({
     }
   };
 
-  // Форматирование даты для отображения
-  const formatDate = (date: Date | null | undefined): string => {
-    if (!date) return '';
-    return date.toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   // Определение, показывать ли камеру в активном режиме
   const isActiveView = isActive && !isGridView;
 
@@ -200,18 +169,12 @@ const CameraView: React.FC<CameraViewProps> = ({
                 🔴 Запись
               </span>
               )}
-              
-              {camera?.isArchiveMode && (
-                  <span className="status-indicator archive badge-sticker" title="Архивный режим">
-                📼 Архив
-              </span>
-              )}
             </div>
           </div>
 
           {/* Меню управления камерой */}
           <div className="camera-header-right">
-            {/* Основное меню (календарь) */}
+            {/* Кнопка календаря - переход в архив */}
             <button 
                 className="camera-menu-button" 
                 onClick={handleOpenCalendar}
@@ -272,31 +235,14 @@ const CameraView: React.FC<CameraViewProps> = ({
                   onError={handleVideoError}
                   className="camera-video"
                   isFullscreen={isActiveView}
-                  isArchiveMode={camera?.isArchiveMode}
+                  isArchiveMode={false} // Всегда false для live stream
                   onVideoClick={handleVideoClick}
                   monitorId={monitorId}
               />
           )}
 
-          {/* Индикатор архивного режима */}
-          {camera?.isArchiveMode && camera.archiveStartDate && (
-              <>
-                <div className="archive-indicator">
-              <span className="archive-badge">
-                Архив: {formatDate(camera.archiveStartDate)} - {formatDate(camera.archiveEndDate)}
-              </span>
-                </div>
-                <button
-                    className="exit-archive-mode"
-                    onClick={handleExitArchiveMode}
-                >
-                  Вернуться к прямой трансляции
-                </button>
-              </>
-          )}
-
           {/* Индикатор качества соединения (только для онлайн режима) */}
-          {isCameraEnabled && !camera?.isArchiveMode && showControls && (
+          {isCameraEnabled && showControls && (
               <div className="stream-quality-indicator">
                 <div className="quality-bars">
                   <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>

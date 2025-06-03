@@ -4,7 +4,6 @@ import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
 import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
 
-
 // Типы локаций камер
 export type LocationType =
     | 'street'       // Улица
@@ -38,28 +37,22 @@ export interface TimelineMark {
   major: boolean; // Основная или второстепенная метка
 }
 
-// Тип камеры (адаптированный под SentryShot мониторы)
+// Тип камеры (упрощенный, без архивных полей)
 export interface Camera {
   id: string;
   name: string;
   url: string;
-  // location: LocationType; <- Добавим отдельный маппинг
   isActive: boolean;
-  isArchiveMode?: boolean;
-  archiveStartDate?: Date | null;
-  archiveEndDate?: Date | null;
   enable?: boolean;
   alwaysRecord?: boolean;
   videoLength?: number;
   hasSubStream?: boolean;
 }
 
-// Тип состояния для календаря
+// Тип состояния для календаря (упрощенный)
 interface CalendarState {
   isOpen: boolean;
   activeCameraId: string | null;
-  startDate: Date | null;
-  endDate: Date | null;
 }
 
 // Используем RecordingInfo из archiveAPI
@@ -105,41 +98,6 @@ interface AuthState {
 const STORAGE_KEYS = {
   AUTH: 'sentryshot_auth',
   USER_PREFS: 'sentryshot_preferences'
-};
-
-// Сохранение аутентификации
-const saveAuthToStorage = (username: string, password: string) => {
-  try {
-    const authData = { username, password, timestamp: Date.now() };
-    localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData));
-  } catch (error) {
-    console.error('Ошибка сохранения аутентификации:', error);
-  }
-};
-
-// Загрузка аутентификации
-const loadAuthFromStorage = (): { username: string; password: string } | null => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEYS.AUTH);
-    if (saved) {
-      const authData = JSON.parse(saved);
-      // Проверяем, что данные не старше 24 часов
-      if (Date.now() - authData.timestamp < 24 * 60 * 60 * 1000) {
-        return { username: authData.username, password: authData.password };
-      }
-    }
-  } catch (error) {
-    console.error('Ошибка загрузки аутентификации:', error);
-  }
-  return null;
-};
-
-const clearAuthFromStorage = () => {
-  try {
-    localStorage.removeItem(STORAGE_KEYS.AUTH);
-  } catch (error) {
-    console.error('Ошибка очистки аутентификации:', error);
-  }
 };
 
 // Дополнительные поля для состояния архива
@@ -192,9 +150,9 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   isGridView: boolean;
   getLocationForMonitor: (monitorId: string) => LocationType;
 
-playlist: {
+  playlist: {
     items: RecordingInfo[];
-events: ArchiveEvent[];
+    events: ArchiveEvent[];
     timeRange: {
       start: Date;
       end: Date;
@@ -206,7 +164,7 @@ events: ArchiveEvent[];
   currentTime: number;
   seekToAbsolutePosition: (position: number) => void;
 
-  // Состояние календаря
+  // Состояние календаря (упрощенное)
   calendar: CalendarState;
 
   // Поля для масштабирования и временных меток
@@ -244,12 +202,9 @@ events: ArchiveEvent[];
   panTimelineRight: (percentage?: number) => void;
   generateTimelineMarks: () => TimelineMark[];
 
-  // Методы для управления календарем
+  // Методы для управления календарем (упрощенные)
   openCalendar: (monitorId: string) => void;
   closeCalendar: () => void;
-  setCalendarDates: (startDate: Date, endDate: Date) => void;
-  applyArchiveMode: () => void;
-  exitArchiveMode: (monitorId: string) => void;
 
   // Методы управления мониторами
   toggleMotionDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
@@ -271,7 +226,7 @@ export const locationNames: Record<LocationType, string> = {
 
 // Создание хранилища
 export const useStore = create<AppState>((set, get) => ({
-playlist: {
+  playlist: {
     items: [],
     events: [],
     timeRange: {
@@ -318,12 +273,10 @@ playlist: {
     end: new Date()
   },
 
-  // Календарь
+  // Календарь (упрощенный)
   calendar: {
     isOpen: false,
-    activeCameraId: null,
-    startDate: null,
-    endDate: null
+    activeCameraId: null
   },
 
   // Архив
@@ -393,19 +346,18 @@ playlist: {
     }
   },
 
-
-logout: () => {
-  // Очищаем localStorage
-  localStorage.removeItem('sentryshot_auth');
-  set({
-    isAuthenticated: false,
-    username: '',
-    hasAdminRights: false,
-    connectionStatus: 'disconnected',
-    cameras: [],
-    activeCamera: null
-  });
-},
+  logout: () => {
+    // Очищаем localStorage
+    localStorage.removeItem('sentryshot_auth');
+    set({
+      isAuthenticated: false,
+      username: '',
+      hasAdminRights: false,
+      connectionStatus: 'disconnected',
+      cameras: [],
+      activeCamera: null
+    });
+  },
 
   checkAuthStatus: async () => {
     const currentStatus = get().connectionStatus;
@@ -472,11 +424,9 @@ logout: () => {
 
       const cameras = await sentryshotAPI.getCameras();
 
+      // Убираем архивные поля при создании камер
       const enhancedCameras = cameras.map(camera => ({
-        ...camera,
-        isArchiveMode: false,
-        archiveStartDate: null,
-        archiveEndDate: null
+        ...camera
       }));
 
       set({
@@ -737,7 +687,7 @@ logout: () => {
     }
   },
 
-  // === ОСТАЛЬНЫЕ МЕТОДЫ (сохраняем как было, но адаптируем где нужно) ===
+  // === ОСТАЛЬНЫЕ МЕТОДЫ ===
 
   setActiveCamera: (monitorId: string) => {
     set(state => {
@@ -795,7 +745,7 @@ logout: () => {
     set({ selectedLocations: [] });
   },
 
-  // === МЕТОДЫ ТАЙМЛАЙНА (сохраняем как было) ===
+  // === МЕТОДЫ ТАЙМЛАЙНА ===
 
   setTimelineZoomLevel: (level: TimelineZoomLevel) => {
     const currentRange = get().timelineVisibleRange;
@@ -912,9 +862,6 @@ logout: () => {
     const start = new Date(timelineVisibleRange.start);
     const end = new Date(timelineVisibleRange.end);
 
-    // Генерируем метки в зависимости от уровня масштабирования
-    // (логика сохраняется как была)
-
     switch (timelineZoomLevel) {
       case 'hours':
         const startHour = new Date(start);
@@ -933,7 +880,6 @@ logout: () => {
         }
         break;
 
-        // Другие случаи можно добавить аналогично
       default:
         break;
     }
@@ -1051,69 +997,23 @@ logout: () => {
     }
   },
 
-  // === МЕТОДЫ КАЛЕНДАРЯ ===
+  // === МЕТОДЫ КАЛЕНДАРЯ (упрощенные) ===
 
   openCalendar: (monitorId: string) => {
-    set(state => ({
+    set({
       calendar: {
-        ...state.calendar,
         isOpen: true,
-        activeCameraId: monitorId,
-        startDate: new Date(),
-        endDate: new Date(new Date().getTime() + 3600000)
+        activeCameraId: monitorId
       }
-    }));
+    });
   },
 
   closeCalendar: () => {
-    set(state => ({
+    set({
       calendar: {
-        ...state.calendar,
-        isOpen: false
+        isOpen: false,
+        activeCameraId: null
       }
-    }));
-  },
-
-  setCalendarDates: (startDate: Date, endDate: Date) => {
-    set(state => ({
-      calendar: {
-        ...state.calendar,
-        startDate,
-        endDate
-      }
-    }));
-  },
-
-  applyArchiveMode: () => {
-    const { calendar } = get();
-    if (!calendar.activeCameraId || !calendar.startDate || !calendar.endDate) return;
-
-    set(state => ({
-      cameras: state.cameras.map(camera =>
-          camera.id === calendar.activeCameraId ? {
-            ...camera,
-            isArchiveMode: true,
-            archiveStartDate: calendar.startDate,
-            archiveEndDate: calendar.endDate
-          } : camera
-      ),
-      calendar: {
-        ...state.calendar,
-        isOpen: false
-      }
-    }));
-  },
-
-  exitArchiveMode: (monitorId: string) => {
-    set(state => ({
-      cameras: state.cameras.map(camera =>
-          camera.id === monitorId ? {
-            ...camera,
-            isArchiveMode: false,
-            archiveStartDate: null,
-            archiveEndDate: null
-          } : camera
-      )
-    }));
+    });
   }
 }));
