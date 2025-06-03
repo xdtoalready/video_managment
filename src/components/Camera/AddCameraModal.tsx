@@ -42,7 +42,6 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
   // Сброс формы при открытии/закрытии
   useEffect(() => {
     if (isOpen) {
-      // Генерируем новый ID
       const newId = generateCameraId();
       setFormData({
         id: newId,
@@ -166,7 +165,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
     return generateCameraId();
   };
 
-  // Обработка отправки формы
+  // ИСПРАВЛЕННАЯ обработка отправки формы
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -177,11 +176,11 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // Создаем объект камеры для добавления
+      // ИСПРАВЛЕНО: Создаем объект камеры в правильном формате
       const newCamera = {
         id: formData.id,
         name: formData.name,
-        url: formData.rtspUrl,
+        url: formData.rtspUrl, // Основной RTSP URL
         enable: formData.enable,
         alwaysRecord: formData.alwaysRecord,
         videoLength: formData.videoLength,
@@ -237,7 +236,8 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
     { name: 'Стандартный', template: 'rtsp://username:password@ip:554/stream' },
     { name: 'Hikvision', template: 'rtsp://username:password@ip:554/Streaming/Channels/101' },
     { name: 'Dahua', template: 'rtsp://username:password@ip:554/cam/realmonitor?channel=1&subtype=0' },
-    { name: 'Axis', template: 'rtsp://username:password@ip:554/axis-media/media.amp' }
+    { name: 'Axis', template: 'rtsp://username:password@ip:554/axis-media/media.amp' },
+    { name: 'Тест стрим', template: 'rtsp://mpv.cdn3.bigCDN.com:554/bigCDN/mp4:bigbuckbunnyiphone_400.mp4' }
   ];
 
   if (!isOpen) return null;

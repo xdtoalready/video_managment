@@ -1,3 +1,5 @@
+// src/api/sentryshot.ts - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
 // Базовая конфигурация
 const API_BASE_URL = '';  // Базовый URL (пустой, т.к. используем относительные пути)
 const STREAM_BASE_URL = '';  // Базовый URL для стримов (без /api)
@@ -83,20 +85,31 @@ class AuthManager {
   }
 }
 
-// Интерфейсы для SentryShot
+// ИСПРАВЛЕННЫЕ интерфейсы для SentryShot
 export interface Monitor {
   id: string;
   name: string;
   enable: boolean;
-  source: {
-    rtsp: {
-      protocol: 'TCP' | 'UDP' | 'tcp' | 'udp';
-      mainStream: string;
-      subStream?: string;
-    };
+  source: string; // ИСПРАВЛЕНО: просто строка "rtsp"
+  sourcertsp: {   // ИСПРАВЛЕНО: отдельное поле для RTSP настроек
+    protocol: 'tcp' | 'udp'; // ИСПРАВЛЕНО: в нижнем регистре
+    mainStream: string;      // ИСПРАВЛЕНО: правильное название поля
+    subStream?: string;      // ИСПРАВЛЕНО: правильное название поля
   };
   alwaysRecord: boolean;
   videoLength: number; // в минутах
+}
+
+// Интерфейс для создания монитора (упрощенный для фронтенда)
+export interface CreateMonitorRequest {
+  id: string;
+  name: string;
+  enable: boolean;
+  rtspUrl: string;
+  rtspSubUrl?: string;
+  protocol: 'TCP' | 'UDP';
+  alwaysRecord: boolean;
+  videoLength: number;
 }
 
 export interface Camera {
@@ -179,17 +192,16 @@ export const sentryshotAPI = {
       // Преобразуем объект в массив
       if (typeof data === 'object' && data !== null) {
         const monitorsArray = Object.entries(data).map(([monitorId, monitorData]: [string, any]) => {
-          // Нормализуем структуру монитора
+          // Нормализуем структуру монитора в соответствии с реальным API
           return {
             id: monitorId,
             name: monitorData.name || `Monitor ${monitorId}`,
             enable: monitorData.enable || false,
-            source: {
-              rtsp: {
-                protocol: monitorData.source?.rtsp?.protocol || 'TCP',
-                mainStream: monitorData.source?.rtsp?.mainStream || monitorData.source?.rtsp?.mainInput || '',
-                subStream: monitorData.source?.rtsp?.subStream || monitorData.source?.rtsp?.subInput || undefined
-              }
+            source: monitorData.source || 'rtsp',
+            sourcertsp: {
+              protocol: monitorData.sourcertsp?.protocol || 'tcp',
+              mainStream: monitorData.sourcertsp?.mainStream || '',
+              subStream: monitorData.sourcertsp?.subStream || undefined
             },
             alwaysRecord: monitorData.alwaysRecord || false,
             videoLength: monitorData.videoLength || 60
@@ -220,15 +232,12 @@ export const sentryshotAPI = {
       }
 
       const cameras = monitors.map(monitor => {
-        // Создаем URL потока, учитывая различные варианты структуры данных
+        // Создаем URL потока
         let streamUrl = `${STREAM_BASE_URL}/stream/${monitor.id}/index.m3u8`;
         
-        // Проверяем, есть ли HLS эндпоинт в конфигурации
-        // (это может варьироваться в зависимости от настроек SentryShot)
         if (STREAM_BASE_URL) {
           streamUrl = `${STREAM_BASE_URL}/stream/${monitor.id}/index.m3u8`;
         } else {
-          // Относительный путь для случаев когда фронтенд и бэкенд на одном домене
           streamUrl = `/stream/${monitor.id}/index.m3u8`;
         }
 
@@ -251,9 +260,29 @@ export const sentryshotAPI = {
     }
   },
 
-  async createOrUpdateMonitor(monitor: Monitor): Promise<boolean> {
+  // ИСПРАВЛЕННЫЙ метод создания/обновления монитора
+  async createOrUpdateMonitor(requestData: CreateMonitorRequest): Promise<boolean> {
     try {
-      console.log('API: Создание/обновление монитора:', monitor);
+      console.log('API: Создание/обновление монитора с запросом:', requestData);
+      
+      // ИСПРАВЛЕНО: Преобразуем данные в формат, который ожидает SentryShot
+      const monitorData = {
+        [requestData.id]: {
+          id: requestData.id,
+          name: requestData.name,
+          enable: requestData.enable,
+          source: "rtsp",  // ИСПРАВЛЕНО: всегда "rtsp"
+          sourcertsp: {    // ИСПРАВЛЕНО: отдельное поле для RTSP
+            protocol: requestData.protocol.toLowerCase(), // ИСПРАВЛЕНО: в нижнем регистре
+            mainStream: requestData.rtspUrl,              // ИСПРАВЛЕНО: правильное поле
+            subStream: requestData.rtspSubUrl || undefined // ИСПРАВЛЕНО: правильное поле
+          },
+          alwaysRecord: requestData.alwaysRecord,
+          videoLength: requestData.videoLength
+        }
+      };
+      
+      console.log('API: Отправляемые данные в SentryShot:', JSON.stringify(monitorData, null, 2));
       
       const headers = await this.auth.getModifyHeaders();
       console.log('API: Заголовки запроса:', headers);
@@ -261,7 +290,7 @@ export const sentryshotAPI = {
       const response = await fetch(`${API_BASE_URL}/api/monitor`, {
         method: 'PUT',
         headers: headers,
-        body: JSON.stringify(monitor)
+        body: JSON.stringify(monitorData[requestData.id]) // ИСПРАВЛЕНО: отправляем только объект монитора, не обертку
       });
 
       console.log('API: Ответ сервера:', response.status, response.statusText);
@@ -273,6 +302,11 @@ export const sentryshotAPI = {
         if (response.status === 401) {
           console.error('API: Ошибка аутентификации - проверьте учетные данные и CSRF токен');
           throw new Error('Ошибка аутентификации. Попробуйте перелогиниться.');
+        }
+        
+        if (response.status === 422) {
+          console.error('API: Ошибка валидации данных (422). Проверьте структуру отправляемых данных.');
+          throw new Error(`Ошибка валидации данных: ${errorText}`);
         }
         
         throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
@@ -354,19 +388,18 @@ export const sentryshotAPI = {
 
   // === АРХИВНЫЕ ЗАПИСИ ===
 
-  // Получение архивного видео через VOD API (ИСПРАВЛЕНО)
+  // Получение архивного видео через VOD API
   getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId: string | number = Date.now()): string {
     const start = TimeUtils.isoToUnixNano(startTime.toISOString());
     const end = TimeUtils.isoToUnixNano(endTime.toISOString());
     const vodBase = STREAM_BASE_URL || '';
     
-    // Преобразуем cacheId в строку если это число
     const cacheIdStr = typeof cacheId === 'number' ? cacheId.toString() : cacheId;
     
     return `${vodBase}/vod/vod.mp4?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheIdStr}`;
   },
 
-  // Получение списка записей (ОБНОВЛЕНО)
+  // Получение списка записей
   async getRecordings(monitorId: string, date: Date): Promise<RecordingInfo[]> {
     try {
       console.log(`Запрос записей для монитора ${monitorId} за ${date.toDateString()}`);
@@ -375,7 +408,7 @@ export const sentryshotAPI = {
         monitors: monitorId,
         "include-data": "true",
         reverse: "true",
-        limit: "200" // Ограничиваем количество записей
+        limit: "200"
       });
 
       const response = await fetch(`${API_BASE_URL}/api/recording/query?${queryParams.toString()}`, {
@@ -398,10 +431,8 @@ export const sentryshotAPI = {
       // Преобразуем в нужный формат
       const recordings = Object.entries(backendRecordings).map(([recordingId, rec]: [string, any]) => {
         try {
-          // Извлекаем монитор ID из записи
           const recMonitorId = rec.monitorID || monitorId;
           
-          // Проверяем наличие данных
           if (!rec.data || !rec.data.start || !rec.data.end) {
             console.warn(`Запись ${recordingId} не содержит необходимых данных времени`);
             return null;
@@ -410,16 +441,14 @@ export const sentryshotAPI = {
           const startTime = new Date(TimeUtils.unixNanoToIso(rec.data.start));
           const endTime = new Date(TimeUtils.unixNanoToIso(rec.data.end));
           
-          // Фильтрация по дате (приблизительно)
           const recordingDate = new Date(startTime);
           recordingDate.setHours(0, 0, 0, 0);
           const filterDate = new Date(date);
           filterDate.setHours(0, 0, 0, 0);
           
-          // Проверяем, что запись относится к нужному дню (с небольшим допуском)
           const dayDifference = Math.abs(recordingDate.getTime() - filterDate.getTime()) / (1000 * 60 * 60 * 24);
           if (dayDifference > 1) {
-            return null; // Пропускаем записи не из нужного дня
+            return null;
           }
 
           return {
@@ -428,7 +457,7 @@ export const sentryshotAPI = {
             monitorName: rec.data?.monitorName || `Monitor ${recMonitorId}`,
             startTime: startTime,
             endTime: endTime,
-            duration: (rec.data.end - rec.data.start) / 1_000_000_000, // Длительность в секундах
+            duration: (rec.data.end - rec.data.start) / 1_000_000_000,
             fileUrl: this.getVodUrl(recMonitorId, startTime, endTime, recordingId),
             fileSize: rec.data?.sizeBytes,
             thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${recordingId}`
@@ -437,7 +466,7 @@ export const sentryshotAPI = {
           console.error(`Ошибка обработки записи ${recordingId}:`, error);
           return null;
         }
-      }).filter(Boolean) as RecordingInfo[]; // Убираем null значения
+      }).filter(Boolean) as RecordingInfo[];
 
       console.log(`Обработано ${recordings.length} записей для монитора ${monitorId}`);
       return recordings;
@@ -453,7 +482,7 @@ export const sentryshotAPI = {
     levels?: string[];
     sources?: string[];
     monitors?: string[];
-    time?: number; // Unix микросекунды
+    time?: number;
     limit?: number;
   } = {}): Promise<LogEntry[]> {
     try {
@@ -496,7 +525,6 @@ export const sentryshotAPI = {
 
   // === WEBSOCKET ===
 
-  // Создание WebSocket соединения для логов
   createLogsWebSocket(params: {
     levels?: string[];
     monitors?: string[];
@@ -517,7 +545,6 @@ export const sentryshotAPI = {
         queryParams.set('sources', params.sources.join(','));
       }
 
-      // Определяем протокол WebSocket на основе текущего протокола
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}${API_BASE_URL}/api/log/feed?${queryParams.toString()}`;
 
@@ -532,7 +559,6 @@ export const sentryshotAPI = {
 
   // === УТИЛИТЫ ===
 
-  // Проверка доступности API
   async checkHealth(): Promise<boolean> {
     try {
       const response = await fetch(`${API_BASE_URL}/api/monitors`, {
@@ -547,10 +573,8 @@ export const sentryshotAPI = {
     }
   },
 
-  // Получение информации о системе (если доступно)
   async getSystemInfo(): Promise<any> {
     try {
-      // Этот эндпоинт может не существовать в SentryShot
       const response = await fetch(`${API_BASE_URL}/api/system/info`, {
         headers: this.auth.getAuthHeaders()
       });
