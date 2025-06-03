@@ -79,6 +79,9 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         return videoElement?.currentTime || 0;
     }, []);
 
+    const getVideoElement = useCallback((): HTMLVideoElement | null => {
+    return document.querySelector('.archive-player-video') as HTMLVideoElement;
+    }, []);
 
     // Функция для установки времени видео
     const setVideoTime = useCallback((timeInSeconds: number) => {
