@@ -59,6 +59,7 @@
 }
 
 .modal-close-button {
+  display: flex;
   background: none;
   border: none;
   padding: 8px;
@@ -69,7 +70,7 @@
 }
 
 .modal-close-button:hover {
-  background: #333;
+  background: var(--primary-color);
   color: #FFFFFF;
 }
 
@@ -112,18 +113,18 @@
 
 .toggle-advanced {
   background: none;
-  border: 1px solid #4175D4;
-  color: #4175D4;
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all .2s ease;
 }
 
 .toggle-advanced:hover {
-  background: #4175D4;
-  color: #FFFFFF;
+  background: var(--primary-hover);
+  color: var(--white);
 }
 
 /* Группы полей */
@@ -215,8 +216,8 @@
 }
 
 .template-button:hover {
-  background: var(--primary-color-hover);
-  border-color: var(--primary-color-hover);
+  background: var(--primary-color);
+  border-color: var(--primary-hover);
   color: #FFFFFF;
 }
 
@@ -273,15 +274,10 @@
   opacity: 1;
 } */
 
-.checkbox-text {
-  font-size: 14px;
-  color: #DEDFE3;
-}
-
 /* Информация о подключении */
 .connection-info {
-  background: #2A2A2A;
-  border: 1px solid #444;
+  background: var(--white);
+  border: 1px solid var(--text-color);
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 16px;
@@ -360,14 +356,13 @@
 }
 
 .cancel-button {
-  background: none;
-  border: 1px solid #444;
-  color: #A4A0A0;
+background-color: transparent;
+    color: var(--primary-color);
+    outline: 1px solid #D1CDCD;
 }
 
 .cancel-button:hover:not(:disabled) {
-  background: #333;
-  color: #FFFFFF;
+    background-color: #e0e0e0;
 }
 
 .submit-button {

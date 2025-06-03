@@ -1169,8 +1169,8 @@ button:focus, button:focus-visible {
 }
 
 .refresh-button {
-  background: var(--light-bg);
-  color: var(--text-color);
+  background: var(--primary-color);
+  color: var(--white);
   border: none;
   border-radius: 4px;
   padding: 8px 12px;
@@ -1180,8 +1180,7 @@ button:focus, button:focus-visible {
 }
 
 .refresh-button:hover {
-  background: var(--color-main2);
-  color: var(--white);
+  background: var(--primary-hover);
 }
 
 .refresh-button:disabled {
