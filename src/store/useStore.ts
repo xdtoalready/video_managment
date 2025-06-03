@@ -161,6 +161,7 @@ interface AppState extends AuthState, ArchiveState, SystemState {
     currentItemIndex: number;
     absolutePosition: number;
   };
+  
   currentTime: number;
   seekToAbsolutePosition: (position: number) => void;
 
@@ -447,11 +448,13 @@ export const useStore = create<AppState>((set, get) => ({
 
   addCamera: async (camera: Omit<Camera, 'isActive'>) => {
     try {
-      // Создаем монитор в SentryShot
+      console.log('Добавление камеры:', camera);
+
+      // Создаем монитор в SentryShot API
       const monitor = {
         id: camera.id,
         name: camera.name,
-        enable: true,
+        enable: camera.enable !== undefined ? camera.enable : true,
         source: {
           rtsp: {
             protocol: 'TCP' as const,
@@ -459,23 +462,51 @@ export const useStore = create<AppState>((set, get) => ({
             subInput: camera.hasSubStream ? `${camera.url}_sub` : undefined
           }
         },
-        alwaysRecord: camera.alwaysRecord || false,
+        alwaysRecord: camera.alwaysRecord !== undefined ? camera.alwaysRecord : true,
         videoLength: camera.videoLength || 60
       };
 
+      console.log('Отправка монитора в SentryShot:', monitor);
+
+      // Отправляем запрос на создание монитора
       const success = await sentryshotAPI.createOrUpdateMonitor(monitor);
 
       if (success) {
-        const newCamera = { ...camera, isActive: false };
+        console.log(`Монитор ${camera.id} успешно создан в SentryShot`);
+
+        // Добавляем камеру в локальное состояние
+        const newCamera: Camera = { 
+          ...camera, 
+          isActive: monitor.enable 
+        };
+
         set(state => ({
           cameras: [...state.cameras, newCamera]
         }));
-        return true;
-      }
 
-      return false;
+        // Обновляем список камер с сервера для синхронизации
+        setTimeout(async () => {
+          try {
+            await get().loadCameras();
+            console.log('Список камер обновлен после добавления');
+          } catch (error) {
+            console.error('Ошибка при обновлении списка камер:', error);
+          }
+        }, 1000);
+
+        return true;
+      } else {
+        console.error('Не удалось создать монитор в SentryShot');
+        return false;
+      }
     } catch (error) {
       console.error('Ошибка при добавлении камеры:', error);
+      
+      // Показываем более детальную информацию об ошибке
+      if (error instanceof Error) {
+        console.error('Детали ошибки:', error.message);
+      }
+      
       return false;
     }
   },

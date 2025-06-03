@@ -241,16 +241,37 @@ export const sentryshotAPI = {
 
   async createOrUpdateMonitor(monitor: Monitor): Promise<boolean> {
     try {
+      console.log('API: Создание/обновление монитора:', monitor);
+      
       const response = await fetch(`${API_BASE_URL}/api/monitor`, {
         method: 'PUT',
         headers: await this.auth.getModifyHeaders(),
         body: JSON.stringify(monitor)
       });
 
-      return response.ok;
+      console.log('API: Ответ сервера:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API: Ошибка сервера:', errorText);
+        throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.text();
+      console.log('API: Результат создания монитора:', result);
+
+      return true;
     } catch (error) {
-      console.error('Ошибка при создании/обновлении монитора:', error);
-      return false;
+      console.error('API: Ошибка при создании/обновлении монитора:', error);
+      
+      // Проверяем тип ошибки для более понятного сообщения
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error('Не удалось подключиться к серверу SentryShot');
+      } else if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Неизвестная ошибка при создании монитора');
+      }
     }
   },
 

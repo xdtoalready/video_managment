@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import CameraView from './CameraView.tsx';
+import AddCameraCard from './AddCameraCard.tsx';
+import AddCameraModal from './AddCameraModal.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { locationNames } from '../../store/useStore.ts';
 import { getLocationForMonitor } from '../../constants/locationMapping';
@@ -11,16 +13,30 @@ const CameraGrid: React.FC = () => {
     activeCamera, 
     showSingleCamera,
     showGridView,
-    selectedLocations 
+    selectedLocations,
+    isAuthenticated,
+    hasAdminRights
   } = useStore();
   
+  const [isAddCameraModalOpen, setIsAddCameraModalOpen] = useState(false);
+
   // Фильтруем камеры по выбранным локациям
-    const filteredCameras = selectedLocations.length > 0
-        ? cameras.filter(camera => {
-            const cameraLocation = getLocationForMonitor(camera.id);
-            return selectedLocations.includes(cameraLocation);
-        })
-        : cameras;
+  const filteredCameras = selectedLocations.length > 0
+    ? cameras.filter(camera => {
+        const cameraLocation = getLocationForMonitor(camera.id);
+        return selectedLocations.includes(cameraLocation);
+    })
+    : cameras;
+
+  // Обработчик открытия модального окна добавления камеры
+  const handleAddCameraClick = () => {
+    setIsAddCameraModalOpen(true);
+  };
+
+  // Обработчик закрытия модального окна
+  const handleCloseAddCameraModal = () => {
+    setIsAddCameraModalOpen(false);
+  };
   
   // Если нет камер, показываем сообщение
   if (filteredCameras.length === 0) {
@@ -38,7 +54,7 @@ const CameraGrid: React.FC = () => {
   }
   
   // Если включен режим одной камеры и есть активная камера
-  if (!isGridView && activeCamera) {
+if (!isGridView && activeCamera) {
     return (
       <div className="camera-single-view-container">
         <CameraView 
@@ -60,12 +76,18 @@ const CameraGrid: React.FC = () => {
                 </defs>
             </svg>
         </button>
+
+        {/* Модальное окно добавления камеры */}
+        <AddCameraModal 
+          isOpen={isAddCameraModalOpen}
+          onClose={handleCloseAddCameraModal}
+        />
       </div>
     );
   }
   
   // Режим сетки
-  return (
+   return (
     <div className="camera-grid-container">
       <div className="breadcrumb-navigation">
         <span className="breadcrumb-item">Видеонаблюдение</span>
@@ -82,21 +104,47 @@ const CameraGrid: React.FC = () => {
             </span>
           </>
         )}
-        <span className="camera-count">{filteredCameras.length}/{cameras.length}</span>
+        <span className="camera-count">
+          {filteredCameras.length + (isAuthenticated && hasAdminRights ? 1 : 0)}/{cameras.length + (isAuthenticated && hasAdminRights ? 1 : 0)}
+        </span>
       </div>
       
       <div className="camera-grid">
-        {filteredCameras.map(camera => (
-          <CameraView 
-            key={camera.id}
-            monitorId={camera.id}
-            streamUrl={camera.url}
-            monitorName={camera.name}
-            isActive={camera.isActive}
-            onClick={() => showSingleCamera(camera.id)}
-          />
-        ))}
+        {/* Кнопка добавления камеры - показываем только для аутентифицированных пользователей с правами администратора */}
+        {isAuthenticated && hasAdminRights && (
+          <AddCameraCard onClick={handleAddCameraClick} />
+        )}
+
+        {/* Проверяем, есть ли камеры для отображения */}
+        {filteredCameras.length === 0 && (!isAuthenticated || !hasAdminRights) ? (
+          <div className="camera-grid-empty">
+            <p>
+              {selectedLocations.length > 0 
+                ? `Нет доступных камер в выбранных категориях: ${selectedLocations.map(loc => locationNames[loc]).join(', ')}.`
+                : 'Нет доступных камер.'
+              }
+            </p>
+          </div>
+        ) : (
+          /* Отображаем отфильтрованные камеры */
+          filteredCameras.map(camera => (
+            <CameraView 
+              key={camera.id}
+              monitorId={camera.id}
+              streamUrl={camera.url}
+              monitorName={camera.name}
+              isActive={camera.isActive}
+              onClick={() => showSingleCamera(camera.id)}
+            />
+          ))
+        )}
       </div>
+
+      {/* Модальное окно добавления камеры */}
+      <AddCameraModal 
+        isOpen={isAddCameraModalOpen}
+        onClose={handleCloseAddCameraModal}
+      />
     </div>
   );
 };
