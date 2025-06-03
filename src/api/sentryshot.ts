@@ -91,8 +91,8 @@ export interface Monitor {
   source: {
     rtsp: {
       protocol: 'TCP' | 'UDP' | 'tcp' | 'udp';
-      mainInput: string;
-      subInput?: string;
+      mainStream: string;
+      subStream?: string;
     };
   };
   alwaysRecord: boolean;
@@ -187,8 +187,8 @@ export const sentryshotAPI = {
             source: {
               rtsp: {
                 protocol: monitorData.source?.rtsp?.protocol || 'TCP',
-                mainInput: monitorData.source?.rtsp?.mainStream || monitorData.source?.rtsp?.mainInput || '',
-                subInput: monitorData.source?.rtsp?.subStream || monitorData.source?.rtsp?.subInput || undefined
+                mainStream: monitorData.source?.rtsp?.mainStream || monitorData.source?.rtsp?.mainInput || '',
+                subStream: monitorData.source?.rtsp?.subStream || monitorData.source?.rtsp?.subInput || undefined
               }
             },
             alwaysRecord: monitorData.alwaysRecord || false,

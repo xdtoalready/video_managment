@@ -458,8 +458,8 @@ export const useStore = create<AppState>((set, get) => ({
         source: {
           rtsp: {
             protocol: 'TCP' as const,
-            mainInput: camera.url,
-            subInput: camera.hasSubStream ? `${camera.url}_sub` : undefined
+            mainStream: camera.url,
+            subStream: camera.hasSubStream ? `${camera.url}_sub` : undefined
           }
         },
         alwaysRecord: camera.alwaysRecord !== undefined ? camera.alwaysRecord : true,
