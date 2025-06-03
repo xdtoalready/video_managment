@@ -101,7 +101,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         if (!activeRecording || !timelineRef.current) return 0;
 
         const currentTime = getCurrentVideoTime();
-const recordingStart = new Date(activeRecording.startTime).getTime();
+        const recordingStart = new Date(activeRecording.startTime).getTime();
         const currentTimeMs = recordingStart + currentTime * 1000;
 
         const visibleStart = timelineVisibleRange.start.getTime();
@@ -261,62 +261,48 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
 
     // Обработчик клика по таймлайну
     const handleTimelineClick = useCallback((e: React.MouseEvent) => {
-        if (!timelineRef.current || isDragging || isAnimating) return;
+    if (!timelineRef.current || isDragging || isAnimating) return;
 
-        const rect = timelineRef.current.getBoundingClientRect();
-        const clickX = e.clientX - rect.left;
-        const containerWidth = rect.width;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const containerWidth = rect.width;
 
-        // Рассчитываем смещение клика от центра
-        const offsetFromCenter = clickX - containerWidth / 2;
+    // Рассчитываем абсолютное время для клика
+    const clickPosition = clickX / containerWidth;
+    const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+    const clickTimeMs = timelineVisibleRange.start.getTime() + clickPosition * visibleDuration;
+    const absoluteTime = new Date(clickTimeMs);
 
-        // Рассчитываем время для клика
-        const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
-        const pixelsPerMs = containerWidth / visibleDuration;
-        const offsetMs = offsetFromCenter / pixelsPerMs;
+    // Ищем запись, которая содержит это время
+    const { findRecordingAtTime, selectRecording } = useStore.getState();
+    const result = findRecordingAtTime(absoluteTime);
 
-        const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
-
-        if (activeRecording) {
-            const recordingStart = activeRecording.startTime.getTime();
-            const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
-
-            if (isClipMode) {
-                // Логика для режима обрезки
-                if (clipStart === null && onClipStartSet) {
-                    onClipStartSet(localTimeSeconds);
-                } else if (clipEnd === null && onClipEndSet) {
-                    if (localTimeSeconds > clipStart!) {
-                        onClipEndSet(localTimeSeconds);
-                    } else {
-                        if (onClipEndSet) onClipEndSet(clipStart!);
-                        if (onClipStartSet) onClipStartSet(localTimeSeconds);
-                    }
-                } else {
-                    if (onClipStartSet) onClipStartSet(localTimeSeconds);
-if (onClipEndSet) onClipEndSet(0);
-                }
-            } else {
-                // Обычный режим - перемотка
-                if (localTimeSeconds >= 0) {
-                    setVideoTime(localTimeSeconds);
-
-                    // Плавно центрируем таймлайн
-                    if (updateTimeoutRef.current) {
-                        clearTimeout(updateTimeoutRef.current);
-                    }
-
-                    updateTimeoutRef.current = setTimeout(() => {
-                        const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
-                        animateToOffset(targetOffset);
-                    }, 50);
-                }
+    if (result) {
+        const { recording, localTime } = result;
+        
+        // Переключаемся на нужную запись если она не активна
+        if (!activeRecording || activeRecording.id !== recording.id) {
+        selectRecording(recording.id);
+        
+        // Ждем смены записи и устанавливаем время
+        setTimeout(() => {
+            const videoElement = getVideoElement();
+            if (videoElement && localTime >= 0) {
+            videoElement.currentTime = localTime;
             }
+        }, 500);
+        } else {
+        // Устанавливаем время в текущей записи
+        const videoElement = getVideoElement();
+        if (videoElement && localTime >= 0) {
+            videoElement.currentTime = localTime;
         }
+        }
+    }
 
-        e.preventDefault();
-        e.stopPropagation();
-    }, [timelineVisibleRange, isClipMode, clipStart, clipEnd, onClipStartSet, onClipEndSet, activeRecording, isDragging, isAnimating, setVideoTime, animateToOffset]);
+    e.preventDefault();
+    e.stopPropagation();
+    }, [timelineVisibleRange, isDragging, isAnimating, activeRecording]);
 
     // Плавное обновление во время воспроизведения
     useEffect(() => {

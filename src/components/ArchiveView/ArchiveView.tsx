@@ -21,8 +21,12 @@ const ArchiveView: React.FC = () => {
 
   // Загрузка записей при монтировании компонента
   React.useEffect(() => {
-    loadRecordings();
-  }, [loadRecordings]);
+  // Инициализируем непрерывный плейлист при переходе в single режим
+  if (archiveViewMode === 'single' && activeRecording) {
+    const { loadContinuousRecordings } = useStore.getState();
+    loadContinuousRecordings(activeRecording.monitorId, activeRecording.startTime);
+  }
+}, [archiveViewMode, activeRecording?.id]);
 
   // Обработчик для выбора времени из закладки или события
   const handleTimeSelected = (time: Date) => {

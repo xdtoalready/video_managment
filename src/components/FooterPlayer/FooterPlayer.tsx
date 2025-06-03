@@ -122,16 +122,26 @@ const FooterPlayer: React.FC = () => {
     if (!videoElement) return;
 
     const updateTimeInfo = () => {
-      setCurrentTime(videoElement.currentTime);
-      // Обновляем строковые представления времени для инпутов
-      const totalTimeSeconds = Math.floor(videoElement.currentTime);
-      const hours = Math.floor(totalTimeSeconds / 3600);
-      const minutes = Math.floor((totalTimeSeconds % 3600) / 60);
-      const seconds = totalTimeSeconds % 60;
+      const currentVideoTime = videoElement.currentTime;
+      setCurrentTime(currentVideoTime);
+      
+      // Проверяем, нужно ли переключиться на следующую запись
+      if (currentVideoTime >= (videoElement.duration - 1) && !videoElement.paused) {
+        // Пытаемся загрузить следующую запись
+        handleLoadNextRecording();
+      }
+      
+      // Обновляем строковые представления времени для абсолютного времени
+      if (activeRecording) {
+        const absoluteTime = new Date(activeRecording.startTime.getTime() + currentVideoTime * 1000);
+        const hours = absoluteTime.getHours();
+        const minutes = absoluteTime.getMinutes();
+        const seconds = absoluteTime.getSeconds();
 
-      setTimeInputHours(hours.toString().padStart(2, '0'));
-      setTimeInputMinutes(minutes.toString().padStart(2, '0'));
-      setTimeInputSeconds(seconds.toString().padStart(2, '0'));
+        setTimeInputHours(hours.toString().padStart(2, '0'));
+        setTimeInputMinutes(minutes.toString().padStart(2, '0'));
+        setTimeInputSeconds(seconds.toString().padStart(2, '0'));
+      }
     };
 
     const updatePlayerState = () => {
@@ -189,6 +199,29 @@ const FooterPlayer: React.FC = () => {
       }
     };
   }, [activeRecording]);
+
+  const handleLoadNextRecording = async () => {
+    if (!activeRecording) return;
+    
+    const { continuousPlaylist, loadContinuousRecordings, selectRecording } = useStore.getState();
+    
+    // Если есть следующая запись в плейлисте
+    if (continuousPlaylist.currentRecordingIndex < continuousPlaylist.recordings.length - 1) {
+      const nextRecording = continuousPlaylist.recordings[continuousPlaylist.currentRecordingIndex + 1];
+      selectRecording(nextRecording.id);
+      return;
+    }
+    
+    // Иначе загружаем новые записи
+    const nextStartTime = new Date(activeRecording.endTime.getTime() + 1000); // +1 секунда
+    await loadContinuousRecordings(activeRecording.monitorId, nextStartTime, 'forward');
+    
+    // Выбираем первую из новых записей
+    const { continuousPlaylist: updatedPlaylist } = useStore.getState();
+    if (updatedPlaylist.recordings.length > 0) {
+      selectRecording(updatedPlaylist.recordings[0].id);
+    }
+  };
 
   // Перемотка на указанное количество секунд
   const seekRelative = (seconds: number) => {
@@ -438,14 +471,24 @@ const FooterPlayer: React.FC = () => {
   };
 
   // Форматирование времени (HH:MM:SS)
-  const formatTime = (timeInSeconds: number) => {
+  const formatTime = (timeInSeconds: number, showAbsolute: boolean = true) => {
     if (isNaN(timeInSeconds)) return '00:00:00';
 
-    const hours = Math.floor(timeInSeconds / 3600);
-    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-    const seconds = Math.floor(timeInSeconds % 60);
-
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    if (showAbsolute && activeRecording) {
+      // Показываем абсолютное время
+      const absoluteTime = new Date(activeRecording.startTime.getTime() + timeInSeconds * 1000);
+      return absoluteTime.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } else {
+      // Показываем относительное время
+      const hours = Math.floor(timeInSeconds / 3600);
+      const minutes = Math.floor((timeInSeconds % 3600) / 60);
+      const seconds = Math.floor(timeInSeconds % 60);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
   };
 
   // Вычисляем позиции маркеров обрезки на таймлайне

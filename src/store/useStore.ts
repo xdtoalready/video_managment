@@ -149,7 +149,13 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   viewMode: ViewMode;
   isGridView: boolean;
   getLocationForMonitor: (monitorId: string) => LocationType;
-
+  continuousPlaylist: {
+    recordings: Recording[];
+    currentRecordingIndex: number;
+    absoluteStartTime: Date;
+    absoluteEndTime: Date;
+    totalDurationSeconds: number;
+  };
   playlist: {
     items: RecordingInfo[];
     events: ArchiveEvent[];
@@ -210,6 +216,11 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   toggleMotionDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   toggleObjectDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   updateCameraSettings: (monitorId: string, settings: Partial<Camera>) => Promise<boolean>;
+
+  loadContinuousRecordings: (monitorId: string, startTime: Date, direction?: 'forward' | 'backward') => Promise<void>;
+  findRecordingAtTime: (absoluteTime: Date) => { recording: Recording; localTime: number } | null;
+  getAbsoluteTimeFromPosition: (position: number) => Date;
+  getPositionFromAbsoluteTime: (absoluteTime: Date) => number;
 }
 
 // Соответствие локаций и их русских названий
@@ -236,6 +247,13 @@ export const useStore = create<AppState>((set, get) => ({
     totalDuration: 0,
     currentItemIndex: -1,
     absolutePosition: 0
+  },
+  continuousPlaylist: {
+  recordings: [],
+  currentRecordingIndex: -1,
+  absoluteStartTime: new Date(),
+  absoluteEndTime: new Date(),
+  totalDurationSeconds: 0,
   },
   currentTime: 0,
   seekToAbsolutePosition: (position: number) => {
@@ -636,8 +654,15 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   selectRecording: (recordingId: string) => {
-    const { recordings } = get();
-    const recording = recordings.find(r => r.id === recordingId);
+    const { recordings, continuousPlaylist } = get();
+    
+    // Ищем в основном списке записей
+    let recording = recordings.find(r => r.id === recordingId);
+    
+    // Если не найдено, ищем в непрерывном плейлисте
+    if (!recording) {
+      recording = continuousPlaylist.recordings.find(r => r.id === recordingId);
+    }
 
     if (!recording) {
       console.error(`Запись с ID ${recordingId} не найдена`);
@@ -646,21 +671,22 @@ export const useStore = create<AppState>((set, get) => ({
 
     console.log('Выбрана запись:', recording);
 
+    // Обновляем индекс в непрерывном плейлисте
+    const newIndex = continuousPlaylist.recordings.findIndex(r => r.id === recordingId);
+    
     set({
       activeRecording: recording,
-      archiveViewMode: 'single'
-    });
-
-    // Обновляем видимый диапазон таймлайна для просмотра записи
-    const recordingDuration = recording.endTime.getTime() - recording.startTime.getTime();
-    const padding = Math.max(recordingDuration * 0.5, 1800000); // Минимум 30 минут отступа
-
-    set({
-      timelineVisibleRange: {
-        start: new Date(recording.startTime.getTime() - padding),
-        end: new Date(recording.endTime.getTime() + padding)
+      archiveViewMode: 'single',
+      continuousPlaylist: {
+        ...continuousPlaylist,
+        currentRecordingIndex: newIndex >= 0 ? newIndex : continuousPlaylist.currentRecordingIndex
       }
     });
+
+    // Если это первая запись, загружаем непрерывный плейлист
+    if (continuousPlaylist.recordings.length === 0) {
+      get().loadContinuousRecordings(recording.monitorId, recording.startTime);
+    }
   },
 
   setArchiveViewMode: (mode: ArchiveViewMode) => {
@@ -861,27 +887,46 @@ export const useStore = create<AppState>((set, get) => ({
 
     const start = new Date(timelineVisibleRange.start);
     const end = new Date(timelineVisibleRange.end);
+    const rangeDuration = end.getTime() - start.getTime();
 
-    switch (timelineZoomLevel) {
-      case 'hours':
-        const startHour = new Date(start);
-        startHour.setMinutes(0, 0, 0);
-        const endHour = new Date(end);
+    // Определяем интервал меток в зависимости от масштаба
+    let interval: number;
+    let formatOptions: Intl.DateTimeFormatOptions;
+    
+    if (rangeDuration <= 2 * 60 * 1000) { // <= 2 минуты - показываем секунды
+      interval = 10 * 1000; // каждые 10 секунд
+      formatOptions = { second: '2-digit' };
+    } else if (rangeDuration <= 2 * 60 * 60 * 1000) { // <= 2 часа - показываем минуты  
+      interval = 5 * 60 * 1000; // каждые 5 минут
+      formatOptions = { hour: '2-digit', minute: '2-digit' };
+    } else if (rangeDuration <= 48 * 60 * 60 * 1000) { // <= 2 дня - показываем часы
+      interval = 60 * 60 * 1000; // каждый час
+      formatOptions = { hour: '2-digit', minute: '2-digit' };
+    } else { // больше 2 дней - показываем дни
+      interval = 24 * 60 * 60 * 1000; // каждый день
+      formatOptions = { day: '2-digit', month: '2-digit', hour: '2-digit' };
+    }
 
-        while (startHour <= endHour) {
-          if (startHour >= start && startHour <= end) {
-            marks.push({
-              time: new Date(startHour),
-              label: startHour.getHours().toString(),
-              major: startHour.getHours() === 0
-            });
-          }
-          startHour.setHours(startHour.getHours() + 1);
-        }
-        break;
+    // Выравниваем начальную точку по интервалу
+    const alignedStart = new Date(Math.ceil(start.getTime() / interval) * interval);
+    
+    let currentTime = new Date(alignedStart);
+    while (currentTime <= end) {
+      if (currentTime >= start) {
+        const isMajor = 
+          (interval === 10 * 1000 && currentTime.getSeconds() % 60 === 0) ||
+          (interval === 5 * 60 * 1000 && currentTime.getMinutes() % 60 === 0) ||
+          (interval === 60 * 60 * 1000 && currentTime.getHours() % 24 === 0) ||
+          (interval === 24 * 60 * 60 * 1000);
 
-      default:
-        break;
+        marks.push({
+          time: new Date(currentTime),
+          label: currentTime.toLocaleString('ru-RU', formatOptions),
+          major: isMajor
+        });
+      }
+      
+      currentTime = new Date(currentTime.getTime() + interval);
     }
 
     return marks;
@@ -1015,5 +1060,87 @@ export const useStore = create<AppState>((set, get) => ({
         activeCameraId: null
       }
     });
+  },
+
+  loadContinuousRecordings: async (monitorId: string, startTime: Date, direction: 'forward' | 'backward' = 'forward') => {
+  try {
+    const endTime = new Date(startTime);
+    if (direction === 'forward') {
+      endTime.setDate(endTime.getDate() + 1); // Загружаем записи на день вперед
+    } else {
+      startTime.setDate(startTime.getDate() - 1); // Загружаем записи на день назад
+    }
+
+    console.log(`Загрузка непрерывных записей для ${monitorId} с ${startTime} по ${endTime}`);
+    
+    const recordings = await archiveAPI.getRecordingsForMonitor(monitorId, startTime, endTime);
+    
+    if (recordings.length === 0) {
+      console.log('Записи не найдены');
+      return;
+    }
+
+    // Сортируем записи по времени начала
+    recordings.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+    const absoluteStartTime = new Date(recordings[0].startTime);
+    const absoluteEndTime = new Date(recordings[recordings.length - 1].endTime);
+    const totalDurationSeconds = recordings.reduce((sum, rec) => sum + rec.duration, 0);
+
+    set({
+      continuousPlaylist: {
+        recordings,
+        currentRecordingIndex: 0,
+        absoluteStartTime,
+        absoluteEndTime,
+        totalDurationSeconds
+      }
+    });
+
+    // Устанавливаем видимый диапазон таймлайна
+    const timelinePadding = (absoluteEndTime.getTime() - absoluteStartTime.getTime()) * 0.1;
+    set({
+      timelineVisibleRange: {
+        start: new Date(absoluteStartTime.getTime() - timelinePadding),
+        end: new Date(absoluteEndTime.getTime() + timelinePadding)
+      }
+    });
+
+  } catch (error) {
+    console.error('Ошибка загрузки непрерывных записей:', error);
   }
+},
+
+// Поиск записи по абсолютному времени
+findRecordingAtTime: (absoluteTime: Date) => {
+  const { continuousPlaylist } = get();
+  
+  for (let i = 0; i < continuousPlaylist.recordings.length; i++) {
+    const recording = continuousPlaylist.recordings[i];
+    const startTime = new Date(recording.startTime);
+    const endTime = new Date(recording.endTime);
+    
+    if (absoluteTime >= startTime && absoluteTime <= endTime) {
+      const localTime = (absoluteTime.getTime() - startTime.getTime()) / 1000;
+      return { recording, localTime };
+    }
+  }
+  
+  return null;
+},
+
+// Получение абсолютного времени из позиции на таймлайне
+getAbsoluteTimeFromPosition: (position: number) => {
+  const { timelineVisibleRange } = get();
+  const rangeDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+  return new Date(timelineVisibleRange.start.getTime() + position * rangeDuration);
+},
+
+// Получение позиции на таймлайне из абсолютного времени
+getPositionFromAbsoluteTime: (absoluteTime: Date) => {
+  const { timelineVisibleRange } = get();
+  const rangeDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+  return (absoluteTime.getTime() - timelineVisibleRange.start.getTime()) / rangeDuration;
+},
+
 }));
