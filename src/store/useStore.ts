@@ -190,8 +190,8 @@ interface AppState extends AuthState, ArchiveState, SystemState {
   setViewMode: (mode: ViewMode) => void;
   toggleLocationSelection: (location: LocationType) => void;
   clearLocationSelections: () => void;
-  addCamera: (camera: Omit<Camera, 'isActive'>) => void;
-  removeCamera: (monitorId: string) => void;
+  addCamera: (camera: Omit<Camera, 'isActive'>) => Promise<boolean>;
+  removeCamera: (monitorId: string) => Promise<boolean>;
   loadCameras: () => Promise<void>;
 
   // Методы таймлайна
@@ -494,10 +494,10 @@ export const useStore = create<AppState>((set, get) => ({
           }
         }, 1000);
 
-        return true;
+        return true; // Возвращаем true при успехе
       } else {
         console.error('Не удалось создать монитор в SentryShot');
-        return false;
+        return false; // Возвращаем false при неудаче
       }
     } catch (error) {
       console.error('Ошибка при добавлении камеры:', error);
@@ -507,7 +507,7 @@ export const useStore = create<AppState>((set, get) => ({
         console.error('Детали ошибки:', error.message);
       }
       
-      return false;
+      return false; // Возвращаем false при ошибке
     }
   },
 
