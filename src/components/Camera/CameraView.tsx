@@ -91,10 +91,21 @@ const CameraView: React.FC<CameraViewProps> = ({
         enable: !currentMonitor.enable
       };
 
+      const createRequest = {
+        id: updatedMonitor.id,
+        name: updatedMonitor.name,
+        enable: updatedMonitor.enable,
+        rtspUrl: updatedMonitor.sourcertsp.mainStream,
+        rtspSubUrl: updatedMonitor.sourcertsp.subStream,
+        protocol: updatedMonitor.sourcertsp.protocol.toUpperCase() as 'TCP' | 'UDP',
+        alwaysRecord: updatedMonitor.alwaysRecord,
+        videoLength: updatedMonitor.videoLength
+      };
+
       console.log(`${currentMonitor.enable ? 'Отключение' : 'Включение'} камеры ${monitorId}`);
 
       // Отправляем обновленную конфигурацию
-      const success = await sentryshotAPI.createOrUpdateMonitor(updatedMonitor);
+      const success = await sentryshotAPI.createOrUpdateMonitor(createRequest);
 
       if (success) {
         // Обновляем локальное состояние

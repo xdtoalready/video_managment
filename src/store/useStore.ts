@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sentryshotAPI, TimeUtils } from '../api/sentryshot';
+import { sentryshotAPI, TimeUtils, CreateMonitorRequest } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
 import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
@@ -451,7 +451,7 @@ export const useStore = create<AppState>((set, get) => ({
     console.log('Добавление камеры:', camera);
 
     // ИСПРАВЛЕНО: Создаем объект запроса в правильном формате
-    const createRequest: sentryshotAPI.CreateMonitorRequest = {
+    const createRequest: CreateMonitorRequest = {
       id: camera.id,
       name: camera.name,
       enable: camera.enable !== undefined ? camera.enable : true,
