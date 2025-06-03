@@ -41,8 +41,9 @@ body {
 .layout-content {
   flex: 1;
   margin: 10px;
-  overflow-y: auto;
-  height: calc(100vh + 280px);
+  /* overflow-y: auto; */
+  /* height: calc(100vh + 280px); */
+  height: 100%;
 }
 
 .border-linebrake {
