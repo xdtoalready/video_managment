@@ -29,6 +29,9 @@ class AuthManager {
     if (this.username && this.password) {
       const basicAuth = btoa(`${this.username}:${this.password}`);
       headers['Authorization'] = `Basic ${basicAuth}`;
+      console.log('AUTH: Добавлен Authorization заголовок для пользователя:', this.username);
+    } else {
+      console.warn('AUTH: Отсутствуют учетные данные для аутентификации');
     }
 
     return headers;
@@ -37,37 +40,46 @@ class AuthManager {
   async getCsrfToken(): Promise<string> {
     const now = Date.now();
 
-    // Проверяем, есть ли действующий токен
     if (this.csrfToken && now < this.tokenExpiry) {
+      console.log('AUTH: Используется кешированный CSRF токен');
       return this.csrfToken;
     }
 
     try {
+      console.log('AUTH: Запрос нового CSRF токена...');
+      const authHeaders = this.getAuthHeaders();
+      console.log('AUTH: Заголовки для получения токена:', authHeaders);
+      
       const response = await fetch(`${API_BASE_URL}/api/account/my-token`, {
         method: 'GET',
-        headers: this.getAuthHeaders()
+        headers: authHeaders
       });
 
       if (!response.ok) {
+        console.error('AUTH: Ошибка получения CSRF токена:', response.status, response.statusText);
         throw new Error(`Ошибка получения CSRF токена: ${response.status}`);
       }
 
       this.csrfToken = await response.text();
-      this.tokenExpiry = now + (30 * 60 * 1000); // Токен действует 30 минут
+      this.tokenExpiry = now + (30 * 60 * 1000);
 
+      console.log('AUTH: Получен новый CSRF токен');
       return this.csrfToken;
     } catch (error) {
-      console.error('Ошибка при получении CSRF-токена:', error);
+      console.error('AUTH: Ошибка при получении CSRF-токена:', error);
       throw error;
     }
   }
 
   async getModifyHeaders(): Promise<HeadersInit> {
     const headers = this.getAuthHeaders();
-    const headersObj = new Headers(headers);
-    headersObj.set('X-CSRF-TOKEN', await this.getCsrfToken());
-    headersObj.set('Content-Type', 'application/json');
-    return headers;
+    const csrfToken = await this.getCsrfToken();
+    
+    return {
+      ...headers,
+      'X-CSRF-TOKEN': csrfToken,
+      'Content-Type': 'application/json'
+    };
   }
 }
 
@@ -243,9 +255,12 @@ export const sentryshotAPI = {
     try {
       console.log('API: Создание/обновление монитора:', monitor);
       
+      const headers = await this.auth.getModifyHeaders();
+      console.log('API: Заголовки запроса:', headers);
+      
       const response = await fetch(`${API_BASE_URL}/api/monitor`, {
         method: 'PUT',
-        headers: await this.auth.getModifyHeaders(),
+        headers: headers,
         body: JSON.stringify(monitor)
       });
 
@@ -254,6 +269,12 @@ export const sentryshotAPI = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('API: Ошибка сервера:', errorText);
+        
+        if (response.status === 401) {
+          console.error('API: Ошибка аутентификации - проверьте учетные данные и CSRF токен');
+          throw new Error('Ошибка аутентификации. Попробуйте перелогиниться.');
+        }
+        
         throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
       }
 
@@ -263,15 +284,7 @@ export const sentryshotAPI = {
       return true;
     } catch (error) {
       console.error('API: Ошибка при создании/обновлении монитора:', error);
-      
-      // Проверяем тип ошибки для более понятного сообщения
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error('Не удалось подключиться к серверу SentryShot');
-      } else if (error instanceof Error) {
-        throw error;
-      } else {
-        throw new Error('Неизвестная ошибка при создании монитора');
-      }
+      throw error;
     }
   },
 
