@@ -81,9 +81,22 @@
   cursor: pointer;
 }
 
-.camera-active .camera-menu-button {
-  background-color: rgba(0, 0, 0, 0.5);
+.camera-offline-message {
+  color: var(--primary-color);
 }
+
+.camera-offline {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* .camera-active .camera-menu-button {
+  background-color: rgba(0, 0, 0, 0.5);
+} */
 
 .menu-button-circle {
   width: 5px;

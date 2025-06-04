@@ -202,7 +202,6 @@ const CameraView: React.FC<CameraViewProps> = ({
           {/* Показываем сообщение если нет соединения с сервером */}
           {connectionStatus !== 'connected' ? (
               <div className="camera-offline">
-                <div className="camera-offline-icon">🌐</div>
                 <div className="camera-offline-message">
                   Нет соединения с сервером SentryShot
                 </div>
@@ -212,7 +211,6 @@ const CameraView: React.FC<CameraViewProps> = ({
               </div>
           ) : !isCameraEnabled ? (
               <div className="camera-offline">
-                <div className="camera-offline-icon">📷</div>
                 <div className="camera-offline-message">
                   Камера отключена
                 </div>

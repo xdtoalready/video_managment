@@ -105,7 +105,7 @@ if (!isGridView && activeCamera) {
           </>
         )}
         <span className="camera-count">
-          {filteredCameras.length + (isAuthenticated && hasAdminRights ? 1 : 0)}/{cameras.length + (isAuthenticated && hasAdminRights ? 1 : 0)}
+          {filteredCameras.length}/{cameras.length}
         </span>
       </div>
       
