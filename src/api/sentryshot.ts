@@ -372,7 +372,7 @@ export const sentryshotAPI = {
   // Получение URL потокового видео
   getStreamUrl(monitorId: string, useSubStream = false): string {
     const streamBase = STREAM_BASE_URL || '';
-    let streamPath = `/stream/${monitorId}/index.m3u8`;
+    let streamPath = `/hls/${monitorId}/index.m3u8`;
 
     if (useSubStream) {
       return `${streamBase}${streamPath}?quality=sub`;
