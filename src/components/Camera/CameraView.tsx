@@ -4,6 +4,7 @@ import DeleteCameraModal from './DeleteCameraModal.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
 import { getLocationForMonitor } from '../../constants/locationMapping';
+import './Camera.css';
 
 interface CameraViewProps {
   streamUrl: string;

@@ -203,19 +203,10 @@
 
 /* Кнопка удаления камеры */
 .camera-delete-button {
+  padding: 4px 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: rgba(211, 84, 74, 0.1);
-  color: #D3544A;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-left: 8px;
-  opacity: 0.8;
 }
 
 .camera-delete-button:hover {
@@ -264,6 +255,7 @@
   display: flex;
   align-items: center;
   transition: all 0.3s ease;
+  gap: 12px;
 }
 
 /* Стили для мобильных устройств */
