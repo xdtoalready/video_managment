@@ -3,6 +3,7 @@ import VideoPlayer from '../video/VideoPlayer.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
 import { getLocationForMonitor } from '../../constants/locationMapping';
+import { FaTrash } from 'react-icons/fa';
 
 interface CameraViewProps {
   streamUrl: string;
@@ -24,7 +25,8 @@ const CameraView: React.FC<CameraViewProps> = ({
     isGridView,
     isAuthenticated,
     connectionStatus,
-    cameras
+    cameras,
+    removeCamera
   } = useStore();
 
   const location = getLocationForMonitor(monitorId);
@@ -35,6 +37,7 @@ const CameraView: React.FC<CameraViewProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(false);
   const [isTogglingCamera, setIsTogglingCamera] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Обработчик ошибок видеоплеера
   const handleVideoError = (errorMessage: string) => {
@@ -128,6 +131,31 @@ const CameraView: React.FC<CameraViewProps> = ({
     }
   };
 
+  // Обработчик для кнопки удаления
+  const handleDeleteCamera = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteCamera = async () => {
+    if (!isAuthenticated || !camera) return;
+
+    // Можно добавить индикатор загрузки во время удаления
+    const success = await removeCamera(monitorId);
+    if (success) {
+      console.log(`Камера ${monitorId} успешно удалена.`);
+      // Дополнительные действия после удаления, если нужны
+      // Например, закрыть модальное окно подтверждения или показать уведомление
+    } else {
+      setError('Ошибка при удалении камеры. Попробуйте еще раз.');
+    }
+    setShowDeleteConfirm(false);
+  };
+
+  const cancelDeleteCamera = () => {
+    setShowDeleteConfirm(false);
+  };
+
   // Определение, показывать ли камеру в активном режиме
   const isActiveView = isActive && !isGridView;
 
@@ -195,8 +223,34 @@ const CameraView: React.FC<CameraViewProps> = ({
               <span className="menu-button-circle"></span>
               <span className="menu-button-circle"></span>
             </button>
+
+            {/* Кнопка удаления камеры */}
+            {isAuthenticated && (
+              <button
+                className="camera-delete-button camera-menu-button"
+                onClick={handleDeleteCamera}
+                title="Удалить камеру"
+                style={{ marginLeft: '8px' }}
+              >
+                <FaTrash />
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Диалог подтверждения удаления */}
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay">
+            <div className="delete-confirm-dialog">
+              <h3>Подтвердите удаление</h3>
+              <p>Вы уверены, что хотите удалить камеру "{monitorName}"? Это действие необратимо.</p>
+              <div className="delete-confirm-actions">
+                <button onClick={confirmDeleteCamera} className="confirm-btn">Удалить</button>
+                <button onClick={cancelDeleteCamera} className="cancel-btn">Отмена</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className={`camera-view ${isActive ? 'active' : ''}`}>
           {/* Показываем сообщение если нет соединения с сервером */}
