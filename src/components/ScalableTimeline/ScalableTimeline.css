@@ -19,7 +19,7 @@
 .timeline-control-button {
     background-color: rgba(255, 255, 255, 0.1);
     border: none;
-    color: white;
+    color: var(--white);
     width: 30px;
     height: 30px;
     border-radius: 4px;
@@ -93,7 +93,7 @@
     left: 50%;
     width: 2px;
     height: 100%;
-    background-color: #ff0000;
+    background-color: var(--primary-color);
     z-index: 10;
     transform: translateX(-50%);
     pointer-events: none;
@@ -120,9 +120,9 @@
     left: 50%;
     width: 18px;
     height: 18px;
-    background-color: #ff0000;
+    background-color: var(--primary-color);
     border-radius: 50%;
-    border: 2px solid #ffffff;
+    border: 2px solid var(--white);
     transform: translateX(-50%);
     z-index: 11;
     pointer-events: none;
@@ -135,7 +135,7 @@
     left: 50%;
     transform: translateX(-50%);
     background-color: rgba(0, 0, 0, 0.9);
-    color: white;
+    color: var(--white);
     padding: 6px 10px;
     border-radius: 6px;
     font-size: 13px;
@@ -198,7 +198,7 @@
 }
 
 .timeline-mark.major .timeline-mark-label {
-    color: rgba(255, 255, 255, 1);
+    color: var(--white);
     font-weight: 600;
     background: rgba(0, 0, 0, 0.6);
     font-size: 13px;
@@ -222,7 +222,7 @@
 
 .timeline-segment.active {
     background-color: rgba(74, 144, 226, 0.8);
-    border-color: rgba(74, 144, 226, 1);
+    border-color: var(--color-main2);
 }
 
 .timeline-range-display {

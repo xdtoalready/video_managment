@@ -142,7 +142,7 @@
   width: 90%;
   max-width: 400px;
   text-align: center;
-  color: #fff;
+  color: var(--white);
 }
 
 .delete-confirm-dialog h3 {
@@ -174,17 +174,17 @@
 }
 
 .delete-confirm-actions .confirm-btn {
-  background-color: #e53935;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--white);
 }
 
 .delete-confirm-actions .confirm-btn:hover {
-  background-color: #c62828;
+  background-color: var(--primary-hover);
 }
 
 .delete-confirm-actions .cancel-btn {
   background-color: #555;
-  color: white;
+  color: var(--white);
 }
 
 .delete-confirm-actions .cancel-btn:hover {

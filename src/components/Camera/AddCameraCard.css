@@ -6,8 +6,8 @@
   height: 100%;
   min-height: 200px;
   background: transparent;
-  border: 2px dashed #D3544A;
-  border-radius: 10px;
+  border: 2px dashed var(--primary-color);
+  border-radius: var(--border-radius);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -15,7 +15,7 @@
 }
 
 .add-camera-card:hover {
-  border-color: #B8453C;
+  border-color: var(--primary-hover);
   background: rgba(211, 84, 74, 0.05);
   transform: translateY(-2px);
   box-shadow: 0 4px 20px rgba(211, 84, 74, 0.15);
@@ -32,7 +32,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  color: #D3544A;
+  color: var(--primary-color);
   user-select: none;
 }
 
@@ -56,13 +56,13 @@
   margin: 0 0 4px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #D3544A;
+  color: var(--primary-color);
 }
 
 .add-camera-text p {
   margin: 0;
   font-size: 12px;
-  color: #A4A0A0;
+  color: var(--gray2-color);
   opacity: 0.8;
 }
 

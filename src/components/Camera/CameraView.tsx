@@ -3,7 +3,6 @@ import VideoPlayer from '../video/VideoPlayer.tsx';
 import { useStore } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
 import { getLocationForMonitor } from '../../constants/locationMapping';
-import { FaTrash } from 'react-icons/fa';
 
 interface CameraViewProps {
   streamUrl: string;
@@ -232,7 +231,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                 title="Удалить камеру"
                 style={{ marginLeft: '8px' }}
               >
-                <FaTrash />
+                🗑️
               </button>
             )}
           </div>
@@ -284,7 +283,7 @@ const CameraView: React.FC<CameraViewProps> = ({
                 <div className="camera-error-message">{error}</div>
                 <button
                     className="camera-retry-btn"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent) => {
                       e.stopPropagation();
                       setError(null);
                     }}

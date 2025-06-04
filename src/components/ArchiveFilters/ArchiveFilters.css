@@ -211,7 +211,7 @@
 }
 
 .preset-button {
-  background: #f8f9fa;
+  background: var(--light-bg);
   border: 1px solid #dee2e6;
   color: #495057;
   padding: 8px 16px;
@@ -223,7 +223,7 @@
 
 .preset-button:hover:not(:disabled) {
   background: var(--primary-color);
-  color: white;
+  color: var(--white);
   border-color: var(--primary-color);
 }
 

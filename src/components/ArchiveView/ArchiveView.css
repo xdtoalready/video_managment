@@ -14,7 +14,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   background-size: 100%;
   width: 20px;
   height: 20px;
-  background-color: white;
+  background-color: var(--white);
   padding: 8px;
   border-radius: 6px;
 }

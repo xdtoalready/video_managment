@@ -51,7 +51,7 @@
 }
 
 .login-date-label {
-    color: #666;
+    color: var(--gray2-color);
     font-size: 14px;
 }
 
@@ -73,7 +73,7 @@
 
 .login-subtitle {
     font-size: 16px;
-    color: #666;
+    color: var(--gray2-color);
     margin: 0;
     font-weight: 300;
 }
@@ -107,12 +107,12 @@
 
 .status-indicator.disconnected {
     background-color: rgba(158, 158, 158, 0.1);
-    color: #9E9E9E;
+    color: var(--gray2-color);
 }
 
 .status-indicator.error {
     background-color: rgba(244, 67, 54, 0.1);
-    color: #F44336;
+    color: var(--primary-color);
 }
 
 .status-dot {
@@ -157,14 +157,14 @@
     border-radius: 12px !important;
     font-size: 16px !important;
     color: var(--text-color) !important;
-    background-color: #FAFAFA !important;
+    background-color: var(--light-bg) !important;
     transition: all 0.3s ease !important;
     outline: none !important;
 }
 
 .form-input:focus {
     border-color: var(--color-main2);
-    background-color: #fff;
+    background-color: var(--white);
     box-shadow: 0 0 0 3px rgba(65, 117, 212, 0.1);
 }
 
@@ -174,7 +174,7 @@
 }
 
 .form-input::placeholder {
-    color: #999;
+    color: var(--gray2-color);
 }
 
 .checkbox-group {
@@ -205,7 +205,7 @@
     border-radius: 4px;
     cursor: pointer;
     appearance: none;
-    background-color: #fff;
+    background-color: var(--white);
     transition: all 0.3s ease;
     position: relative;
 }
@@ -222,7 +222,7 @@
     left: 5px;
     width: 6px;
     height: 10px;
-    border: solid white;
+    border: solid var(--white);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -239,7 +239,7 @@
     background-color: rgba(244, 67, 54, 0.1);
     border: 1px solid rgba(244, 67, 54, 0.2);
     border-radius: 8px;
-    color: #F44336;
+    color: var(--primary-color);
     font-size: 14px;
     margin-top: -10px;
 }

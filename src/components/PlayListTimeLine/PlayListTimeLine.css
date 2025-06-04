@@ -64,7 +64,7 @@
 }
 
 .event-person {
-  background-color: rgba(255, 0, 0, 0.8);
+  background-color: var(--primary-color);
 }
 
 .event-vehicle {
@@ -100,7 +100,7 @@
   height: 18px;
   background-color: var(--primary-color);
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid var(--white);
 }
 
 .timeline-hours {

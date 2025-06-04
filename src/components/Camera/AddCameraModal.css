@@ -14,7 +14,7 @@
 }
 
 .add-camera-modal {
-  background: #fff;
+  background: var(--white);
   border-radius: 12px;
   width: 90%;
   max-width: 600px;
@@ -22,7 +22,7 @@
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: slideIn 0.3s ease-out;
-  border: 1px solid #333;
+  border: 1px solid var(--text-color);
 }
 
 @keyframes fadeIn {
@@ -47,8 +47,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #333;
-  background: #fff;
+  border-bottom: 1px solid var(--text-color);
+  background: var(--white);
 }
 
 .modal-header h2 {
@@ -64,14 +64,14 @@
   border: none;
   padding: 8px;
   cursor: pointer;
-  color: #A4A0A0;
+  color: var(--gray2-color);
   border-radius: 6px;
   transition: all 0.2s ease;
 }
 
 .modal-close-button:hover {
   background: var(--primary-color);
-  color: #FFFFFF;
+  color: var(--white);
 }
 
 .modal-close-button:disabled {
@@ -101,7 +101,7 @@
   font-weight: 600;
   color: var(--text-color);
   padding-bottom: 8px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--text-color);
 }
 
 .section-header {
@@ -177,7 +177,7 @@
   display: block;
   margin-top: 4px;
   font-size: 12px;
-  color: #A4A0A0;
+  color: var(--gray2-color);
 }
 
 /* Ошибки валидации */
@@ -195,7 +195,7 @@
 
 .rtsp-templates label {
   font-size: 12px;
-  color: #A4A0A0;
+  color: var(--gray2-color);
   margin-bottom: 6px;
 }
 
@@ -218,7 +218,7 @@
 .template-button:hover {
   background: var(--primary-color);
   border-color: var(--primary-hover);
-  color: #FFFFFF;
+  color: var(--white);
 }
 
 .template-button:disabled {
@@ -301,8 +301,8 @@
 
 .info-value.connected { color: #4CAF50; }
 .info-value.connecting { color: #FF9800; }
-.info-value.error { color: #D3544A; }
-.info-value.disconnected { color: #A4A0A0; }
+.info-value.error { color: var(--primary-color); }
+.info-value.disconnected { color: var(--gray2-color); }
 
 .connection-warning {
   margin-top: 8px;
