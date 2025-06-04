@@ -324,9 +324,11 @@ export const sentryshotAPI = {
 
   async deleteMonitor(monitorId: string): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/monitor/${monitorId}`, {
+      console.log(`Удаление камеры ${monitorId}...`);
+      const headers = await this.auth.getModifyHeaders();
+      const response = await fetch(`${API_BASE_URL}/api/monitor?id=${monitorId}`, {
         method: 'DELETE',
-        headers: await this.auth.getModifyHeaders()
+        headers: headers
       });
 
       return response.ok;
