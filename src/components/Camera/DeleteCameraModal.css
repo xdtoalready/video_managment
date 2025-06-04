@@ -309,7 +309,7 @@
   }
   
   /* Темная тема (если используется) */
-  @media (prefers-color-scheme: dark) {
+  /* @media (prefers-color-scheme: dark) {
     .delete-camera-modal {
       background: #1A1A1A;
       box-shadow: 
@@ -336,7 +336,7 @@
     .confirmation-input input:focus {
       border-color: #D3544A;
     }
-  }
+  } */
   
   /* Анимация при удалении */
   .delete-camera-modal.deleting {
