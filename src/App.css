@@ -1168,6 +1168,19 @@ button:focus, button:focus-visible {
   font-weight: 600;
 }
 
+.camera-offline-message {
+  color: var(--primary-color);
+}
+
+.camera-offline {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .refresh-button {
   background: var(--primary-color);
   color: var(--white);
