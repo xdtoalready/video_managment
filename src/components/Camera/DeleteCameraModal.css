@@ -1,0 +1,348 @@
+/* Оверлей модального окна */
+.delete-camera-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(6px);
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  /* Модальное окно */
+  .delete-camera-modal {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 0;
+    width: 90%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+    animation: slideIn 0.3s ease-out;
+    position: relative;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  /* Иконка предупреждения */
+  .delete-modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 24px 16px 24px;
+    color: #D3544A;
+  }
+  
+  .delete-modal-icon svg {
+    width: 48px;
+    height: 48px;
+  }
+  
+  /* Заголовок */
+  .delete-modal-header {
+    text-align: center;
+    padding: 0 24px 20px 24px;
+  }
+  
+  .delete-modal-header h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-color);
+  }
+  
+  .delete-modal-header p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--gray2-color);
+    opacity: 0.8;
+  }
+  
+  /* Контент */
+  .delete-modal-content {
+    padding: 0 24px 24px 24px;
+  }
+  
+  /* Информация о камере */
+  .camera-info {
+    background: var(--light-bg);
+    border: 1px solid var(--text-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .camera-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 4px;
+  }
+  
+  .camera-id {
+    font-size: 12px;
+    color: var(--gray2-color);
+    font-family: 'Courier New', monospace;
+    background: rgba(0, 0, 0, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  
+  /* Предупреждающий текст */
+  .warning-text {
+    margin-bottom: 20px;
+  }
+  
+  .warning-text p {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--text-color);
+    font-weight: 500;
+  }
+  
+  .warning-text ul {
+    margin: 0;
+    padding-left: 20px;
+    list-style: none;
+  }
+  
+  .warning-text li {
+    font-size: 13px;
+    color: var(--gray2-color);
+    margin-bottom: 6px;
+    position: relative;
+  }
+  
+  .warning-text li:before {
+    content: '•';
+    color: #D3544A;
+    position: absolute;
+    left: -16px;
+    font-weight: bold;
+  }
+  
+  .warning-text li:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* Поле подтверждения */
+  .confirmation-input {
+    margin-bottom: 24px;
+  }
+  
+  .confirmation-input label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--text-color);
+  }
+  
+  .confirmation-input strong {
+    color: #D3544A;
+    font-weight: 600;
+  }
+  
+  .confirmation-input input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--text-color);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--white);
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+  }
+  
+  .confirmation-input input:focus {
+    outline: none;
+    border-color: #D3544A;
+    box-shadow: 0 0 0 3px rgba(211, 84, 74, 0.1);
+  }
+  
+  .confirmation-input input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  /* Действия */
+  .delete-modal-actions {
+    display: flex;
+    gap: 12px;
+    padding: 24px;
+    border-top: 1px solid var(--text-color);
+    background: var(--light-bg);
+  }
+  
+  .cancel-delete-btn,
+  .confirm-delete-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+  }
+  
+  .cancel-delete-btn {
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--text-color);
+  }
+  
+  .cancel-delete-btn:hover:not(:disabled) {
+    background: var(--text-color);
+    color: var(--white);
+  }
+  
+  .confirm-delete-btn {
+    background: #D3544A;
+    color: white;
+    border: 1px solid #D3544A;
+  }
+  
+  .confirm-delete-btn:hover:not(:disabled) {
+    background: #B8453C;
+    border-color: #B8453C;
+    box-shadow: 0 2px 8px rgba(211, 84, 74, 0.3);
+  }
+  
+  .cancel-delete-btn:disabled,
+  .confirm-delete-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  .confirm-delete-btn:disabled {
+    background: var(--gray2-color);
+    border-color: var(--gray2-color);
+  }
+  
+  /* Загрузочный спиннер */
+  .loading-spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .delete-camera-modal {
+      width: 95%;
+      margin: 0 auto;
+    }
+  
+    .delete-modal-icon {
+      padding: 20px 20px 12px 20px;
+    }
+  
+    .delete-modal-icon svg {
+      width: 40px;
+      height: 40px;
+    }
+  
+    .delete-modal-header {
+      padding: 0 20px 16px 20px;
+    }
+  
+    .delete-modal-header h2 {
+      font-size: 20px;
+    }
+  
+    .delete-modal-content {
+      padding: 0 20px 20px 20px;
+    }
+  
+    .delete-modal-actions {
+      flex-direction: column-reverse;
+      padding: 20px;
+    }
+  
+    .cancel-delete-btn,
+    .confirm-delete-btn {
+      width: 100%;
+    }
+  }
+  
+  /* Темная тема (если используется) */
+  @media (prefers-color-scheme: dark) {
+    .delete-camera-modal {
+      background: #1A1A1A;
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+  
+    .camera-info {
+      background: #2A2A2A;
+      border-color: #333;
+    }
+  
+    .delete-modal-actions {
+      background: #2A2A2A;
+      border-color: #333;
+    }
+  
+    .confirmation-input input {
+      background: #2A2A2A;
+      border-color: #333;
+      color: #DEDFE3;
+    }
+  
+    .confirmation-input input:focus {
+      border-color: #D3544A;
+    }
+  }
+  
+  /* Анимация при удалении */
+  .delete-camera-modal.deleting {
+    pointer-events: none;
+  }
+  
+  .delete-camera-modal.deleting .delete-modal-content {
+    opacity: 0.7;
+  }

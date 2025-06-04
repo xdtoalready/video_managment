@@ -199,3 +199,226 @@
   color: #ff4757;
   background-color: rgba(255, 255, 255, 0.1);
 }
+
+
+/* Кнопка удаления камеры */
+.camera-delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(211, 84, 74, 0.1);
+  color: #D3544A;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+  opacity: 0.8;
+}
+
+.camera-delete-button:hover {
+  background: #D3544A;
+  color: white;
+  opacity: 1;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(211, 84, 74, 0.3);
+}
+
+.camera-delete-button:active {
+  transform: scale(0.95);
+}
+
+.camera-delete-button svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.camera-delete-button:hover svg {
+  transform: scale(1.1);
+}
+
+/* Скрываем кнопку удаления по умолчанию, показываем при наведении */
+.camera-card .camera-delete-button {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+}
+
+.camera-card:hover .camera-delete-button,
+.camera-card.camera-active .camera-delete-button {
+  opacity: 0.8;
+  visibility: visible;
+  transform: translateX(0);
+}
+
+.camera-card:hover .camera-delete-button:hover {
+  opacity: 1;
+}
+
+/* Анимация для header-right при появлении кнопки удаления */
+.camera-header-right {
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+/* Стили для мобильных устройств */
+@media (max-width: 768px) {
+  /* На мобильных всегда показываем кнопку удаления */
+  .camera-card .camera-delete-button {
+    opacity: 0.6;
+    visibility: visible;
+    transform: translateX(0);
+  }
+  
+  .camera-delete-button {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .camera-delete-button svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Состояние загрузки для кнопки удаления */
+.camera-delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.camera-delete-button.deleting {
+  background: #D3544A;
+  color: white;
+  cursor: not-allowed;
+}
+
+.camera-delete-button.deleting svg {
+  animation: shake 0.5s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Улучшенные стили для меню кнопок */
+.camera-menu-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.camera-menu-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s ease;
+}
+
+.camera-menu-button:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Группировка кнопок управления */
+.camera-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.camera-card:hover .camera-controls-group {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Если нужно сгруппировать кнопки управления */
+.camera-header-right.grouped {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 4px;
+  backdrop-filter: blur(4px);
+}
+
+/* Тултип для кнопки удаления */
+.camera-delete-button[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 4px;
+}
+
+.camera-delete-button[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+}
+
+/* Предотвращаем появление нативного тултипа */
+.camera-delete-button[title] {
+  position: relative;
+}
+
+/* Состояния доступности кнопки удаления */
+.camera-delete-button.admin-only {
+  display: none;
+}
+
+.camera-card[data-user-role="admin"] .camera-delete-button.admin-only {
+  display: flex;
+}
+
+/* Анимация для успешного удаления */
+@keyframes fadeOutScale {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.camera-card.deleting {
+  animation: fadeOutScale 0.5s ease-out forwards;
+  pointer-events: none;
+}
