@@ -30,7 +30,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   const [switchPassword, setSwitchPassword] = useState('');
   const [switchError, setSwitchError] = useState<string | null>(null);
 
-  // ИСПРАВЛЕНО: Позиционирование выпадающего меню с правильными типами
+  // ИСПРАВЛЕНО: Улучшенная логика позиционирования
   const [position, setPosition] = useState({ 
     top: 0, 
     left: 0, 
@@ -44,19 +44,34 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
 
-      let top = triggerRect.top - dropdownRect.height - 8; // 8px отступ
+      // ИСПРАВЛЕНО: Определяем, находится ли trigger в нижней части экрана (например, в футере)
+      const isInBottomArea = triggerRect.bottom > viewportHeight * 0.7; // Если элемент в нижних 30% экрана
+
+      let top: number;
       let left = triggerRect.left;
       let right: number | undefined = undefined;
 
-      // Если не помещается сверху, показываем снизу
-      if (top < 0) {
-        top = triggerRect.bottom + 8;
+      // ИСПРАВЛЕНО: Для элементов в нижней части всегда показываем dropdown сверху
+      if (isInBottomArea) {
+        top = triggerRect.top - dropdownRect.height - 8; // 8px отступ сверху
+        // Если всё равно не помещается сверху, показываем максимально высоко
+        if (top < 8) {
+          top = 8; // Минимальный отступ от верха экрана
+        }
+      } else {
+        // Для элементов в верхней части используем старую логику
+        top = triggerRect.top - dropdownRect.height - 8;
+        // Если не помещается сверху, показываем снизу
+        if (top < 8) {
+          top = triggerRect.bottom + 8;
+        }
       }
 
-      // ИСПРАВЛЕНО: Если не помещается справа, выравниваем по правому краю
-      if (left + dropdownRect.width > viewportWidth) {
-        left = 0; // Сбрасываем left
+      // ИСПРАВЛЕНО: Позиционирование по горизонтали
+      if (left + dropdownRect.width > viewportWidth - 16) {
+        // Если не помещается справа, выравниваем по правому краю
         right = viewportWidth - triggerRect.right;
+        left = 0; // Сбрасываем left когда используем right
       }
 
       setPosition({ top, left, right });
@@ -85,14 +100,14 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   const handleCreateAccount = () => {
     setEditingAccount(null);
     setIsAccountModalOpen(true);
-    onClose();
+    onClose(); // Закрываем dropdown при открытии модального окна
   };
 
   // Обработчик открытия модального окна для редактирования аккаунта
   const handleEditAccount = (account: Account) => {
     setEditingAccount(account);
     setIsAccountModalOpen(true);
-    onClose();
+    onClose(); // Закрываем dropdown при открытии модального окна
   };
 
   // Обработчик удаления аккаунта
@@ -180,16 +195,17 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
         style={{
           position: 'fixed',
           top: position.top,
-          // ИСПРАВЛЕНО: Правильная обработка позиционирования
           left: position.right === undefined ? position.left : undefined,
           right: position.right,
-          zIndex: 9999,
+          zIndex: 10000, // ИСПРАВЛЕНО: Увеличили z-index для отображения поверх всех элементов
           background: 'var(--white)',
           border: '1px solid var(--text-color)',
           borderRadius: '8px',
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
           minWidth: '280px',
           maxWidth: '320px',
+          maxHeight: '80vh', // ДОБАВЛЕНО: Ограничиваем максимальную высоту
+          overflowY: 'auto', // ДОБАВЛЕНО: Добавляем скролл если контент не помещается
           padding: '8px 0',
           animation: 'fadeIn 0.2s ease-out'
         }}
@@ -452,15 +468,17 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
         )}
       </div>
 
-      {/* Модальное окно управления аккаунтами */}
-      <AccountModal
-        isOpen={isAccountModalOpen}
-        onClose={() => {
-          setIsAccountModalOpen(false);
-          setEditingAccount(null);
-        }}
-        editingAccount={editingAccount}
-      />
+      {/* ИСПРАВЛЕНО: Модальное окно теперь рендерится в портале для правильного позиционирования */}
+      {isAccountModalOpen && (
+        <AccountModal
+          isOpen={isAccountModalOpen}
+          onClose={() => {
+            setIsAccountModalOpen(false);
+            setEditingAccount(null);
+          }}
+          editingAccount={editingAccount}
+        />
+      )}
     </>
   );
 };
