@@ -278,6 +278,12 @@ const SystemStatusFooter: React.FC = () => {
                 transition: 'transform 0.2s'
               }}>
                 ▼
+                  {/* Выпадающее меню аккаунтов */}
+                  <AccountDropdown
+                    isOpen={isAccountDropdownOpen}
+                    onClose={() => setIsAccountDropdownOpen(false)}
+                    triggerRef={usernameRef as React.RefObject<HTMLElement>}
+                  />
               </span>
             </span>
           </div>
@@ -292,12 +298,6 @@ const SystemStatusFooter: React.FC = () => {
           <span className="status-value">v1.0</span>
         </div>
 
-        {/* Выпадающее меню аккаунтов */}
-        <AccountDropdown
-          isOpen={isAccountDropdownOpen}
-          onClose={() => setIsAccountDropdownOpen(false)}
-          triggerRef={usernameRef as React.RefObject<HTMLElement>}
-        />
       </div>
   );
 };
