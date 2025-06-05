@@ -1,30 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { Account } from '../../api/sentryshot';
-import AccountModal from './AccountModal';
 import './AccountDropdown.css';
 
 interface AccountDropdownProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (callback?: () => void) => void; // Модифицированный onClose с поддержкой callback
   triggerRef: React.RefObject<HTMLElement>;
+  onCreateAccount: () => void; // Новый проп для создания аккаунта
+  onEditAccount: (account: Account) => void; // Новый проп для редактирования аккаунта
 }
 
-const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, triggerRef }) => {
+const AccountDropdown: React.FC<AccountDropdownProps> = ({ 
+  isOpen, 
+  onClose, 
+  triggerRef,
+  onCreateAccount,
+  onEditAccount
+}) => {
   const { 
     accounts, 
     username, 
     hasAdminRights, 
-    switchAccount, 
     deleteAccount,
     logout 
   } = useStore();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  // Состояние для модального окна
-  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   
   // Состояние для переключения аккаунта
   const [switchingToAccount, setSwitchingToAccount] = useState<string | null>(null);
@@ -117,12 +119,8 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   // Улучшенная обработка клика вне меню
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Проверяем, не является ли цель клика частью модального окна
-      const isModalClick = (event.target as Element).closest('.account-modal-overlay');
-      
       if (
         isOpen &&
-        !isModalClick && // Не закрываем, если клик был по модальному окну
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         triggerRef.current &&
@@ -155,24 +153,14 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
 
   // Обработчик открытия модального окна для создания аккаунта
   const handleCreateAccount = () => {
-    setEditingAccount(null);
-    // Сначала закрываем дропдаун, затем с небольшой задержкой открываем модальное окно
-    onClose();
-    // Используем setTimeout для гарантированного открытия модального окна после закрытия дропдауна
-    setTimeout(() => {
-      setIsAccountModalOpen(true);
-    }, 50);
+    // Вызываем проп onCreateAccount
+    onCreateAccount();
   };
 
   // Обработчик открытия модального окна для редактирования аккаунта
   const handleEditAccount = (account: Account) => {
-    setEditingAccount(account);
-    // Сначала закрываем дропдаун, затем с небольшой задержкой открываем модальное окно
-    onClose();
-    // Используем setTimeout для гарантированного открытия модального окна после закрытия дропдауна
-    setTimeout(() => {
-      setIsAccountModalOpen(true);
-    }, 50);
+    // Вызываем проп onEditAccount
+    onEditAccount(account);
   };
 
   // Обработчик удаления аккаунта
@@ -224,6 +212,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
     if (!switchingToAccount || !switchPassword) return;
 
     try {
+      const { switchAccount } = useStore.getState(); // Получаем функцию из store напрямую
       const success = await switchAccount(switchingToAccount, switchPassword);
       
       if (success) {
@@ -253,165 +242,151 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   const otherAccounts = accounts.filter(acc => acc.username !== username);
 
   return (
-    <>
-      <div 
-        ref={dropdownRef}
-        className="account-dropdown"
-        style={dropdownStyle}
-      >
-        {/* Заголовок */}
-        <div className="account-dropdown-header">
-          Управление аккаунтами
-        </div>
-
-        {/* Текущий аккаунт */}
-        <div className="account-dropdown-current">
-          <div className="current-user-label">
-            Текущий пользователь:
-          </div>
-          <div className="current-user-info">
-            <div className="current-user-details">
-              <div className="username">{username}</div>
-              <div className="role">
-                {hasAdminRights ? 'Администратор' : 'Пользователь'}
-              </div>
-            </div>
-            <div className="current-user-icon">
-              {hasAdminRights ? '👑' : '👤'}
-            </div>
-          </div>
-        </div>
-
-        {/* Переключение аккаунта */}
-        {switchingToAccount ? (
-          <div className="account-switch-form">
-            <div className="switch-form-title">
-              Переключение на: <strong>{switchingToAccount}</strong>
-            </div>
-            <input
-              type="password"
-              placeholder="Введите пароль"
-              value={switchPassword}
-              onChange={(e) => setSwitchPassword(e.target.value)}
-              className="switch-password-input"
-              autoFocus
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleConfirmSwitch();
-                }
-              }}
-            />
-            {switchError && (
-              <div className="switch-error">
-                {switchError}
-              </div>
-            )}
-            <div className="switch-form-actions">
-              <button
-                onClick={handleCancelSwitching}
-                className="switch-btn switch-btn-cancel"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={handleConfirmSwitch}
-                disabled={!switchPassword}
-                className="switch-btn switch-btn-confirm"
-              >
-                Войти
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Список других аккаунтов */}
-            {otherAccounts.length > 0 && (
-              <div className="account-dropdown-section">
-                <div className="section-label">
-                  Переключиться на:
-                </div>
-                {otherAccounts.map(account => (
-                  <div
-                    key={account.id}
-                    className="account-item"
-                    onClick={() => handleStartSwitching(account)}
-                  >
-                    <div className="account-item-info">
-                      <span className="account-item-icon">
-                        {account.isAdmin ? '👑' : '👤'}
-                      </span>
-                      <div className="account-item-details">
-                        <div className="username">{account.username}</div>
-                        <div className="role">
-                          {account.isAdmin ? 'Администратор' : 'Пользователь'}
-                        </div>
-                      </div>
-                    </div>
-                    {hasAdminRights && (
-                      <div className="account-item-actions">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditAccount(account);
-                          }}
-                          className="account-action-btn"
-                          title="Редактировать"
-                        >
-                          ✎
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteAccount(account);
-                          }}
-                          className="account-action-btn delete"
-                          title="Удалить"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Действия */}
-            <div className="account-dropdown-actions">
-              {hasAdminRights && (
-                <div
-                  className="dropdown-action-item create"
-                  onClick={handleCreateAccount}
-                >
-                  <span>+</span>
-                  Добавить аккаунт
-                </div>
-              )}
-
-              <div
-                className="dropdown-action-item logout"
-                onClick={handleLogout}
-              >
-                <span>🚪</span>
-                Выйти
-              </div>
-            </div>
-          </>
-        )}
+    <div 
+      ref={dropdownRef}
+      className="account-dropdown"
+      style={dropdownStyle}
+    >
+      {/* Заголовок */}
+      <div className="account-dropdown-header">
+        Управление аккаунтами
       </div>
 
-      {/* Модальное окно аккаунтов */}
-      {isAccountModalOpen && (
-        <AccountModal
-          isOpen={isAccountModalOpen}
-          onClose={() => {
-            setIsAccountModalOpen(false);
-            setEditingAccount(null);
-          }}
-          editingAccount={editingAccount}
-        />
+      {/* Текущий аккаунт */}
+      <div className="account-dropdown-current">
+        <div className="current-user-label">
+          Текущий пользователь:
+        </div>
+        <div className="current-user-info">
+          <div className="current-user-details">
+            <div className="username">{username}</div>
+            <div className="role">
+              {hasAdminRights ? 'Администратор' : 'Пользователь'}
+            </div>
+          </div>
+          <div className="current-user-icon">
+            {hasAdminRights ? '👑' : '👤'}
+          </div>
+        </div>
+      </div>
+
+      {/* Переключение аккаунта */}
+      {switchingToAccount ? (
+        <div className="account-switch-form">
+          <div className="switch-form-title">
+            Переключение на: <strong>{switchingToAccount}</strong>
+          </div>
+          <input
+            type="password"
+            placeholder="Введите пароль"
+            value={switchPassword}
+            onChange={(e) => setSwitchPassword(e.target.value)}
+            className="switch-password-input"
+            autoFocus
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleConfirmSwitch();
+              }
+            }}
+          />
+          {switchError && (
+            <div className="switch-error">
+              {switchError}
+            </div>
+          )}
+          <div className="switch-form-actions">
+            <button
+              onClick={handleCancelSwitching}
+              className="switch-btn switch-btn-cancel"
+            >
+              Отмена
+            </button>
+            <button
+              onClick={handleConfirmSwitch}
+              disabled={!switchPassword}
+              className="switch-btn switch-btn-confirm"
+            >
+              Войти
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Список других аккаунтов */}
+          {otherAccounts.length > 0 && (
+            <div className="account-dropdown-section">
+              <div className="section-label">
+                Переключиться на:
+              </div>
+              {otherAccounts.map(account => (
+                <div
+                  key={account.id}
+                  className="account-item"
+                  onClick={() => handleStartSwitching(account)}
+                >
+                  <div className="account-item-info">
+                    <span className="account-item-icon">
+                      {account.isAdmin ? '👑' : '👤'}
+                    </span>
+                    <div className="account-item-details">
+                      <div className="username">{account.username}</div>
+                      <div className="role">
+                        {account.isAdmin ? 'Администратор' : 'Пользователь'}
+                      </div>
+                    </div>
+                  </div>
+                  {hasAdminRights && (
+                    <div className="account-item-actions">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditAccount(account);
+                        }}
+                        className="account-action-btn"
+                        title="Редактировать"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteAccount(account);
+                        }}
+                        className="account-action-btn delete"
+                        title="Удалить"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Действия */}
+          <div className="account-dropdown-actions">
+            {hasAdminRights && (
+              <div
+                className="dropdown-action-item create"
+                onClick={handleCreateAccount}
+              >
+                <span>+</span>
+                Добавить аккаунт
+              </div>
+            )}
+
+            <div
+              className="dropdown-action-item logout"
+              onClick={handleLogout}
+            >
+              <span>🚪</span>
+              Выйти
+            </div>
+          </div>
+        </>
       )}
-    </>
+    </div>
   );
 };
 
