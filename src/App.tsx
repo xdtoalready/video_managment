@@ -278,13 +278,13 @@ const SystemStatusFooter: React.FC = () => {
                 transition: 'transform 0.2s'
               }}>
                 ▼
-                  {/* Выпадающее меню аккаунтов */}
-                  <AccountDropdown
-                    isOpen={isAccountDropdownOpen}
-                    onClose={() => setIsAccountDropdownOpen(false)}
-                    triggerRef={usernameRef as React.RefObject<HTMLElement>}
-                  />
               </span>
+                {/* Выпадающее меню аккаунтов */}
+                <AccountDropdown
+                  isOpen={isAccountDropdownOpen}
+                  onClose={() => setIsAccountDropdownOpen(false)}
+                  triggerRef={usernameRef as React.RefObject<HTMLElement>}
+                />
             </span>
           </div>
 
