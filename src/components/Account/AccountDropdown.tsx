@@ -34,7 +34,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   // Позиционирование dropdown
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
-  // Улучшенная логика позиционирования
+  // Улучшенная логика позиционирования с учетом футера
   useEffect(() => {
     if (isOpen && triggerRef.current && dropdownRef.current) {
       const updatePosition = () => {
@@ -49,23 +49,29 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
         const dropdownWidth = 300; // Примерная ширина из CSS
         const dropdownHeight = Math.min(400, viewportHeight * 0.8); // Максимальная высота
         
+        // Получаем высоту футера (примерно 40px)
+        const footerHeight = 40;
+        
         let top: number;
         let left: number;
         let right: number | undefined;
+        let transformOrigin = 'top left';
         
         // Определяем, показывать ли dropdown сверху или снизу
-        const spaceBelow = viewportHeight - triggerRect.bottom;
+        const spaceBelow = viewportHeight - triggerRect.bottom - footerHeight;
         const spaceAbove = triggerRect.top;
         
         if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
           // Показываем снизу
-          top = triggerRect.bottom + 8;
+          top = 0; // Относительное позиционирование
+          transformOrigin = 'top left';
         } else {
           // Показываем сверху
-          top = triggerRect.top - dropdownHeight - 8;
+          top = -dropdownHeight - 8;
+          transformOrigin = 'bottom left';
           // Убеждаемся, что не выходим за верхнюю границу
-          if (top < 8) {
-            top = 8;
+          if (triggerRect.top + top < 8) {
+            top = -triggerRect.top + 8;
           }
         }
         
@@ -75,22 +81,24 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
         
         if (spaceRight >= dropdownWidth) {
           // Выравниваем по левому краю trigger элемента
-          left = triggerRect.left;
+          left = 0; // Относительное позиционирование
           right = undefined;
         } else if (spaceLeft >= dropdownWidth) {
           // Выравниваем по правому краю trigger элемента
-          left = triggerRect.right - dropdownWidth;
+          left = -dropdownWidth + triggerRect.width;
           right = undefined;
+          transformOrigin = transformOrigin.replace('left', 'right');
         } else {
           // Если не помещается ни с одной стороны, выравниваем по правому краю экрана
-          left = 0;
-          right = 16; // 16px отступ от правого края
+          left = -triggerRect.left + 16;
+          right = undefined;
         }
         
         setDropdownStyle({
           top: `${top}px`,
           left: right === undefined ? `${left}px` : undefined,
           right: right !== undefined ? `${right}px` : undefined,
+          transformOrigin,
         });
       };
 
@@ -106,11 +114,15 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
     }
   }, [isOpen, triggerRef]);
 
-  // Закрытие по клику вне меню
+  // Улучшенная обработка клика вне меню
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Проверяем, не является ли цель клика частью модального окна
+      const isModalClick = (event.target as Element).closest('.account-modal-overlay');
+      
       if (
         isOpen &&
+        !isModalClick && // Не закрываем, если клик был по модальному окну
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
         triggerRef.current &&

@@ -188,12 +188,14 @@ const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose, editingAcc
     }
   };
 
-  // ИСПРАВЛЕНО: Правильная обработка клика по оверлею
+  // Улучшенная обработка клика по оверлею
   const handleOverlayClick = (e: React.MouseEvent) => {
     // Проверяем, что клик был именно по оверлею, а не по дочерним элементам
     if (e.target === e.currentTarget) {
       handleClose();
     }
+    // Останавливаем всплытие события, чтобы не закрывать дропдаун
+    e.stopPropagation();
   };
 
   // Обработка Escape

@@ -1,7 +1,7 @@
 /* AccountDropdown.css */
 .account-dropdown {
-  position: fixed;
-  z-index: 10000;
+  position: absolute; /* Изменено с fixed на absolute для правильного позиционирования */
+  z-index: 100000; /* Увеличен z-index, чтобы быть выше футера */
   background: var(--white);
   border: 1px solid var(--text-color);
   border-radius: 8px;
