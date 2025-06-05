@@ -1,3 +1,4 @@
+// src/App.tsx - Обновленное главное приложение с аутентификацией
 import React, { useEffect, useState, useRef } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
@@ -198,7 +199,7 @@ const SystemStatusFooter: React.FC = () => {
   
   // Состояние для выпадающего меню аккаунтов
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
-  const usernameRef = useRef<HTMLSpanElement>(null);
+  const usernameRef = useRef<HTMLElement>(null);
 
   const handleUsernameClick = () => {
     setIsAccountDropdownOpen(!isAccountDropdownOpen);
