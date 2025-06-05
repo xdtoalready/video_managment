@@ -1,4 +1,3 @@
-// src/App.tsx - Обновленное главное приложение с аутентификацией
 import React, { useEffect, useState, useRef } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
@@ -297,7 +296,7 @@ const SystemStatusFooter: React.FC = () => {
         <AccountDropdown
           isOpen={isAccountDropdownOpen}
           onClose={() => setIsAccountDropdownOpen(false)}
-          triggerRef={usernameRef}
+          triggerRef={usernameRef as React.RefObject<HTMLElement>}
         />
       </div>
   );
