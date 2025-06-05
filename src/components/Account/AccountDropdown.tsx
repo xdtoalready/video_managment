@@ -156,15 +156,23 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   // Обработчик открытия модального окна для создания аккаунта
   const handleCreateAccount = () => {
     setEditingAccount(null);
-    setIsAccountModalOpen(true);
-    onClose(); // Закрываем dropdown при открытии модального окна
+    // Сначала закрываем дропдаун, затем с небольшой задержкой открываем модальное окно
+    onClose();
+    // Используем setTimeout для гарантированного открытия модального окна после закрытия дропдауна
+    setTimeout(() => {
+      setIsAccountModalOpen(true);
+    }, 50);
   };
 
   // Обработчик открытия модального окна для редактирования аккаунта
   const handleEditAccount = (account: Account) => {
     setEditingAccount(account);
-    setIsAccountModalOpen(true);
-    onClose(); // Закрываем dropdown при открытии модального окна
+    // Сначала закрываем дропдаун, затем с небольшой задержкой открываем модальное окно
+    onClose();
+    // Используем setTimeout для гарантированного открытия модального окна после закрытия дропдауна
+    setTimeout(() => {
+      setIsAccountModalOpen(true);
+    }, 50);
   };
 
   // Обработчик удаления аккаунта

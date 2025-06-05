@@ -655,15 +655,32 @@ export const sentryshotAPI = {
     // Создание нового аккаунта
     async createAccount(requestData: CreateAccountRequest): Promise<boolean> {
       try {
-        console.log('API: Создание аккаунта с данными:', { ...requestData, plainPassword: '[СКРЫТО]' });
+        // Убедимся, что id всегда строка
+        const accountData = {
+          ...requestData,
+          id: String(requestData.id)
+        };
+        
+        console.log('API: Создание аккаунта с данными:', { ...accountData, plainPassword: '[СКРЫТО]' });
         
         const headers = await this.auth.getModifyHeaders();
         console.log('API: Заголовки запроса:', headers);
         
+        // Создаем объект с правильной структурой для API
+        // Формат: { id: "строка", username: "строка", isAdmin: boolean, plainPassword: "строка" }
+        const requestBody = {
+          id: accountData.id,
+          username: accountData.username,
+          isAdmin: accountData.isAdmin,
+          plainPassword: accountData.plainPassword
+        };
+        
+        console.log('API: Структура запроса:', JSON.stringify(requestBody).replace(accountData.plainPassword, '[СКРЫТО]'));
+        
         const response = await fetch(`${API_BASE_URL}/api/account`, {
           method: 'PUT',
           headers: headers,
-          body: JSON.stringify(requestData)
+          body: JSON.stringify(requestBody)
         });
 
         console.log('API: Ответ сервера при создании аккаунта:', response.status, response.statusText);
@@ -698,14 +715,28 @@ export const sentryshotAPI = {
     // Обновление существующего аккаунта
     async updateAccount(requestData: UpdateAccountRequest): Promise<boolean> {
       try {
-        console.log('API: Обновление аккаунта с данными:', { ...requestData, plainPassword: requestData.plainPassword ? '[СКРЫТО]' : undefined });
+        // Убедимся, что id всегда строка
+        const accountData = {
+          ...requestData,
+          id: String(requestData.id)
+        };
+        
+        console.log('API: Обновление аккаунта с данными:', { ...accountData, plainPassword: accountData.plainPassword ? '[СКРЫТО]' : undefined });
         
         const headers = await this.auth.getModifyHeaders();
+        
+        // Создаем объект с правильной структурой для API
+        const requestBody = {
+          id: accountData.id,
+          username: accountData.username,
+          isAdmin: accountData.isAdmin,
+          plainPassword: accountData.plainPassword
+        };
         
         const response = await fetch(`${API_BASE_URL}/api/account`, {
           method: 'PUT',
           headers: headers,
-          body: JSON.stringify(requestData)
+          body: JSON.stringify(requestBody)
         });
 
         console.log('API: Ответ сервера при обновлении аккаунта:', response.status, response.statusText);
@@ -722,6 +753,10 @@ export const sentryshotAPI = {
             throw new Error('Недостаточно прав для обновления аккаунтов.');
           }
           
+          if (response.status === 422) {
+            throw new Error(`Ошибка валидации данных: ${errorText}`);
+          }
+          
           throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
         }
 
@@ -736,13 +771,16 @@ export const sentryshotAPI = {
     // Удаление аккаунта
     async deleteAccount(accountId: string): Promise<boolean> {
       try {
-        console.log(`API: Удаление аккаунта ${accountId}...`);
+        // Убедимся, что id всегда строка
+        const id = String(accountId);
+        
+        console.log(`API: Удаление аккаунта ${id}...`);
         const headers = await this.auth.getModifyHeaders();
         
         const response = await fetch(`${API_BASE_URL}/api/account`, {
           method: 'DELETE',
           headers: headers,
-          body: JSON.stringify({ id: accountId })
+          body: JSON.stringify({ id })
         });
 
         console.log('API: Ответ сервера при удалении аккаунта:', response.status, response.statusText);
@@ -750,6 +788,10 @@ export const sentryshotAPI = {
         if (!response.ok) {
           if (response.status === 403) {
             throw new Error('Недостаточно прав для удаления аккаунтов.');
+          }
+          if (response.status === 422) {
+            const errorText = await response.text();
+            throw new Error(`Ошибка валидации данных: ${errorText}`);
           }
           throw new Error(`Ошибка при удалении аккаунта: ${response.status}`);
         }
