@@ -1,4 +1,3 @@
-// src/App.tsx - Обновленное главное приложение с аутентификацией
 import React, { useEffect, useState, useRef } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
@@ -7,6 +6,7 @@ import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
 import CalendarModal from './components/Calendar/CalendarModal.tsx'
 import ArchiveView from './components/ArchiveView/ArchiveView.tsx'
+import AccountDropdown from './components/Account/AccountDropdown.tsx'
 
 function App() {
   const {
@@ -194,7 +194,15 @@ useEffect(() => {
 
 // Компонент для отображения статуса системы
 const SystemStatusFooter: React.FC = () => {
-  const { connectionStatus, isOnline, lastSync, username } = useStore();
+  const { connectionStatus, isOnline, lastSync, username, hasAdminRights } = useStore();
+  
+  // Состояние для выпадающего меню аккаунтов
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+  const usernameRef = useRef<HTMLSpanElement>(null);
+
+  const handleUsernameClick = () => {
+    setIsAccountDropdownOpen(!isAccountDropdownOpen);
+  };
 
   const formatLastSync = (date: Date | null) => {
     if (!date) return 'Никогда';
@@ -283,6 +291,13 @@ const SystemStatusFooter: React.FC = () => {
           <span className="status-label">Видеонаблюдение</span>
           <span className="status-value">v1.0</span>
         </div>
+
+        {/* Выпадающее меню аккаунтов */}
+        <AccountDropdown
+          isOpen={isAccountDropdownOpen}
+          onClose={() => setIsAccountDropdownOpen(false)}
+          triggerRef={usernameRef}
+        />
       </div>
   );
 };

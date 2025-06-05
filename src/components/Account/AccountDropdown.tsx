@@ -30,8 +30,12 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   const [switchPassword, setSwitchPassword] = useState('');
   const [switchError, setSwitchError] = useState<string | null>(null);
 
-  // Позиционирование выпадающего меню
-  const [position, setPosition] = useState({ top: 0, left: 0, right: 'auto' });
+  // ИСПРАВЛЕНО: Позиционирование выпадающего меню с правильными типами
+  const [position, setPosition] = useState({ 
+    top: 0, 
+    left: 0, 
+    right: undefined as number | undefined 
+  });
 
   useEffect(() => {
     if (isOpen && triggerRef.current && dropdownRef.current) {
@@ -42,20 +46,20 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
 
       let top = triggerRect.top - dropdownRect.height - 8; // 8px отступ
       let left = triggerRect.left;
-      let right = 'auto';
+      let right: number | undefined = undefined;
 
       // Если не помещается сверху, показываем снизу
       if (top < 0) {
         top = triggerRect.bottom + 8;
       }
 
-      // Если не помещается справа, выравниваем по правому краю
+      // ИСПРАВЛЕНО: Если не помещается справа, выравниваем по правому краю
       if (left + dropdownRect.width > viewportWidth) {
-        left = 'auto' as any;
+        left = 0; // Сбрасываем left
         right = viewportWidth - triggerRect.right;
       }
 
-      setPosition({ top, left: left as number, right: right as any });
+      setPosition({ top, left, right });
     }
   }, [isOpen, triggerRef]);
 
@@ -176,8 +180,9 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
         style={{
           position: 'fixed',
           top: position.top,
-          left: position.left !== 'auto' ? position.left : undefined,
-          right: position.right !== 'auto' ? position.right : undefined,
+          // ИСПРАВЛЕНО: Правильная обработка позиционирования
+          left: position.right === undefined ? position.left : undefined,
+          right: position.right,
           zIndex: 9999,
           background: 'var(--white)',
           border: '1px solid var(--text-color)',

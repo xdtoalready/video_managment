@@ -347,9 +347,10 @@ export const useStore = create<AppState>((set, get) => ({
         await get().loadCameras();
 
         // Загружаем аккаунты если пользователь - администратор
-        if (hasAdminRights) {
+        const { hasAdminRights: isAdmin } = get();
+        if (isAdmin) {
           await get().loadAccounts();
-        }  
+        }
 
         return true;
       } else {
