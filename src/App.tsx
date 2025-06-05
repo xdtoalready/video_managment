@@ -238,10 +238,41 @@ const SystemStatusFooter: React.FC = () => {
         </span>
         </div>
 
-        <div className="status-item">
-          <span className="status-label">Пользователь:</span>
-          <span className="status-value">{username}</span>
-        </div>
+         <div className="status-item">
+            <span className="status-label">Пользователь:</span>
+            <span 
+              ref={usernameRef}
+              className="status-value username-clickable"
+              onClick={handleUsernameClick}
+              title="Управление аккаунтами"
+              style={{
+                cursor: 'pointer',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                transition: 'background-color 0.2s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--light-bg)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <span>{hasAdminRights ? '👑' : '👤'}</span>
+              <span>{username}</span>
+              <span style={{ 
+                fontSize: '10px', 
+                opacity: 0.7,
+                transform: isAccountDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }}>
+                ▼
+              </span>
+            </span>
+          </div>
 
         <div className="status-item">
           <span className="status-label">Обновлено:</span>

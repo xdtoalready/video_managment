@@ -139,6 +139,27 @@ export interface LogEntry {
   monitorID: string;
 }
 
+// Акаунт пользователя
+export interface Account {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+}
+
+export interface CreateAccountRequest {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+  plainPassword: string;
+}
+
+export interface UpdateAccountRequest {
+  id: string;
+  username?: string;
+  isAdmin?: boolean;
+  plainPassword?: string;
+}
+
 // Утилиты для работы с временными метками
 export const TimeUtils = {
   // Конвертация ISO строки в UnixNano (наносекунды)
@@ -590,5 +611,164 @@ export const sentryshotAPI = {
       console.error('Ошибка при получении информации о системе:', error);
       return null;
     }
-  }
+  },
+
+  async getAccounts(): Promise<Account[]> {
+      try {
+        console.log('Запрос списка аккаунтов...');
+        const response = await fetch(`${API_BASE_URL}/api/accounts`, {
+          method: 'GET',
+          headers: this.auth.getAuthHeaders()
+        });
+
+        if (!response.ok) {
+          if (response.status === 403) {
+            console.warn('Недостаточно прав для получения списка аккаунтов');
+            return [];
+          }
+          throw new Error(`Ошибка получения аккаунтов: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Получены аккаунты (сырые данные):', data);
+
+        // SentryShot возвращает объект, где ключи - это ID аккаунтов
+        if (typeof data === 'object' && data !== null) {
+          const accountsArray = Object.entries(data).map(([accountId, accountData]: [string, any]) => ({
+            id: accountId,
+            username: accountData.username || accountId,
+            isAdmin: accountData.isAdmin || false
+          } as Account));
+          
+          console.log('Преобразованные аккаунты:', accountsArray);
+          return accountsArray;
+        } else {
+          console.warn('Неожиданный формат данных аккаунтов:', data);
+          return [];
+        }
+      } catch (error) {
+        console.error('Ошибка при получении аккаунтов:', error);
+        return [];
+      }
+    },
+
+    // Создание нового аккаунта
+    async createAccount(requestData: CreateAccountRequest): Promise<boolean> {
+      try {
+        console.log('API: Создание аккаунта с данными:', { ...requestData, plainPassword: '[СКРЫТО]' });
+        
+        const headers = await this.auth.getModifyHeaders();
+        console.log('API: Заголовки запроса:', headers);
+        
+        const response = await fetch(`${API_BASE_URL}/api/account`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(requestData)
+        });
+
+        console.log('API: Ответ сервера при создании аккаунта:', response.status, response.statusText);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API: Ошибка сервера при создании аккаунта:', errorText);
+          
+          if (response.status === 401) {
+            throw new Error('Ошибка аутентификации. Попробуйте перелогиниться.');
+          }
+          
+          if (response.status === 403) {
+            throw new Error('Недостаточно прав для создания аккаунтов.');
+          }
+          
+          if (response.status === 422) {
+            throw new Error(`Ошибка валидации данных: ${errorText}`);
+          }
+          
+          throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
+        }
+
+        console.log('API: Аккаунт успешно создан');
+        return true;
+      } catch (error) {
+        console.error('API: Ошибка при создании аккаунта:', error);
+        throw error;
+      }
+    },
+
+    // Обновление существующего аккаунта
+    async updateAccount(requestData: UpdateAccountRequest): Promise<boolean> {
+      try {
+        console.log('API: Обновление аккаунта с данными:', { ...requestData, plainPassword: requestData.plainPassword ? '[СКРЫТО]' : undefined });
+        
+        const headers = await this.auth.getModifyHeaders();
+        
+        const response = await fetch(`${API_BASE_URL}/api/account`, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(requestData)
+        });
+
+        console.log('API: Ответ сервера при обновлении аккаунта:', response.status, response.statusText);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API: Ошибка сервера при обновлении аккаунта:', errorText);
+          
+          if (response.status === 401) {
+            throw new Error('Ошибка аутентификации. Попробуйте перелогиниться.');
+          }
+          
+          if (response.status === 403) {
+            throw new Error('Недостаточно прав для обновления аккаунтов.');
+          }
+          
+          throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
+        }
+
+        console.log('API: Аккаунт успешно обновлен');
+        return true;
+      } catch (error) {
+        console.error('API: Ошибка при обновлении аккаунта:', error);
+        throw error;
+      }
+    },
+
+    // Удаление аккаунта
+    async deleteAccount(accountId: string): Promise<boolean> {
+      try {
+        console.log(`API: Удаление аккаунта ${accountId}...`);
+        const headers = await this.auth.getModifyHeaders();
+        
+        const response = await fetch(`${API_BASE_URL}/api/account`, {
+          method: 'DELETE',
+          headers: headers,
+          body: JSON.stringify({ id: accountId })
+        });
+
+        console.log('API: Ответ сервера при удалении аккаунта:', response.status, response.statusText);
+
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error('Недостаточно прав для удаления аккаунтов.');
+          }
+          throw new Error(`Ошибка при удалении аккаунта: ${response.status}`);
+        }
+
+        console.log('API: Аккаунт успешно удален');
+        return true;
+      } catch (error) {
+        console.error('API: Ошибка при удалении аккаунта:', error);
+        throw error;
+      }
+    },
+
+    // Генерация уникального ID для аккаунта (16 символов из разрешенных)
+    generateAccountId(): string {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let result = '';
+      for (let i = 0; i < 16; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
 };
