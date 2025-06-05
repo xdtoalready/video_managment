@@ -1,0 +1,426 @@
+/* AccountModal.css */
+.account-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease-out;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.account-modal {
+  background: var(--white);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease-out;
+  border: 1px solid var(--text-color);
+  position: relative;
+}
+
+/* Заголовок модального окна */
+.account-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--text-color);
+  background: var(--white);
+}
+
+.account-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.account-modal-close-button {
+  display: flex;
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--gray2-color);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.account-modal-close-button:hover:not(:disabled) {
+  background: var(--primary-color);
+  color: var(--white);
+}
+
+.account-modal-close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Форма */
+.account-modal-form {
+  padding: 24px;
+  max-height: calc(90vh - 140px);
+  overflow-y: auto;
+}
+
+/* Секции формы */
+.account-form-section {
+  margin-bottom: 24px;
+}
+
+.account-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.account-form-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--text-color);
+}
+
+.account-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.account-section-note {
+  font-size: 12px;
+  color: var(--gray2-color);
+}
+
+/* Группы полей */
+.account-form-group {
+  margin-bottom: 16px;
+}
+
+.account-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #DEDFE3;
+}
+
+.account-form-group input {
+  background-color: var(--light-bg);
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-color);
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+
+.account-form-group input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(65, 117, 212, 0.1);
+}
+
+.account-form-group input.error {
+  box-shadow: 0 0 0 3px rgba(211, 84, 74, 0.1);
+}
+
+.account-form-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.account-form-group small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--gray2-color);
+}
+
+/* Поле с иконкой */
+.account-password-field {
+  position: relative;
+}
+
+.account-password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--gray2-color);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.account-password-toggle:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.account-password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ошибки валидации */
+.account-error-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #D3544A;
+}
+
+/* Чекбоксы */
+.account-checkbox-group {
+  margin-top: 8px;
+}
+
+.account-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.account-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.account-checkbox-wrapper input[type="checkbox"] {
+  display: none;
+}
+
+.account-custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #444;
+  border-radius: 4px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: #2A2A2A;
+}
+
+.account-checkbox-wrapper input[type="checkbox"]:checked + .account-custom-checkbox {
+  background: #4175D4;
+  border-color: #4175D4;
+}
+
+.account-custom-checkbox-icon {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.account-checkbox-wrapper input[type="checkbox"]:checked + .account-custom-checkbox .account-custom-checkbox-icon {
+  opacity: 1;
+}
+
+.account-checkbox-text {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+/* Информация о подключении */
+.account-connection-info {
+  background: var(--white);
+  border: 1px solid var(--text-color);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.account-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.account-info-label {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.account-info-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.account-info-value.connected { color: #4CAF50; }
+.account-info-value.connecting { color: #FF9800; }
+.account-info-value.error { color: var(--primary-color); }
+.account-info-value.disconnected { color: var(--gray2-color); }
+
+.account-connection-warning {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(211, 84, 74, 0.1);
+  border: 1px solid rgba(211, 84, 74, 0.3);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #D3544A;
+}
+
+/* Ошибка отправки */
+.account-submit-error {
+  background: rgba(211, 84, 74, 0.1);
+  border: 1px solid rgba(211, 84, 74, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #D3544A;
+  font-size: 14px;
+}
+
+.account-error-icon {
+  font-size: 16px;
+}
+
+/* Действия модального окна */
+.account-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #333;
+  margin-top: 24px;
+}
+
+.account-cancel-button,
+.account-submit-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-cancel-button {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid #D1CDCD;
+}
+
+.account-cancel-button:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+.account-submit-button {
+  background: #D3544A;
+  border: 1px solid #D3544A;
+  color: #FFFFFF;
+}
+
+.account-submit-button:hover:not(:disabled) {
+  background: #B8453C;
+  border-color: #B8453C;
+}
+
+.account-cancel-button:disabled,
+.account-submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Загрузочный спиннер */
+.account-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .account-modal {
+    width: 95%;
+    max-height: 95vh;
+  }
+  
+  .account-modal-header {
+    padding: 16px 20px;
+  }
+  
+  .account-modal-header h2 {
+    font-size: 18px;
+  }
+  
+  .account-modal-form {
+    padding: 20px;
+  }
+  
+  .account-modal-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .account-cancel-button,
+  .account-submit-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Скроллбар для формы */
+.account-modal-form::-webkit-scrollbar {
+  width: 6px;
+}
+
+.account-modal-form::-webkit-scrollbar-track {
+  background: #2A2A2A;
+  border-radius: 3px;
+}
+
+.account-modal-form::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+.account-modal-form::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

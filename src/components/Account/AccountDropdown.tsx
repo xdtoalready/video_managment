@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { Account } from '../../api/sentryshot';
 import AccountModal from './AccountModal';
+import './AccountDropdown.css';
 
 interface AccountDropdownProps {
   isOpen: boolean;
@@ -30,51 +31,78 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
   const [switchPassword, setSwitchPassword] = useState('');
   const [switchError, setSwitchError] = useState<string | null>(null);
 
-  // ИСПРАВЛЕНО: Улучшенная логика позиционирования
-  const [position, setPosition] = useState({ 
-    top: 0, 
-    left: 0, 
-    right: undefined as number | undefined 
-  });
+  // Позиционирование dropdown
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
+  // Улучшенная логика позиционирования
   useEffect(() => {
     if (isOpen && triggerRef.current && dropdownRef.current) {
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const dropdownRect = dropdownRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // ИСПРАВЛЕНО: Определяем, находится ли trigger в нижней части экрана (например, в футере)
-      const isInBottomArea = triggerRect.bottom > viewportHeight * 0.7; // Если элемент в нижних 30% экрана
-
-      let top: number;
-      let left = triggerRect.left;
-      let right: number | undefined = undefined;
-
-      // ИСПРАВЛЕНО: Для элементов в нижней части всегда показываем dropdown сверху
-      if (isInBottomArea) {
-        top = triggerRect.top - dropdownRect.height - 8; // 8px отступ сверху
-        // Если всё равно не помещается сверху, показываем максимально высоко
-        if (top < 8) {
-          top = 8; // Минимальный отступ от верха экрана
-        }
-      } else {
-        // Для элементов в верхней части используем старую логику
-        top = triggerRect.top - dropdownRect.height - 8;
-        // Если не помещается сверху, показываем снизу
-        if (top < 8) {
+      const updatePosition = () => {
+        const triggerRect = triggerRef.current!.getBoundingClientRect();
+        const dropdownElement = dropdownRef.current!;
+        
+        // Получаем размеры viewport
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        // Получаем размеры dropdown (может быть неточным до рендера, но попробуем)
+        const dropdownWidth = 300; // Примерная ширина из CSS
+        const dropdownHeight = Math.min(400, viewportHeight * 0.8); // Максимальная высота
+        
+        let top: number;
+        let left: number;
+        let right: number | undefined;
+        
+        // Определяем, показывать ли dropdown сверху или снизу
+        const spaceBelow = viewportHeight - triggerRect.bottom;
+        const spaceAbove = triggerRect.top;
+        
+        if (spaceBelow >= dropdownHeight || spaceBelow >= spaceAbove) {
+          // Показываем снизу
           top = triggerRect.bottom + 8;
+        } else {
+          // Показываем сверху
+          top = triggerRect.top - dropdownHeight - 8;
+          // Убеждаемся, что не выходим за верхнюю границу
+          if (top < 8) {
+            top = 8;
+          }
         }
-      }
+        
+        // Определяем горизонтальное позиционирование
+        const spaceRight = viewportWidth - triggerRect.left;
+        const spaceLeft = triggerRect.right;
+        
+        if (spaceRight >= dropdownWidth) {
+          // Выравниваем по левому краю trigger элемента
+          left = triggerRect.left;
+          right = undefined;
+        } else if (spaceLeft >= dropdownWidth) {
+          // Выравниваем по правому краю trigger элемента
+          left = triggerRect.right - dropdownWidth;
+          right = undefined;
+        } else {
+          // Если не помещается ни с одной стороны, выравниваем по правому краю экрана
+          left = 0;
+          right = 16; // 16px отступ от правого края
+        }
+        
+        setDropdownStyle({
+          top: `${top}px`,
+          left: right === undefined ? `${left}px` : undefined,
+          right: right !== undefined ? `${right}px` : undefined,
+        });
+      };
 
-      // ИСПРАВЛЕНО: Позиционирование по горизонтали
-      if (left + dropdownRect.width > viewportWidth - 16) {
-        // Если не помещается справа, выравниваем по правому краю
-        right = viewportWidth - triggerRect.right;
-        left = 0; // Сбрасываем left когда используем right
-      }
-
-      setPosition({ top, left, right });
+      // Обновляем позицию сразу и при изменении размера окна
+      updatePosition();
+      
+      const handleResize = () => updatePosition();
+      window.addEventListener('resize', handleResize);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
     }
   }, [isOpen, triggerRef]);
 
@@ -95,6 +123,23 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose, triggerRef]);
+
+  // Закрытие по Escape
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   // Обработчик открытия модального окна для создания аккаунта
   const handleCreateAccount = () => {
@@ -192,58 +237,26 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
       <div 
         ref={dropdownRef}
         className="account-dropdown"
-        style={{
-          position: 'fixed',
-          top: position.top,
-          left: position.right === undefined ? position.left : undefined,
-          right: position.right,
-          zIndex: 10000, // ИСПРАВЛЕНО: Увеличили z-index для отображения поверх всех элементов
-          background: 'var(--white)',
-          border: '1px solid var(--text-color)',
-          borderRadius: '8px',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-          minWidth: '280px',
-          maxWidth: '320px',
-          maxHeight: '80vh', // ДОБАВЛЕНО: Ограничиваем максимальную высоту
-          overflowY: 'auto', // ДОБАВЛЕНО: Добавляем скролл если контент не помещается
-          padding: '8px 0',
-          animation: 'fadeIn 0.2s ease-out'
-        }}
+        style={dropdownStyle}
       >
         {/* Заголовок */}
-        <div style={{
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--text-color)',
-          fontSize: '14px',
-          fontWeight: '600',
-          color: 'var(--text-color)'
-        }}>
+        <div className="account-dropdown-header">
           Управление аккаунтами
         </div>
 
         {/* Текущий аккаунт */}
-        <div style={{
-          padding: '12px 16px',
-          background: 'var(--light-bg)',
-          borderBottom: '1px solid var(--text-color)'
-        }}>
-          <div style={{ fontSize: '12px', color: 'var(--gray2-color)', marginBottom: '4px' }}>
+        <div className="account-dropdown-current">
+          <div className="current-user-label">
             Текущий пользователь:
           </div>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between' 
-          }}>
-            <div>
-              <div style={{ fontWeight: '600', color: 'var(--text-color)' }}>
-                {username}
-              </div>
-              <div style={{ fontSize: '12px', color: 'var(--gray2-color)' }}>
+          <div className="current-user-info">
+            <div className="current-user-details">
+              <div className="username">{username}</div>
+              <div className="role">
                 {hasAdminRights ? 'Администратор' : 'Пользователь'}
               </div>
             </div>
-            <div style={{ fontSize: '16px' }}>
+            <div className="current-user-icon">
               {hasAdminRights ? '👑' : '👤'}
             </div>
           </div>
@@ -251,70 +264,39 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
 
         {/* Переключение аккаунта */}
         {switchingToAccount ? (
-          <div style={{ padding: '16px' }}>
-            <div style={{ marginBottom: '12px', fontSize: '14px', fontWeight: '500' }}>
+          <div className="account-switch-form">
+            <div className="switch-form-title">
               Переключение на: <strong>{switchingToAccount}</strong>
             </div>
-            <div style={{ marginBottom: '12px' }}>
-              <input
-                type="password"
-                placeholder="Введите пароль"
-                value={switchPassword}
-                onChange={(e) => setSwitchPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid var(--text-color)',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleConfirmSwitch();
-                  }
-                }}
-              />
-            </div>
+            <input
+              type="password"
+              placeholder="Введите пароль"
+              value={switchPassword}
+              onChange={(e) => setSwitchPassword(e.target.value)}
+              className="switch-password-input"
+              autoFocus
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleConfirmSwitch();
+                }
+              }}
+            />
             {switchError && (
-              <div style={{ 
-                fontSize: '12px', 
-                color: '#D3544A', 
-                marginBottom: '12px' 
-              }}>
+              <div className="switch-error">
                 {switchError}
               </div>
             )}
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div className="switch-form-actions">
               <button
                 onClick={handleCancelSwitching}
-                style={{
-                  flex: 1,
-                  padding: '6px 12px',
-                  border: '1px solid var(--text-color)',
-                  background: 'transparent',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
+                className="switch-btn switch-btn-cancel"
               >
                 Отмена
               </button>
               <button
                 onClick={handleConfirmSwitch}
                 disabled={!switchPassword}
-                style={{
-                  flex: 1,
-                  padding: '6px 12px',
-                  border: '1px solid var(--primary-color)',
-                  background: 'var(--primary-color)',
-                  color: 'white',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  cursor: switchPassword ? 'pointer' : 'not-allowed',
-                  opacity: switchPassword ? 1 : 0.6
-                }}
+                className="switch-btn switch-btn-confirm"
               >
                 Войти
               </button>
@@ -324,62 +306,35 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
           <>
             {/* Список других аккаунтов */}
             {otherAccounts.length > 0 && (
-              <div>
-                <div style={{
-                  padding: '8px 16px',
-                  fontSize: '12px',
-                  color: 'var(--gray2-color)',
-                  fontWeight: '500'
-                }}>
+              <div className="account-dropdown-section">
+                <div className="section-label">
                   Переключиться на:
                 </div>
                 {otherAccounts.map(account => (
                   <div
                     key={account.id}
-                    style={{
-                      padding: '8px 16px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--light-bg)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
+                    className="account-item"
                     onClick={() => handleStartSwitching(account)}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '14px' }}>
+                    <div className="account-item-info">
+                      <span className="account-item-icon">
                         {account.isAdmin ? '👑' : '👤'}
                       </span>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: '500' }}>
-                          {account.username}
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--gray2-color)' }}>
+                      <div className="account-item-details">
+                        <div className="username">{account.username}</div>
+                        <div className="role">
                           {account.isAdmin ? 'Администратор' : 'Пользователь'}
                         </div>
                       </div>
                     </div>
                     {hasAdminRights && (
-                      <div style={{ display: 'flex', gap: '4px' }}>
+                      <div className="account-item-actions">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditAccount(account);
                           }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            fontSize: '12px'
-                          }}
+                          className="account-action-btn"
                           title="Редактировать"
                         >
                           ✎
@@ -389,15 +344,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
                             e.stopPropagation();
                             handleDeleteAccount(account);
                           }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            color: '#D3544A'
-                          }}
+                          className="account-action-btn delete"
                           title="Удалить"
                         >
                           ×
@@ -410,29 +357,10 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
             )}
 
             {/* Действия */}
-            <div style={{ 
-              borderTop: '1px solid var(--text-color)', 
-              marginTop: '8px' 
-            }}>
+            <div className="account-dropdown-actions">
               {hasAdminRights && (
                 <div
-                  style={{
-                    padding: '12px 16px',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    color: 'var(--primary-color)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'var(--light-bg)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                  }}
+                  className="dropdown-action-item create"
                   onClick={handleCreateAccount}
                 >
                   <span>+</span>
@@ -441,23 +369,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
               )}
 
               <div
-                style={{
-                  padding: '12px 16px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#D3544A',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'background-color 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(211, 84, 74, 0.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                }}
+                className="dropdown-action-item logout"
                 onClick={handleLogout}
               >
                 <span>🚪</span>
@@ -468,7 +380,7 @@ const AccountDropdown: React.FC<AccountDropdownProps> = ({ isOpen, onClose, trig
         )}
       </div>
 
-      {/* ИСПРАВЛЕНО: Модальное окно теперь рендерится в портале для правильного позиционирования */}
+      {/* Модальное окно аккаунтов */}
       {isAccountModalOpen && (
         <AccountModal
           isOpen={isAccountModalOpen}
