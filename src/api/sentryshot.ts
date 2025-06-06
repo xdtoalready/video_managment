@@ -658,16 +658,12 @@ export const sentryshotAPI = {
         // Убедимся, что id всегда строка
         const accountData = {
           ...requestData,
-          id: String(requestData.id)
+          id: String(requestData.id).trim() // Добавляем trim() для удаления пробелов
         };
         
         console.log('API: Создание аккаунта с данными:', { ...accountData, plainPassword: '[СКРЫТО]' });
         
-        const headers = await this.auth.getModifyHeaders();
-        console.log('API: Заголовки запроса:', headers);
-        
         // Создаем объект с правильной структурой для API
-        // Формат: { id: "строка", username: "строка", isAdmin: boolean, plainPassword: "строка" }
         const requestBody = {
           id: accountData.id,
           username: accountData.username,
@@ -675,12 +671,21 @@ export const sentryshotAPI = {
           plainPassword: accountData.plainPassword
         };
         
-        console.log('API: Структура запроса:', JSON.stringify(requestBody).replace(accountData.plainPassword, '[СКРЫТО]'));
+        // ДОБАВЛЕНО: Логируем точный JSON, который будет отправлен
+        const jsonString = JSON.stringify(requestBody);
+        console.log('API: Точный JSON для отправки:', jsonString);
+        console.log('API: Длина JSON:', jsonString.length);
+        console.log('API: Символ на позиции 24:', jsonString.charAt(23), 'код:', jsonString.charCodeAt(23));
+        
+        // ИСПРАВЛЕНО: Используем новый метод для получения заголовков
+        const headers = await this.getEnhancedModifyHeaders();
+        
+        console.log('API: Заголовки запроса (Content-Type):', headers['Content-Type']);
         
         const response = await fetch(`${API_BASE_URL}/api/account`, {
           method: 'PUT',
           headers: headers,
-          body: JSON.stringify(requestBody)
+          body: jsonString // Используем уже готовую JSON строку
         });
 
         console.log('API: Ответ сервера при создании аккаунта:', response.status, response.statusText);
@@ -688,6 +693,7 @@ export const sentryshotAPI = {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('API: Ошибка сервера при создании аккаунта:', errorText);
+          console.error('API: Отправленные данные:', jsonString);
           
           if (response.status === 401) {
             throw new Error('Ошибка аутентификации. Попробуйте перелогиниться.');
@@ -698,12 +704,21 @@ export const sentryshotAPI = {
           }
           
           if (response.status === 422) {
+            // Для 422 ошибки добавляем дополнительную информацию
+            console.error('API: Детали валидации 422:', {
+              sentData: requestBody,
+              jsonString: jsonString,
+              contentType: headers['Content-Type'],
+              responseText: errorText
+            });
             throw new Error(`Ошибка валидации данных: ${errorText}`);
           }
           
           throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
         }
 
+        const result = await response.text();
+        console.log('API: Результат создания аккаунта:', result);
         console.log('API: Аккаунт успешно создан');
         return true;
       } catch (error) {
@@ -711,6 +726,59 @@ export const sentryshotAPI = {
         throw error;
       }
     },
+
+    // Вспомогательный метод для получения улучшенных заголовков
+   async getEnhancedModifyHeaders(): Promise<Record<string, string>> {
+    try {
+      const baseHeaders = await this.auth.getModifyHeaders();
+      
+      // Преобразуем HeadersInit в Record<string, string> для лучшей типизации
+      const headersRecord: Record<string, string> = {};
+      
+      if (baseHeaders instanceof Headers) {
+        baseHeaders.forEach((value, key) => {
+          headersRecord[key] = value;
+        });
+      } else if (Array.isArray(baseHeaders)) {
+        baseHeaders.forEach(([key, value]) => {
+          headersRecord[key] = value;
+        });
+      } else if (baseHeaders && typeof baseHeaders === 'object') {
+        Object.assign(headersRecord, baseHeaders);
+      }
+      
+      return {
+        ...headersRecord,
+        'Content-Type': 'application/json; charset=utf-8', // Явно указываем charset
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      };
+    } catch (error) {
+      console.error('API: Ошибка получения заголовков, используем базовые:', error);
+      // Fallback на базовые заголовки
+      const authHeaders = this.auth.getAuthHeaders();
+      const headersRecord: Record<string, string> = {};
+      
+      if (authHeaders instanceof Headers) {
+        authHeaders.forEach((value, key) => {
+          headersRecord[key] = value;
+        });
+      } else if (Array.isArray(authHeaders)) {
+        authHeaders.forEach(([key, value]) => {
+          headersRecord[key] = value;
+        });
+      } else if (authHeaders && typeof authHeaders === 'object') {
+        Object.assign(headersRecord, authHeaders);
+      }
+      
+      return {
+        ...headersRecord,
+        'Content-Type': 'application/json; charset=utf-8',
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache'
+      };
+    }
+  },
 
     // Обновление существующего аккаунта
     async updateAccount(requestData: UpdateAccountRequest): Promise<boolean> {

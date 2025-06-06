@@ -289,12 +289,6 @@ const SystemStatusFooter: React.FC = () => {
               className="status-value username-clickable"
               onClick={handleUsernameClick}
               title="Управление аккаунтами"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--light-bg)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
             >
               <span>{hasAdminRights ? '👑' : '👤'}</span>
               <span>{username}</span>
