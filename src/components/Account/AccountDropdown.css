@@ -156,10 +156,10 @@
 }
 
 /* Секция других аккаунтов */
-.account-dropdown-section {
+/* .account-dropdown-section {
   border-top: 1px solid var(--text-color);
   margin-top: 8px;
-}
+} */
 
 .section-label {
   padding: 8px 16px;
