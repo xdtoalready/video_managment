@@ -771,31 +771,29 @@ export const sentryshotAPI = {
     // Удаление аккаунта
     async deleteAccount(accountId: string): Promise<boolean> {
       try {
-        // Убедимся, что id всегда строка
         const id = String(accountId);
-        
         console.log(`API: Удаление аккаунта ${id}...`);
         const headers = await this.auth.getModifyHeaders();
-        
-        const response = await fetch(`${API_BASE_URL}/api/account`, {
+        const response = await fetch(`${API_BASE_URL}/api/account?id=${encodeURIComponent(id)}`, {
           method: 'DELETE',
-          headers: headers,
-          body: JSON.stringify({ id })
+          headers: headers
         });
-
         console.log('API: Ответ сервера при удалении аккаунта:', response.status, response.statusText);
-
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API: Ошибка сервера при удалении аккаунта:', errorText);
+          
+          if (response.status === 400) {
+            throw new Error('Неверные параметры запроса или аккаунт не найден.');
+          }
           if (response.status === 403) {
             throw new Error('Недостаточно прав для удаления аккаунтов.');
           }
           if (response.status === 422) {
-            const errorText = await response.text();
             throw new Error(`Ошибка валидации данных: ${errorText}`);
           }
-          throw new Error(`Ошибка при удалении аккаунта: ${response.status}`);
+          throw new Error(`Ошибка при удалении аккаунта: ${response.status} ${response.statusText}`);
         }
-
         console.log('API: Аккаунт успешно удален');
         return true;
       } catch (error) {
