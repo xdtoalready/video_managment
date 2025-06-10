@@ -427,22 +427,11 @@ export const sentryshotAPI = {
     try {
       console.log(`Запрос записей для монитора ${monitorId} за ${date.toDateString()}`);
       
-      // Формируем временной диапазон для поиска (весь день)
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
-      
-      const startTime = TimeUtils.isoToUnixNano(startOfDay.toISOString());
-      const endTime = TimeUtils.isoToUnixNano(endOfDay.toISOString());
-      
+      // Сначала получаем список всех записей без фильтрации
       const queryParams = new URLSearchParams({
-        "monitor-id": monitorId,
-        "start-time": startTime.toString(),
-        "end-time": endTime.toString(),
         "include-data": "true",
         reverse: "true",
-        limit: "200"
+        limit: "1000"
       });
 
       const response = await fetch(`${API_BASE_URL}/api/recording/query?${queryParams.toString()}`, {
@@ -458,49 +447,55 @@ export const sentryshotAPI = {
       console.log('Сырые данные записей:', backendRecordings);
 
       if (!backendRecordings || Object.keys(backendRecordings).length === 0) {
-        console.log('Нет записей для данного монитора и даты');
+        console.log('Нет записей');
         return [];
       }
 
-      // Преобразуем в нужный формат
-      const recordings = Object.entries(backendRecordings).map(([recordingId, rec]: [string, any]) => {
-        try {
-          const recMonitorId = rec.monitorID || monitorId;
-          
-          if (!rec.data || !rec.data.start || !rec.data.end) {
-            console.warn(`Запись ${recordingId} не содержит необходимых данных времени`);
+      // Фильтруем записи по монитору и дате на клиенте
+      const recordings = Object.entries(backendRecordings)
+        .map(([recordingId, rec]: [string, any]) => {
+          try {
+            // Проверяем что запись относится к нужному монитору
+            if (rec.monitorID && rec.monitorID !== monitorId) {
+              return null;
+            }
+
+            if (!rec.data || !rec.data.start || !rec.data.end) {
+              console.warn(`Запись ${recordingId} не содержит необходимых данных времени`);
+              return null;
+            }
+
+            const startTime = new Date(TimeUtils.unixNanoToIso(rec.data.start));
+            const endTime = new Date(TimeUtils.unixNanoToIso(rec.data.end));
+            
+            // Фильтруем по дате
+            const recordingDate = new Date(startTime);
+            recordingDate.setHours(0, 0, 0, 0);
+            const filterDate = new Date(date);
+            filterDate.setHours(0, 0, 0, 0);
+            
+            const dayDifference = Math.abs(recordingDate.getTime() - filterDate.getTime()) / (1000 * 60 * 60 * 24);
+            if (dayDifference > 1) {
+              return null;
+            }
+
+            return {
+              id: recordingId,
+              monitorId: rec.monitorID || monitorId,
+              monitorName: rec.data?.monitorName || `Monitor ${monitorId}`,
+              startTime: startTime,
+              endTime: endTime,
+              duration: (rec.data.end - rec.data.start) / 1_000_000_000,
+              fileUrl: this.getVodUrl(monitorId, startTime, endTime, recordingId),
+              fileSize: rec.data?.sizeBytes,
+              thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${recordingId}`
+            };
+          } catch (error) {
+            console.error(`Ошибка обработки записи ${recordingId}:`, error);
             return null;
           }
-
-          const startTime = new Date(TimeUtils.unixNanoToIso(rec.data.start));
-          const endTime = new Date(TimeUtils.unixNanoToIso(rec.data.end));
-          
-          const recordingDate = new Date(startTime);
-          recordingDate.setHours(0, 0, 0, 0);
-          const filterDate = new Date(date);
-          filterDate.setHours(0, 0, 0, 0);
-          
-          const dayDifference = Math.abs(recordingDate.getTime() - filterDate.getTime()) / (1000 * 60 * 60 * 24);
-          if (dayDifference > 1) {
-            return null;
-          }
-
-          return {
-            id: recordingId,
-            monitorId: recMonitorId,
-            monitorName: rec.data?.monitorName || `Monitor ${recMonitorId}`,
-            startTime: startTime,
-            endTime: endTime,
-            duration: (rec.data.end - rec.data.start) / 1_000_000_000,
-            fileUrl: this.getVodUrl(recMonitorId, startTime, endTime, recordingId),
-            fileSize: rec.data?.sizeBytes,
-            thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${recordingId}`
-          };
-        } catch (error) {
-          console.error(`Ошибка обработки записи ${recordingId}:`, error);
-          return null;
-        }
-      }).filter(Boolean) as RecordingInfo[];
+        })
+        .filter(Boolean) as RecordingInfo[];
 
       console.log(`Обработано ${recordings.length} записей для монитора ${monitorId}`);
       return recordings;
