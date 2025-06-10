@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useStore, LocationType } from '../../store/useStore';
-const { locationCategories, getLocationCategoryName } = useStore();
 import { setLocationForMonitor } from '../../constants/locationMapping';
 import './AddCameraModal.css';
 
