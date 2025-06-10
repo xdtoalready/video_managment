@@ -49,7 +49,7 @@ export interface ArchiveEvent {
 export const archiveAPI = {
   // === ПОЛУЧЕНИЕ ЗАПИСЕЙ ===
 
-  async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
+    async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
     try {
       console.log('Запрос записей с параметрами:', params);
 
@@ -70,75 +70,71 @@ export const archiveAPI = {
         });
       }
 
-      if (filteredMonitors.length === 0) {
-        console.log('Нет мониторов для запроса записей');
-        return [];
+      console.log(`Поиск записей для ${filteredMonitors.length} мониторов`);
+
+      // Если нужны записи только одного монитора - используем прямой запрос
+      if (filteredMonitors.length === 1) {
+        return await this.getRecordingsForMonitor(
+          filteredMonitors[0].id,
+          params.startDate,
+          params.endDate
+        );
       }
 
-      const allRecordings: RecordingInfo[] = [];
+      // Если нужны записи всех мониторов или их много - используем getAllRecordings
+      const allRecordings = await sentryshotAPI.getAllRecordings(1000);
+      console.log(`Получено ${allRecordings.length} записей со всех мониторов`);
 
-      // Получаем записи для каждого монитора
-      for (const monitor of filteredMonitors) {
-        console.log(`Получение записей для монитора ${monitor.id} (${monitor.name})`);
-        
-        // Итерируем по дням в заданном диапазоне
-        const currentDate = new Date(params.startDate);
-        const endDate = new Date(params.endDate);
+      // Фильтруем записи на клиенте
+      let filteredRecordings = allRecordings;
 
-        while (currentDate <= endDate) {
-          try {
-            const dayRecordings = await sentryshotAPI.getRecordings(monitor.id, currentDate);
-            console.log(`Получено ${dayRecordings.length} записей для ${monitor.id} за ${currentDate.toDateString()}`);
-
-            // Фильтруем записи по точному времени
-            const filteredRecordings = dayRecordings.filter(recording => {
-              const recordingStart = new Date(recording.startTime);
-              const recordingEnd = new Date(recording.endTime);
-
-              return recordingStart <= params.endDate && recordingEnd >= params.startDate;
-            });
-
-            // Преобразуем в формат архивного API
-            const archiveRecordings = filteredRecordings.map(recording => ({
-              ...recording,
-              location: this._getLocationByMonitorId(monitor.id),
-              monitorName: monitor.name, // Используем реальное имя монитора
-              fileUrl: sentryshotAPI.getVodUrl(
-                monitor.id,
-                new Date(recording.startTime),
-                new Date(recording.endTime)
-              )
-            }));
-
-            allRecordings.push(...archiveRecordings);
-          } catch (error) {
-            console.warn(`Ошибка получения записей для монитора ${monitor.id} за ${currentDate.toDateString()}:`, error);
-            // Продолжаем для других дней
-          }
-
-          // Переходим к следующему дню
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
+      // Фильтр по мониторам
+      if (filteredMonitors.length > 0) {
+        const monitorIds = filteredMonitors.map(m => m.id);
+        filteredRecordings = filteredRecordings.filter(rec => 
+          monitorIds.includes(rec.monitorId)
+        );
       }
+
+      // Фильтр по временному диапазону
+      filteredRecordings = filteredRecordings.filter(recording => {
+        const recordingStart = new Date(recording.startTime);
+        const recordingEnd = new Date(recording.endTime);
+        return recordingStart <= params.endDate && recordingEnd >= params.startDate;
+      });
+
+      // Добавляем недостающие поля
+      const enhancedRecordings = filteredRecordings.map(recording => {
+        const monitor = monitors.find(m => m.id === recording.monitorId);
+        return {
+          ...recording,
+          location: this._getLocationByMonitorId(recording.monitorId),
+          monitorName: monitor?.name || recording.monitorName || `Monitor ${recording.monitorId}`,
+          fileUrl: sentryshotAPI.getVodUrl(
+            recording.monitorId,
+            new Date(recording.startTime),
+            new Date(recording.endTime),
+            recording.id
+          )
+        };
+      });
 
       // Сортируем записи по времени начала (от новых к старым)
-      allRecordings.sort((a, b) =>
+      enhancedRecordings.sort((a, b) =>
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
       );
 
-      console.log(`Всего найдено записей: ${allRecordings.length}`);
+      console.log(`Итого найдено записей после фильтрации: ${enhancedRecordings.length}`);
+      return enhancedRecordings;
 
-      return allRecordings;
     } catch (error) {
       console.error('Ошибка при получении архивных записей:', error);
-      
-      // Временно возвращаем пустой массив вместо моков
       return [];
     }
   },
 
   // Получение записей для конкретного монитора и временного диапазона
-  async getRecordingsForMonitor(
+   async getRecordingsForMonitor(
     monitorId: string,
     startTime: Date,
     endTime: Date
@@ -155,43 +151,39 @@ export const archiveAPI = {
         return [];
       }
 
-      // Получаем записи по дням
-      const recordings: RecordingInfo[] = [];
-      const currentDate = new Date(startTime);
-      currentDate.setHours(0, 0, 0, 0);
+      // Используем getAllRecordings и фильтруем по монитору и времени
+      const allRecordings = await sentryshotAPI.getAllRecordings(500);
+      
+      const filteredRecordings = allRecordings.filter(recording => {
+        // Фильтр по монитору
+        if (recording.monitorId !== monitorId) return false;
+        
+        // Фильтр по времени
+        const recordingStart = new Date(recording.startTime);
+        const recordingEnd = new Date(recording.endTime);
+        return recordingStart <= endTime && recordingEnd >= startTime;
+      });
 
-      while (currentDate <= endTime) {
-        try {
-          const dayRecordings = await sentryshotAPI.getRecordings(monitorId, currentDate);
+      // Добавляем недостающие поля
+      const enhancedRecordings = filteredRecordings.map(rec => ({
+        ...rec,
+        location: this._getLocationByMonitorId(monitorId),
+        monitorName: monitor.name,
+        fileUrl: sentryshotAPI.getVodUrl(
+          monitorId,
+          new Date(rec.startTime),
+          new Date(rec.endTime),
+          rec.id
+        )
+      }));
 
-          // Фильтруем по точному временному диапазону
-          const filteredRecordings = dayRecordings.filter(recording => {
-            const recordingStart = new Date(recording.startTime);
-            const recordingEnd = new Date(recording.endTime);
-
-            return recordingStart <= endTime && recordingEnd >= startTime;
-          });
-
-          recordings.push(...filteredRecordings.map(rec => ({
-            ...rec,
-            location: this._getLocationByMonitorId(monitorId),
-            monitorName: monitor.name,
-            fileUrl: sentryshotAPI.getVodUrl(
-              monitorId,
-              new Date(rec.startTime),
-              new Date(rec.endTime)
-            )
-          })));
-        } catch (error) {
-          console.warn(`Ошибка получения записей для ${monitorId} за ${currentDate.toDateString()}:`, error);
-        }
-
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      return recordings.sort((a, b) =>
+      // Сортируем по времени
+      enhancedRecordings.sort((a, b) =>
         new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
       );
+
+      console.log(`Найдено ${enhancedRecordings.length} записей для монитора ${monitorId}`);
+      return enhancedRecordings;
     } catch (error) {
       console.error('Ошибка при получении записей для монитора:', error);
       return [];
