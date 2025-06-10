@@ -1,4 +1,4 @@
-import { LocationType, locationNames } from '../store/useStore';
+import { LocationType } from '../store/useStore';
 
 // Базовый маппинг монитор ID -> локация (можно расширять)
 const BASE_MONITOR_LOCATION_MAP: Record<string, LocationType> = {
