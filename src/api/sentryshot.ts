@@ -427,8 +427,19 @@ export const sentryshotAPI = {
     try {
       console.log(`Запрос записей для монитора ${monitorId} за ${date.toDateString()}`);
       
+      // Формируем временной диапазон для поиска (весь день)
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const startTime = TimeUtils.isoToUnixNano(startOfDay.toISOString());
+      const endTime = TimeUtils.isoToUnixNano(endOfDay.toISOString());
+      
       const queryParams = new URLSearchParams({
-        monitors: monitorId,
+        "monitor-id": monitorId,
+        "start-time": startTime.toString(),
+        "end-time": endTime.toString(),
         "include-data": "true",
         reverse: "true",
         limit: "200"
