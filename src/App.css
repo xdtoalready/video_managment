@@ -369,12 +369,12 @@ button:focus, button:focus-visible {
   font-size: 16px;
 }
 
-.fullscreen-camera .camera-card-title {
+/* .fullscreen-camera .camera-card-title {
   color: white;
   background-color: rgba(0, 0, 0, 0.5);
   padding: 5px 10px;
   font-size: 16px;
-}
+} */
 
 .camera-menu-button {
   display: flex;
@@ -399,9 +399,9 @@ button:focus, button:focus-visible {
   border-radius: 50%;
 }
 
-.camera-active .camera-menu-button .menu-button-circle {
+/* .camera-active .camera-menu-button .menu-button-circle {
   background-color: white;
-}
+} */
 
 .fullscreen-camera .camera-menu-button .menu-button-circle {
   background-color: white;
@@ -411,9 +411,9 @@ button:focus, button:focus-visible {
   background-color: #f0f0f0;
 }
 
-.camera-active .camera-menu-button:hover {
+/* .camera-active .camera-menu-button:hover {
   background-color: rgba(0, 0, 0, 0.7);
-}
+} */
 
 .fullscreen-camera .camera-menu-button:hover {
   background-color: rgba(0, 0, 0, 0.7);
@@ -573,9 +573,9 @@ button:focus, button:focus-visible {
   cursor: pointer;
 }
 
-.camera-active .camera-menu-button {
+/* .camera-active .camera-menu-button {
   background-color: rgba(0, 0, 0, 0.5);
-}
+} */
 
 .camera-card-header span.menu-button-circle {
   width: 5px;
