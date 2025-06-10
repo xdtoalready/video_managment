@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStore, LocationType, locationNames } from '../../store/useStore';
+import { useStore, LocationType } from '../../store/useStore';
 
 const Sidebar: React.FC = () => {
   const { 
@@ -8,11 +8,13 @@ const Sidebar: React.FC = () => {
     selectedLocations, 
     toggleLocationSelection,
     clearLocationSelections,
-    cameras 
+    cameras,
+    locationCategories,
+    getLocationCategoryName
   } = useStore();
   
   // Получаем список всех локаций с камерами
-  const availableLocations = Object.keys(locationNames) as LocationType[];
+  const availableLocations = locationCategories.map(cat => cat.id);
   
   // Стейт для управления раскрытием разделов меню
   const [isOnlineExpanded, setIsOnlineExpanded] = useState(true);
@@ -93,7 +95,7 @@ const Sidebar: React.FC = () => {
                         </svg>
                       </div>
                     </div>
-                    <span className="checkbox-text">{locationNames[location]}</span>
+                    <span className="checkbox-text">{getLocationCategoryName(location)}</span>
                   </div>
                 </label>
               </li>

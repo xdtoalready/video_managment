@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStore, Recording, locationNames } from '../../store/useStore.ts';
+import { useStore, Recording } from '../../store/useStore.ts';
 import './RecordingsList.css';
 import { sentryshotAPI } from '../../api/sentryshot';
 import { safeFormatDate } from "../../utils/recordingHelpers.ts";
@@ -12,7 +12,8 @@ const RecordingsList: React.FC = () => {
     archiveFilters,
     updateArchiveFilters,
     cameras,
-    connectionStatus
+    connectionStatus,
+    getLocationCategoryName
   } = useStore();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -340,7 +341,7 @@ const RecordingsList: React.FC = () => {
                 <small className="monitor-id">ID: {recording.monitorId}</small>
               </div>
               <div className="recording-cell">
-                {locationNames[recording.location]}
+                {getLocationCategoryName(recording.location)}
               </div>
               <div className="recording-cell recording-actions">
                 <button

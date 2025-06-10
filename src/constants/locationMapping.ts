@@ -128,7 +128,7 @@ class LocationMappingManager {
         console.log('Импорт маппингов локаций:', Object.keys(mappings).length, 'записей');
         
         for (const [monitorId, location] of Object.entries(mappings)) {
-            if (Object.values(locationNames).includes(locationNames[location])) {
+            if (location && typeof location === 'string') {
                 this.locationMap[monitorId] = location;
             } else {
                 console.warn(`Пропуск некорректной локации для монитора ${monitorId}: ${location}`);
@@ -197,33 +197,37 @@ export const getMonitorsByLocation = (location: LocationType): string[] => {
 
 // Хук React для использования маппинга локаций
 import { useState, useEffect } from 'react';
+import { useStore } from '../store/useStore';
 
 export const useLocationMapping = () => {
-    const [mappings, setMappings] = useState(locationMappingManager.getAllMappings());
+  const [mappings, setMappings] = useState(locationMappingManager.getAllMappings());
+  const { locationCategories, getLocationCategoryName } = useStore();
 
-    useEffect(() => {
-        const handleMappingUpdate = () => {
-            setMappings(locationMappingManager.getAllMappings());
-        };
-
-        window.addEventListener('location-mapping-updated', handleMappingUpdate);
-        
-        return () => {
-            window.removeEventListener('location-mapping-updated', handleMappingUpdate);
-        };
-    }, []);
-
-    return {
-        mappings,
-        getLocationForMonitor: locationMappingManager.getLocationForMonitor.bind(locationMappingManager),
-        setLocationForMonitor: locationMappingManager.setLocationForMonitor.bind(locationMappingManager),
-        removeLocationMapping: locationMappingManager.removeLocationMapping.bind(locationMappingManager),
-        getLocationStats: locationMappingManager.getLocationStats.bind(locationMappingManager),
-        getMonitorsByLocation: locationMappingManager.getMonitorsByLocation.bind(locationMappingManager),
-        exportUserMappings: locationMappingManager.exportUserMappings.bind(locationMappingManager),
-        importMappings: locationMappingManager.importMappings.bind(locationMappingManager),
-        resetToDefaults: locationMappingManager.resetToDefaults.bind(locationMappingManager)
+  useEffect(() => {
+    const handleMappingUpdate = () => {
+      setMappings(locationMappingManager.getAllMappings());
     };
+
+    window.addEventListener('location-mapping-updated', handleMappingUpdate);
+    
+    return () => {
+      window.removeEventListener('location-mapping-updated', handleMappingUpdate);
+    };
+  }, []);
+
+  return {
+    mappings,
+    locationCategories,
+    getLocationCategoryName,
+    getLocationForMonitor: locationMappingManager.getLocationForMonitor.bind(locationMappingManager),
+    setLocationForMonitor: locationMappingManager.setLocationForMonitor.bind(locationMappingManager),
+    removeLocationMapping: locationMappingManager.removeLocationMapping.bind(locationMappingManager),
+    getLocationStats: locationMappingManager.getLocationStats.bind(locationMappingManager),
+    getMonitorsByLocation: locationMappingManager.getMonitorsByLocation.bind(locationMappingManager),
+    exportUserMappings: locationMappingManager.exportUserMappings.bind(locationMappingManager),
+    importMappings: locationMappingManager.importMappings.bind(locationMappingManager),
+    resetToDefaults: locationMappingManager.resetToDefaults.bind(locationMappingManager)
+  };
 };
 
 export default locationMappingManager;

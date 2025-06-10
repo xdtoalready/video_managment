@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useStore, LocationType, locationNames } from '../../store/useStore.ts';
+import { useStore, LocationType } from '../../store/useStore.ts';
 import { getLocationForMonitor, getLocationNameForMonitor } from '../../constants/locationMapping';
 import './ArchiveFilters.css';
 
@@ -9,7 +9,9 @@ const ArchiveFilters: React.FC = () => {
     archiveFilters,
     updateArchiveFilters,
     loadRecordings,
-    connectionStatus
+    connectionStatus,
+    locationCategories,
+    getLocationCategoryName
   } = useStore();
 
   const [startDate, setStartDate] = useState<string>('');
@@ -373,7 +375,7 @@ const ArchiveFilters: React.FC = () => {
                             </svg>
                           </div>
                         </div>
-                        <span>{locationNames[location]}</span>
+                        <span>{getLocationCategoryName(location)}</span>
                         <small>({camerasInLocation.length} камер)</small>
                       </div>
                     </label>
@@ -432,7 +434,7 @@ const ArchiveFilters: React.FC = () => {
                 return (
                   <div key={location} className="camera-group">
                     <div className="camera-group-header">
-                      <strong>{locationNames[location]}</strong>
+                      <strong>{getLocationCategoryName(location)}</strong>
                     </div>
                     {camerasInLocation.map((camera) => (
                       <div key={camera.id} className="filter-option camera-option">
