@@ -1,4 +1,3 @@
-// src/App.tsx - Обновленное главное приложение с аутентификацией
 import React, { useEffect, useState, useRef } from 'react'
 import './App.css'
 import CameraGrid from './components/Camera/CameraGrid.tsx'
@@ -7,6 +6,9 @@ import Layout from './components/layout/Layout'
 import { useStore } from './store/useStore'
 import CalendarModal from './components/Calendar/CalendarModal.tsx'
 import ArchiveView from './components/ArchiveView/ArchiveView.tsx'
+import AccountDropdown from './components/Account/AccountDropdown.tsx'
+import AccountModal from './components/Account/AccountModal.tsx'
+import { Account } from './api/sentryshot'
 
 function App() {
   const {
@@ -194,7 +196,49 @@ useEffect(() => {
 
 // Компонент для отображения статуса системы
 const SystemStatusFooter: React.FC = () => {
-  const { connectionStatus, isOnline, lastSync, username } = useStore();
+  const { connectionStatus, isOnline, lastSync, username, hasAdminRights } = useStore();
+  
+  // Состояние для выпадающего меню аккаунтов
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+  // Состояние для модального окна (перенесено из AccountDropdown)
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  
+  const usernameRef = useRef<HTMLElement>(null);
+
+  const handleUsernameClick = () => {
+    setIsAccountDropdownOpen(!isAccountDropdownOpen);
+  };
+
+  // Функция закрытия дропдауна с возможностью передачи callback
+  const handleCloseDropdown = (callback?: () => void) => {
+    setIsAccountDropdownOpen(false);
+    // Если передан callback, вызываем его после закрытия дропдауна
+    if (callback) {
+      // Используем requestAnimationFrame вместо setTimeout для более надежной синхронизации с циклом рендеринга
+      requestAnimationFrame(() => {
+        callback();
+      });
+    }
+  };
+
+  // Функция для открытия модального окна создания аккаунта
+  const handleOpenCreateAccountModal = () => {
+    setEditingAccount(null);
+    setIsAccountModalOpen(true);
+  };
+
+  // Функция для открытия модального окна редактирования аккаунта
+  const handleOpenEditAccountModal = (account: Account) => {
+    setEditingAccount(account);
+    setIsAccountModalOpen(true);
+  };
+
+  // Функция закрытия модального окна
+  const handleCloseAccountModal = () => {
+    setIsAccountModalOpen(false);
+    setEditingAccount(null);
+  };
 
   const formatLastSync = (date: Date | null) => {
     if (!date) return 'Никогда';
@@ -238,10 +282,34 @@ const SystemStatusFooter: React.FC = () => {
         </span>
         </div>
 
-        <div className="status-item">
-          <span className="status-label">Пользователь:</span>
-          <span className="status-value">{username}</span>
-        </div>
+         <div className="status-item">
+            <span className="status-label">Пользователь:</span>
+            <span 
+              ref={usernameRef}
+              className="status-value username-clickable"
+              onClick={handleUsernameClick}
+              title="Управление аккаунтами"
+            >
+              <span>{hasAdminRights ? '👑' : '👤'}</span>
+              <span>{username}</span>
+              <span style={{ 
+                fontSize: '10px', 
+                opacity: 0.7,
+                transform: isAccountDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }}>
+                ▼
+              </span>
+                {/* Выпадающее меню аккаунтов */}
+                <AccountDropdown
+                  isOpen={isAccountDropdownOpen}
+                  onClose={handleCloseDropdown}
+                  triggerRef={usernameRef as React.RefObject<HTMLElement>}
+                  onCreateAccount={() => handleCloseDropdown(handleOpenCreateAccountModal)}
+                  onEditAccount={(account) => handleCloseDropdown(() => handleOpenEditAccountModal(account))}
+                />
+            </span>
+          </div>
 
         <div className="status-item">
           <span className="status-label">Обновлено:</span>
@@ -252,6 +320,13 @@ const SystemStatusFooter: React.FC = () => {
           <span className="status-label">Видеонаблюдение</span>
           <span className="status-value">v1.0</span>
         </div>
+
+        {/* Модальное окно аккаунтов (перенесено из AccountDropdown) */}
+        <AccountModal
+          isOpen={isAccountModalOpen}
+          onClose={handleCloseAccountModal}
+          editingAccount={editingAccount}
+        />
       </div>
   );
 };

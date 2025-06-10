@@ -1,0 +1,302 @@
+/* AccountDropdown.css */
+.account-dropdown {
+  position: absolute; /* Изменено с fixed на absolute для правильного позиционирования */
+  z-index: 100000; /* Увеличен z-index, чтобы быть выше футера */
+  background: var(--white);
+  border: 1px solid var(--text-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  max-width: 320px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 8px 0;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.status-value.username-clickable {
+  position: relative;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+}
+
+.status-value.username-clickable:hover {
+    background: var(--primary-color);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Заголовок */
+.account-dropdown-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--text-color);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Текущий пользователь */
+.account-dropdown-current {
+  padding: 12px 16px;
+  background: var(--light-bg);
+  border-bottom: 1px solid var(--text-color);
+}
+
+.current-user-label {
+  font-size: 12px;
+  color: var(--gray2-color);
+  margin-bottom: 4px;
+}
+
+.current-user-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.current-user-details .username {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.current-user-details .role {
+  font-size: 12px;
+  color: var(--gray2-color);
+}
+
+.current-user-icon {
+  font-size: 16px;
+}
+
+/* Форма переключения аккаунта */
+.account-switch-form {
+  padding: 16px;
+}
+
+.switch-form-title {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.switch-form-title strong {
+  color: var(--primary-color);
+}
+
+.switch-password-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--text-color);
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  background: var(--white);
+  color: var(--text-color);
+}
+
+.switch-password-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.switch-error {
+  font-size: 12px;
+  color: #D3544A;
+  margin-bottom: 12px;
+}
+
+.switch-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.switch-btn {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--text-color);
+}
+
+.switch-btn-cancel {
+  background: transparent;
+  color: var(--text-color);
+}
+
+.switch-btn-cancel:hover {
+  background: var(--light-bg);
+}
+
+.switch-btn-confirm {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.switch-btn-confirm:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.switch-btn-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Секция других аккаунтов */
+/* .account-dropdown-section {
+  border-top: 1px solid var(--text-color);
+  margin-top: 8px;
+} */
+
+.section-label {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--gray2-color);
+  font-weight: 500;
+}
+
+/* Элемент аккаунта */
+.account-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color 0.2s ease;
+}
+
+.account-item:hover {
+  background: var(--light-bg);
+}
+
+.account-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.account-item-icon {
+  font-size: 14px;
+}
+
+.account-item-details .username {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.account-item-details .role {
+  font-size: 11px;
+  color: var(--gray2-color);
+}
+
+.account-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.account-item:hover .account-item-actions {
+  opacity: 1;
+}
+
+.account-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--gray2-color);
+  transition: all 0.2s ease;
+}
+
+.account-action-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.account-action-btn.delete {
+  color: #D3544A;
+}
+
+.account-action-btn.delete:hover {
+  background: rgba(211, 84, 74, 0.1);
+}
+
+/* Действия в футере */
+.account-dropdown-actions {
+  border-top: 1px solid var(--text-color);
+  margin-top: 8px;
+}
+
+.dropdown-action-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-action-item.create {
+  color: var(--primary-color);
+}
+
+.dropdown-action-item.create:hover {
+  background: var(--light-bg);
+}
+
+.dropdown-action-item.logout {
+  color: #D3544A;
+}
+
+.dropdown-action-item.logout:hover {
+  background: rgba(211, 84, 74, 0.1);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .account-dropdown {
+    min-width: 260px;
+    max-width: 300px;
+  }
+  
+  .account-item-actions {
+    opacity: 1; /* На мобильных всегда показываем кнопки */
+  }
+}
+
+/* Скроллбар */
+.account-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.account-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.account-dropdown::-webkit-scrollbar-thumb {
+  background: var(--gray2-color);
+  border-radius: 3px;
+}
+
+.account-dropdown::-webkit-scrollbar-thumb:hover {
+  background: var(--text-color);
+}

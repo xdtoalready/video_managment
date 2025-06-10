@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sentryshotAPI, TimeUtils, CreateMonitorRequest } from '../api/sentryshot';
+import { sentryshotAPI, TimeUtils, CreateMonitorRequest, Account, CreateAccountRequest } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
 import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
@@ -88,6 +88,7 @@ interface AuthState {
   isAuthenticated: boolean;
   username: string;
   hasAdminRights: boolean;
+  currentAccountId: string;
 
   // Методы аутентификации
   login: (username: string, password: string) => Promise<boolean>;
@@ -99,6 +100,18 @@ const STORAGE_KEYS = {
   AUTH: 'sentryshot_auth',
   USER_PREFS: 'sentryshot_preferences'
 };
+
+interface AccountsState {
+  // Список всех аккаунтов (только для админов)
+  accounts: Account[];
+  
+  // Методы управления аккаунтами
+  loadAccounts: () => Promise<void>;
+  createAccount: (accountData: Omit<CreateAccountRequest, 'id'>) => Promise<boolean>;
+  updateAccount: (accountId: string, updates: Partial<Omit<CreateAccountRequest, 'id'>>) => Promise<boolean>;
+  deleteAccount: (accountId: string) => Promise<boolean>;
+  switchAccount: (username: string, password: string) => Promise<boolean>;
+}
 
 // Дополнительные поля для состояния архива
 interface ArchiveState {
@@ -141,7 +154,7 @@ interface SystemState {
 }
 
 // Тип состояния приложения
-interface AppState extends AuthState, ArchiveState, SystemState {
+interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   // Данные
   cameras: Camera[];
   activeCamera: Camera | null;
@@ -251,6 +264,9 @@ export const useStore = create<AppState>((set, get) => ({
   isAuthenticated: false,
   username: '',
   hasAdminRights: false,
+  currentAccountId: '',
+
+  accounts: [],
 
   // Система
   isOnline: false,
@@ -321,6 +337,7 @@ export const useStore = create<AppState>((set, get) => ({
           isAuthenticated: true,
           username,
           hasAdminRights: true,
+          currentAccountId: username,
           connectionStatus: 'connected',
           isOnline: true,
           lastSync: new Date()
@@ -328,6 +345,12 @@ export const useStore = create<AppState>((set, get) => ({
 
         // Загружаем камеры
         await get().loadCameras();
+
+        // Загружаем аккаунты если пользователь - администратор
+        const { hasAdminRights: isAdmin } = get();
+        if (isAdmin) {
+          await get().loadAccounts();
+        }
 
         return true;
       } else {
@@ -354,9 +377,11 @@ export const useStore = create<AppState>((set, get) => ({
       isAuthenticated: false,
       username: '',
       hasAdminRights: false,
+      currentAccountId: '',
       connectionStatus: 'disconnected',
       cameras: [],
-      activeCamera: null
+      activeCamera: null,
+      accounts: []
     });
   },
 
@@ -383,6 +408,147 @@ export const useStore = create<AppState>((set, get) => ({
         connectionStatus: 'error'
       });
       return false;
+    }
+  },
+
+  // === МЕТОДЫ УПРАВЛЕНИЯ АККАУНТАМИ ===
+
+  loadAccounts: async () => {
+    try {
+      const { isAuthenticated, hasAdminRights } = get();
+      
+      if (!isAuthenticated || !hasAdminRights) {
+        console.log('Недостаточно прав для загрузки аккаунтов');
+        return;
+      }
+
+      console.log('Загрузка списка аккаунтов...');
+      const accounts = await sentryshotAPI.getAccounts();
+      
+      set({ accounts });
+      console.log(`Загружено ${accounts.length} аккаунтов`);
+    } catch (error) {
+      console.error('Ошибка при загрузке аккаунтов:', error);
+      set({ accounts: [] });
+    }
+  },
+
+  createAccount: async (accountData: Omit<CreateAccountRequest, 'id'>) => {
+    try {
+      const { isAuthenticated, hasAdminRights } = get();
+      
+      if (!isAuthenticated || !hasAdminRights) {
+        throw new Error('Недостаточно прав для создания аккаунтов');
+      }
+
+      // Генерируем уникальный ID
+      const newAccountId = sentryshotAPI.generateAccountId();
+      
+      const createRequest: CreateAccountRequest = {
+        id: newAccountId,
+        ...accountData
+      };
+
+      console.log('Создание нового аккаунта:', { ...createRequest, plainPassword: '[СКРЫТО]' });
+      
+      const success = await sentryshotAPI.createAccount(createRequest);
+
+      if (success) {
+        // Перезагружаем список аккаунтов
+        await get().loadAccounts();
+        console.log('Аккаунт успешно создан и список обновлен');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Ошибка при создании аккаунта:', error);
+      throw error;
+    }
+  },
+
+  updateAccount: async (accountId: string, updates: Partial<Omit<CreateAccountRequest, 'id'>>) => {
+    try {
+      const { isAuthenticated, hasAdminRights } = get();
+      
+      if (!isAuthenticated || !hasAdminRights) {
+        throw new Error('Недостаточно прав для обновления аккаунтов');
+      }
+
+      const updateRequest = {
+        id: accountId,
+        ...updates
+      };
+
+      console.log('Обновление аккаунта:', { ...updateRequest, plainPassword: updateRequest.plainPassword ? '[СКРЫТО]' : undefined });
+      
+      const success = await sentryshotAPI.updateAccount(updateRequest);
+
+      if (success) {
+        // Перезагружаем список аккаунтов
+        await get().loadAccounts();
+        console.log('Аккаунт успешно обновлен и список обновлен');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Ошибка при обновлении аккаунта:', error);
+      throw error;
+    }
+  },
+
+  deleteAccount: async (accountId: string) => {
+    try {
+      const { isAuthenticated, hasAdminRights, currentAccountId } = get();
+      
+      if (!isAuthenticated || !hasAdminRights) {
+        throw new Error('Недостаточно прав для удаления аккаунтов');
+      }
+
+      if (accountId === currentAccountId) {
+        throw new Error('Нельзя удалить текущий аккаунт');
+      }
+
+      console.log('Удаление аккаунта:', accountId);
+      
+      const success = await sentryshotAPI.deleteAccount(accountId);
+
+      if (success) {
+        // Перезагружаем список аккаунтов
+        await get().loadAccounts();
+        console.log('Аккаунт успешно удален и список обновлен');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Ошибка при удалении аккаунта:', error);
+      throw error;
+    }
+  },
+
+  switchAccount: async (username: string, password: string) => {
+    try {
+      console.log('Переключение на аккаунт:', username);
+      
+      // Используем существующий метод login для переключения
+      const success = await get().login(username, password);
+      
+      if (success) {
+        console.log('Успешное переключение на аккаунт:', username);
+        
+        // Загружаем список аккаунтов для нового пользователя (если он админ)
+        const { hasAdminRights } = get();
+        if (hasAdminRights) {
+          await get().loadAccounts();
+        }
+      }
+      
+      return success;
+    } catch (error) {
+      console.error('Ошибка при переключении аккаунта:', error);
+      throw error;
     }
   },
 
