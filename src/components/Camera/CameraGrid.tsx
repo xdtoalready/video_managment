@@ -3,7 +3,6 @@ import CameraView from './CameraView.tsx';
 import AddCameraCard from './AddCameraCard.tsx';
 import AddCameraModal from './AddCameraModal.tsx';
 import { useStore } from '../../store/useStore.ts';
-const { locationCategories, getLocationCategoryName } = useStore();
 import { getLocationForMonitor } from '../../constants/locationMapping';
 
 const CameraGrid: React.FC = () => {
