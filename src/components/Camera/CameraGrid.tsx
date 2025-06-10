@@ -38,23 +38,8 @@ const CameraGrid: React.FC = () => {
     setIsAddCameraModalOpen(false);
   };
   
-  // Если нет камер, показываем сообщение
-  if (filteredCameras.length === 0) {
-    return (
-      <div className="camera-grid-container">
-        <div className="camera-grid-empty">
-          {selectedLocations.length > 0 ? (
-            <p>Нет доступных камер в выбранных категориях: {selectedLocations.map(loc => getLocationCategoryName(loc)).join(', ')}.</p>
-          ) : (
-            <p>Нет доступных камер.</p>
-          )}
-        </div>
-      </div>
-    );
-  }
-  
   // Если включен режим одной камеры и есть активная камера
-if (!isGridView && activeCamera) {
+  if (!isGridView && activeCamera) {
     return (
       <div className="camera-single-view-container">
         <CameraView 
@@ -77,6 +62,44 @@ if (!isGridView && activeCamera) {
             </svg>
         </button>
 
+        {/* Кнопка добавления камеры в полноэкранном режиме для админов */}
+        {isAuthenticated && hasAdminRights && (
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            zIndex: 1000
+          }}>
+            <button 
+              onClick={handleAddCameraClick}
+              style={{
+                background: 'rgba(0, 0, 0, 0.7)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+              title="Добавить новую камеру"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path 
+                  d="M12 5V19M5 12H19" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Добавить камеру
+            </button>
+          </div>
+        )}
+
         {/* Модальное окно добавления камеры */}
         <AddCameraModal 
           isOpen={isAddCameraModalOpen}
@@ -87,7 +110,7 @@ if (!isGridView && activeCamera) {
   }
   
   // Режим сетки
-   return (
+  return (
     <div className="camera-grid-container">
       <div className="breadcrumb-navigation">
         <span className="breadcrumb-item">Видеонаблюдение</span>
@@ -110,13 +133,42 @@ if (!isGridView && activeCamera) {
       </div>
       
       <div className="camera-grid">
-        {/* Кнопка добавления камеры - показываем только для аутентифицированных пользователей с правами администратора */}
+        {/* Кнопка добавления камеры - показываем для аутентифицированных пользователей с правами администратора */}
         {isAuthenticated && hasAdminRights && (
           <AddCameraCard onClick={handleAddCameraClick} />
         )}
 
-        {/* Проверяем, есть ли камеры для отображения */}
-        {filteredCameras.length === 0 && (!isAuthenticated || !hasAdminRights) ? (
+        {/* Отображаем камеры если они есть */}
+        {filteredCameras.map(camera => (
+          <CameraView 
+            key={camera.id}
+            monitorId={camera.id}
+            streamUrl={camera.url}
+            monitorName={camera.name}
+            isActive={camera.isActive}
+            onClick={() => showSingleCamera(camera.id)}
+          />
+        ))}
+
+        {/* Приветственное сообщение для администраторов без камер */}
+        {filteredCameras.length === 0 && cameras.length === 0 && isAuthenticated && hasAdminRights && (
+          <div className="camera-grid-empty">
+            <h3>👋 Добро пожаловать в систему видеонаблюдения!</h3>
+            <p>Камеры пока не добавлены. Нажмите на карточку "Добавить камеру" слева, чтобы подключить первую камеру.</p>
+          </div>
+        )}
+
+        {/* Сообщение для администраторов, когда камеры есть, но отфильтрованы */}
+        {filteredCameras.length === 0 && cameras.length > 0 && isAuthenticated && hasAdminRights && selectedLocations.length > 0 && (
+          <div className="camera-grid-empty">
+            <h3>Нет камер в выбранных категориях</h3>
+            <p>Камеры ({cameras.length} шт.) есть в системе, но не относятся к категориям: {selectedLocations.map(loc => getLocationCategoryName(loc)).join(', ')}.</p>
+            <p>Вы можете добавить новую камеру или снять фильтр по категориям в боковой панели.</p>
+          </div>
+        )}
+
+        {/* Сообщение об отсутствии камер только если их нет И пользователь не может добавить */}
+        {filteredCameras.length === 0 && (!isAuthenticated || !hasAdminRights) && (
           <div className="camera-grid-empty">
             <p>
               {selectedLocations.length > 0 
@@ -125,18 +177,6 @@ if (!isGridView && activeCamera) {
               }
             </p>
           </div>
-        ) : (
-          /* Отображаем отфильтрованные камеры */
-          filteredCameras.map(camera => (
-            <CameraView 
-              key={camera.id}
-              monitorId={camera.id}
-              streamUrl={camera.url}
-              monitorName={camera.name}
-              isActive={camera.isActive}
-              onClick={() => showSingleCamera(camera.id)}
-            />
-          ))
         )}
       </div>
 
