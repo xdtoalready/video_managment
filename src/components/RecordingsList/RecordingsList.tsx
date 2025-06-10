@@ -187,7 +187,7 @@ const RecordingsList: React.FC = () => {
               <div>Камеры: {archiveFilters.cameras.length} выбрано</div>
             )}
             {archiveFilters.locations.length > 0 && (
-              <div>Локации: {archiveFilters.locations.map(loc => locationNames[loc]).join(', ')}</div>
+              <div>Локации: {archiveFilters.locations.map(loc => getLocationCategoryName(loc)).join(', ')}</div>
             )}
           </div>
         </div>
@@ -221,7 +221,7 @@ const RecordingsList: React.FC = () => {
             <ul>
               <li>Период: {archiveFilters.dateRange.start.toLocaleDateString()} - {archiveFilters.dateRange.end.toLocaleDateString()}</li>
               <li>Камеры: {archiveFilters.cameras.length > 0 ? `${archiveFilters.cameras.length} выбрано` : 'Все'}</li>
-              <li>Локации: {archiveFilters.locations.length > 0 ? archiveFilters.locations.map(loc => locationNames[loc]).join(', ') : 'Все'}</li>
+              <li>Локации: {archiveFilters.locations.length > 0 ? archiveFilters.locations.map(loc => getLocationCategoryName(loc)).join(', ') : 'Все'}</li>
             </ul>
           </div>
         </div>
@@ -397,7 +397,7 @@ const RecordingsList: React.FC = () => {
           <div className="summary-item">
             <span className="summary-label">Фильтр по локациям:</span>
             <span className="summary-value">
-              {archiveFilters.locations.map(loc => locationNames[loc]).join(', ')}
+              {archiveFilters.locations.map(loc => getLocationCategoryName(loc)).join(', ')}
             </span>
           </div>
         )}

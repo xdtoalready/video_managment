@@ -2,20 +2,20 @@ import { LocationType } from '../store/useStore';
 
 // Базовый маппинг монитор ID -> локация (можно расширять)
 const BASE_MONITOR_LOCATION_MAP: Record<string, LocationType> = {
-    '1': 'street',
-    '2': 'house',
-    '3': 'playground',
-    '4': 'elevator',
-    '5': 'security',
-    '6': 'parking',
-    '7': 'utility',
-    'monitor_1': 'street',
-    'monitor_2': 'house',
-    'monitor_3': 'playground',
-    'monitor_4': 'elevator',
-    'monitor_5': 'security',
-    'monitor_6': 'parking',
-    'monitor_7': 'utility',
+    '1': 'unknown',
+    '2': 'unknown',
+    '3': 'unknown',
+    '4': 'unknown',
+    '5': 'unknown',
+    '6': 'unknown',
+    '7': 'unknown',
+    'monitor_1': 'unknown',
+    'monitor_2': 'unknown',
+    'monitor_3': 'unknown',
+    'monitor_4': 'unknown',
+    'monitor_5': 'unknown',
+    'monitor_6': 'unknown',
+    'monitor_7': 'unknown',
 };
 
 // Класс для управления маппингом локаций
@@ -175,7 +175,9 @@ export const getLocationForMonitor = (monitorId: string): LocationType => {
 
 export const getLocationNameForMonitor = (monitorId: string): string => {
     const location = locationMappingManager.getLocationForMonitor(monitorId);
-    return locationNames[location];
+    // Получаем store напрямую для доступа к getLocationCategoryName
+    const { useStore } = require('../store/useStore');
+    return useStore.getState().getLocationCategoryName(location);
 };
 
 // Новые функции для управления маппингом

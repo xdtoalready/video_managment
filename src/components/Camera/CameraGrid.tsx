@@ -120,7 +120,7 @@ if (!isGridView && activeCamera) {
           <div className="camera-grid-empty">
             <p>
               {selectedLocations.length > 0 
-                ? `Нет доступных камер в выбранных категориях: ${selectedLocations.map(loc => locationNames[loc]).join(', ')}.`
+                ? `Нет доступных камер в выбранных категориях: ${selectedLocations.map(loc => getLocationCategoryName(loc)).join(', ')}.`
                 : 'Нет доступных камер.'
               }
             </p>
