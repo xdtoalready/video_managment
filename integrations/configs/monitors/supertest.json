@@ -1,0 +1,12 @@
+{
+  "alwaysRecord": true,
+  "enable": true,
+  "id": "supertest",
+  "name": "supertest",
+  "source": "rtsp",
+  "sourcertsp": {
+    "mainStream": "rtsp://username:password@ip:554/stream",
+    "protocol": "tcp"
+  },
+  "videoLength": 60
+}

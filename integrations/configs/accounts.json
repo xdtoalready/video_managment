@@ -1,0 +1,14 @@
+{
+  "abcdefabcdefabcd": {
+    "id": "abcdefabcdefabcd",
+    "username": "admin",
+    "password": "$argon2i$v=19$m=16,t=2,p=1$NFZqY1hESHRpVWFFeVZFSw$NVAK9cX+jmiMvNsz4Djh6A",
+    "isAdmin": true
+  },
+  "c4syvwfgfwncp5qx": {
+    "id": "c4syvwfgfwncp5qx",
+    "username": "supertest",
+    "password": "$argon2id$v=19$m=19456,t=2,p=1$macTGFt+hBkzB6sQZcZMbQ$hJEmQPmZRQIoSPxIWdFId3Mfjd368PLLk1FmGrPpgdA",
+    "isAdmin": true
+  }
+}

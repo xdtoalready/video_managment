@@ -1,0 +1,12 @@
+{
+  "alwaysRecord": true,
+  "enable": true,
+  "id": "test32",
+  "name": "test32",
+  "source": "rtsp",
+  "sourcertsp": {
+    "mainStream": "rtsp://mpv.cdn3.bigCDN.com:554/bigCDN/mp4:bigbuckbunnyiphone_400.mp4",
+    "protocol": "tcp"
+  },
+  "videoLength": 60
+}

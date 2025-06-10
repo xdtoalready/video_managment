@@ -1,0 +1,63 @@
+# Port app will be served on.
+port = 8080
+
+# Directory where recordings will be stored.
+storage_dir = "/app/storage"
+
+# Directory where configs will be stored.
+config_dir = "/app/configs"
+
+# Directory where the plugins are located.
+plugin_dir = "/app/plugins"
+
+# Maximum allowed storage space in GigaBytes.
+# Recordings are delete automatically before this limit is exceeded.
+max_disk_usage = 1000
+
+# PLUGINS
+
+# Authentication. One must be enabled.
+# Basic Auth.
+[[plugin]]
+name = "auth_basic"
+enable = true
+accounts_path = "/app/configs/accounts.json"
+
+# No authentication.
+[[plugin]]
+name = "auth_none"
+enable = false
+
+# Motion detection.
+# Documentation ./plugins/motion/README.md
+[[plugin]]
+name = "motion"
+enable = true
+
+# TFlite object detection.
+# Enabling will generate a `tflite.toml` file.
+[[plugin]]
+name = "tflite"
+enable = false
+
+# Настройки логирования
+[log]
+level = "info"
+file_enabled = true
+
+# Настройки веб-интерфейса
+[web]
+cors_origins = ["http://localhost:2020"]
+static_files = true
+
+# Конфигурация монитора
+[[monitors]]
+id = "test"
+name = "Test Camera"
+enable = true
+always_record = false
+
+# Правильная вложенность для source.rtsp
+[monitors.source.rtsp]
+main_input = "rtsp://mediamtx:8554/test"
+protocol = "tcp"

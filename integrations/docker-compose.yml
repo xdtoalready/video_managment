@@ -1,0 +1,69 @@
+version: '3.8'
+
+networks:
+  sentryshot_net:
+    driver: bridge
+
+services:
+  sentryshot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sentryshot
+    container_name: sentryshot
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./configs:/app/configs
+      - ./storage:/app/storage
+      - ./logs:/app/logs
+    environment:
+      - RUST_LOG=info
+      - TZ=Europe/Moscow
+    networks:
+      - sentryshot_net
+    depends_on:
+      - mediamtx
+    shm_size: 500m
+    command: ["./sentryshot", "run", "--config", "/app/configs/sentryshot.toml"]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "2020:80"
+    networks:
+      - sentryshot_net
+    depends_on:
+      - sentryshot
+
+  mediamtx:
+    image: bluenviron/mediamtx:1.3.0
+    container_name: mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"
+      - "1935:1935"
+      - "8888:8888"
+    networks:
+      - sentryshot_net
+
+  test-camera:
+    image: jrottenberg/ffmpeg:4.4-alpine
+    container_name: test-camera
+    restart: unless-stopped
+    command: >
+      -re -f lavfi -i testsrc2=size=1280x720:rate=25 
+      -f lavfi -i sine=frequency=1000:sample_rate=48000 
+      -c:v libx264 -preset ultrafast -tune zerolatency 
+      -c:a aac -b:a 128k -ar 48000
+      -f rtsp rtsp://mediamtx:8554/test
+    depends_on:
+      - mediamtx
+    networks:
+      - sentryshot_net
