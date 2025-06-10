@@ -52,6 +52,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
         rtspSubUrl: '',
         protocol: 'TCP',
         location: 'unknown',
+        locationInput: '',
         alwaysRecord: true,
         videoLength: 60,
         enable: true
@@ -202,9 +203,9 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
 
       if (success) {
         // Обновляем маппинг локаций, если нужно
-        if (formData.location !== 'unknown') {
-          setLocationForMonitor(formData.id, formData.location);
-          console.log(`Локация ${formData.location} установлена для камеры ${formData.id}`);
+        if (finalLocationId !== 'unknown') {
+          setLocationForMonitor(formData.id, finalLocationId);
+          console.log(`Локация ${finalLocationId} установлена для камеры ${formData.id}`);
         }
 
         // Перезагружаем список камер
@@ -363,7 +364,13 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
                     id="location"
                     type="text"
                     value={formData.locationInput || ''}
-                    onChange={(e) => handleInputChange('locationInput', e.target.value)}
+                    onChange={(e) => {
+                      handleInputChange('locationInput', e.target.value);
+                      // Сбрасываем выбранную категорию при вводе новой
+                      if (e.target.value.trim()) {
+                        handleInputChange('location', 'unknown');
+                      }
+                    }}
                     placeholder="Введите название категории"
                     disabled={isSubmitting}
                     list="location-suggestions"

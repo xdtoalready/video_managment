@@ -1243,14 +1243,15 @@ export const useStore = create<AppState>((set, get) => ({
     
     // Сохраняем в localStorage
     try {
-      const categories = get().locationCategories;
-      const categoriesToSave = categories.filter(cat => !cat.isDefault);
+      // Получаем обновленное состояние после добавления категории
+      const updatedCategories = get().locationCategories;
+      const categoriesToSave = updatedCategories.filter(cat => !cat.isDefault);
       localStorage.setItem('custom_location_categories', JSON.stringify(categoriesToSave));
     } catch (error) {
       console.error('Ошибка сохранения категорий:', error);
     }
     
-    console.log(`Добавлена новая категория: ${trimmedName}`);
+    console.log(`Добавлена новая категория: ${trimmedName} с ID: ${newCategory.id}`);
     return newCategory.id;
   },
 
@@ -1318,3 +1319,22 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
 }));
+
+try {
+  const savedCategories = localStorage.getItem('custom_location_categories');
+  if (savedCategories) {
+    const categories = JSON.parse(savedCategories);
+    useStore.setState(state => ({
+      locationCategories: [
+        ...state.locationCategories,
+        ...categories.map((cat: any) => ({
+          ...cat,
+          createdAt: new Date(cat.createdAt)
+        }))
+      ]
+    }));
+    console.log('Загружены пользовательские категории:', categories.length);
+  }
+} catch (error) {
+  console.error('Ошибка загрузки пользовательских категорий:', error);
+}
