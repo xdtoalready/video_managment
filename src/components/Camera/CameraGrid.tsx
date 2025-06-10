@@ -3,7 +3,7 @@ import CameraView from './CameraView.tsx';
 import AddCameraCard from './AddCameraCard.tsx';
 import AddCameraModal from './AddCameraModal.tsx';
 import { useStore } from '../../store/useStore.ts';
-import { locationNames } from '../../store/useStore.ts';
+const { locationCategories, getLocationCategoryName } = useStore();
 import { getLocationForMonitor } from '../../constants/locationMapping';
 
 const CameraGrid: React.FC = () => {
@@ -15,7 +15,8 @@ const CameraGrid: React.FC = () => {
     showGridView,
     selectedLocations,
     isAuthenticated,
-    hasAdminRights
+    hasAdminRights,
+    getLocationCategoryName
   } = useStore();
   
   const [isAddCameraModalOpen, setIsAddCameraModalOpen] = useState(false);
@@ -44,7 +45,7 @@ const CameraGrid: React.FC = () => {
       <div className="camera-grid-container">
         <div className="camera-grid-empty">
           {selectedLocations.length > 0 ? (
-            <p>Нет доступных камер в выбранных категориях: {selectedLocations.map(loc => locationNames[loc]).join(', ')}.</p>
+            <p>Нет доступных камер в выбранных категориях: {selectedLocations.map(loc => getLocationCategoryName(loc)).join(', ')}.</p>
           ) : (
             <p>Нет доступных камер.</p>
           )}
@@ -95,12 +96,12 @@ if (!isGridView && activeCamera) {
           <>
             <span className="breadcrumb-separator">&gt;</span>
             <span className="breadcrumb-item">
-              {selectedLocations.map((loc, index) => (
-                <React.Fragment key={loc}>
-                  {index > 0 && ', '}
-                  {locationNames[loc]}
-                </React.Fragment>
-              ))}
+                {selectedLocations.map((loc, index) => (
+                  <React.Fragment key={loc}>
+                    {index > 0 && ', '}
+                    {getLocationCategoryName(loc)}
+                  </React.Fragment>
+                ))}
             </span>
           </>
         )}

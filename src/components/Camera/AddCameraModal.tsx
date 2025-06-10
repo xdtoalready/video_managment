@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useStore, LocationType, locationNames } from '../../store/useStore';
+import { useStore, LocationType } from '../../store/useStore';
+const { locationCategories, getLocationCategoryName } = useStore();
 import { setLocationForMonitor } from '../../constants/locationMapping';
 import './AddCameraModal.css';
 
@@ -18,6 +19,7 @@ interface CameraFormData {
   alwaysRecord: boolean;
   videoLength: number;
   enable: boolean;
+  locationInput?: string;
 }
 
 const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
@@ -176,7 +178,13 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
     setIsSubmitting(true);
 
     try {
-      // ИСПРАВЛЕНО: Создаем объект камеры в правильном формате
+
+      let finalLocationId = formData.location;
+      if (formData.locationInput && formData.locationInput.trim()) {
+        finalLocationId = addLocationCategory(formData.locationInput.trim());
+      }
+
+      // Создаем объект камеры в правильном формате
       const newCamera = {
         id: formData.id,
         name: formData.name,
@@ -350,16 +358,30 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
 
               <div className="form-group">
                 <label htmlFor="location">Локация</label>
-                <select
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value as LocationType)}
-                  disabled={isSubmitting}
-                >
-                  {Object.entries(locationNames).map(([key, name]) => (
-                    <option key={key} value={key}>{name}</option>
-                  ))}
-                </select>
+                <div className="location-input-container">
+                  <input
+                    id="location"
+                    type="text"
+                    value={formData.location === 'unknown' ? '' : getLocationCategoryName(formData.location)}
+                    onChange={(e) => {
+                      if (e.target.value.trim()) {
+                        // При вводе нового названия будем создавать категорию при сохранении
+                        setFormData(prev => ({ ...prev, locationInput: e.target.value }));
+                      } else {
+                        handleInputChange('location', 'unknown');
+                      }
+                    }}
+                    placeholder="Введите название категории или выберите существующую"
+                    disabled={isSubmitting}
+                    list="location-suggestions"
+                  />
+                  <datalist id="location-suggestions">
+                    {locationCategories.filter(cat => cat.id !== 'unknown').map(category => (
+                      <option key={category.id} value={category.name} />
+                    ))}
+                  </datalist>
+                </div>
+                <small>Если категории нет - она будет создана автоматически</small>
               </div>
             </div>
           </div>

@@ -5,15 +5,7 @@ import { ArchiveEvent } from '../api/archiveAPI';
 import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
 
 // Типы локаций камер
-export type LocationType =
-    | 'street'       // Улица
-    | 'house'        // Дом
-    | 'elevator'     // Лифт
-    | 'utility'      // Бытовка
-    | 'security'     // Комната охранника
-    | 'playground'   // Детская площадка
-    | 'parking'      // Парковка
-    | 'unknown';     // Неизвестная (для мониторов без привязки к локации)
+export type LocationType = string;
 
 // Тип режима просмотра
 export type ViewMode = 'online' | 'archive';
@@ -174,6 +166,9 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
     currentItemIndex: number;
     absolutePosition: number;
   };
+
+  // Динамические категории
+  locationCategories: LocationCategory[];
   
   currentTime: number;
   seekToAbsolutePosition: (position: number) => void;
@@ -224,18 +219,20 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   toggleMotionDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   toggleObjectDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   updateCameraSettings: (monitorId: string, settings: Partial<Camera>) => Promise<boolean>;
+
+  // Методы для работы с категориями
+  addLocationCategory: (name: string) => string;
+  removeLocationCategory: (categoryId: string) => boolean;
+  updateLocationCategory: (categoryId: string, name: string) => boolean;
+  getLocationCategoryName: (categoryId: string) => string;
 }
 
 // Соответствие локаций и их русских названий
-export const locationNames: Record<LocationType, string> = {
-  street: 'Улица',
-  house: 'Дом',
-  elevator: 'Лифт',
-  utility: 'Бытовка',
-  security: 'Комната охранника',
-  playground: 'Детская площадка',
-  parking: 'Парковка',
-  unknown: 'Не определено'
+export interface LocationCategory {
+  id: string;
+  name: string;
+  createdAt: Date;
+  isDefault: boolean;
 };
 
 // Создание хранилища
@@ -277,6 +274,14 @@ export const useStore = create<AppState>((set, get) => ({
   // Основные данные
   timelineEvents: [],
   timelineBookmarks: [],
+  locationCategories: [
+    {
+      id: 'unknown',
+      name: 'Не определена',
+      createdAt: new Date(),
+      isDefault: true
+    }
+  ],
   cameras: [],
   activeCamera: null,
   selectedLocations: [],
@@ -1207,5 +1212,109 @@ export const useStore = create<AppState>((set, get) => ({
         activeCameraId: null
       }
     });
-  }
+  },
+
+  // === МЕТОДЫ Динамических категорий ===
+
+  addLocationCategory: (name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return 'unknown';
+    
+    // Проверяем, существует ли уже такая категория
+    const existing = get().locationCategories.find(cat => 
+      cat.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    
+    if (existing) {
+      return existing.id;
+    }
+    
+    // Создаем новую категорию
+    const newCategory: LocationCategory = {
+      id: `category_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: trimmedName,
+      createdAt: new Date(),
+      isDefault: false
+    };
+    
+    set(state => ({
+      locationCategories: [...state.locationCategories, newCategory]
+    }));
+    
+    // Сохраняем в localStorage
+    try {
+      const categories = get().locationCategories;
+      const categoriesToSave = categories.filter(cat => !cat.isDefault);
+      localStorage.setItem('custom_location_categories', JSON.stringify(categoriesToSave));
+    } catch (error) {
+      console.error('Ошибка сохранения категорий:', error);
+    }
+    
+    console.log(`Добавлена новая категория: ${trimmedName}`);
+    return newCategory.id;
+  },
+
+  // Удаление категории
+  removeLocationCategory: (categoryId: string) => {
+    const { locationCategories } = get();
+    const category = locationCategories.find(cat => cat.id === categoryId);
+    
+    if (!category || category.isDefault) {
+      console.warn('Нельзя удалить базовую категорию');
+      return false;
+    }
+    
+    set(state => ({
+      locationCategories: state.locationCategories.filter(cat => cat.id !== categoryId)
+    }));
+    
+    // Обновляем localStorage
+    try {
+      const categories = get().locationCategories.filter(cat => !cat.isDefault);
+      localStorage.setItem('custom_location_categories', JSON.stringify(categories));
+    } catch (error) {
+      console.error('Ошибка сохранения категорий:', error);
+    }
+    
+    console.log(`Удалена категория: ${category.name}`);
+    return true;
+  },
+
+  // Обновление категории
+  updateLocationCategory: (categoryId: string, name: string) => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return false;
+    
+    const { locationCategories } = get();
+    const category = locationCategories.find(cat => cat.id === categoryId);
+    
+    if (!category || category.isDefault) {
+      console.warn('Нельзя изменить базовую категорию');
+      return false;
+    }
+    
+    set(state => ({
+      locationCategories: state.locationCategories.map(cat =>
+        cat.id === categoryId ? { ...cat, name: trimmedName } : cat
+      )
+    }));
+    
+    // Обновляем localStorage
+    try {
+      const categories = get().locationCategories.filter(cat => !cat.isDefault);
+      localStorage.setItem('custom_location_categories', JSON.stringify(categories));
+    } catch (error) {
+      console.error('Ошибка сохранения категорий:', error);
+    }
+    
+    console.log(`Обновлена категория: ${trimmedName}`);
+    return true;
+  },
+
+  // Получение имени категории
+  getLocationCategoryName: (categoryId: string) => {
+    const category = get().locationCategories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'Не определена';
+  },
+
 }));
