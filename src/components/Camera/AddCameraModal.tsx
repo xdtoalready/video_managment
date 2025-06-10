@@ -15,15 +15,15 @@ interface CameraFormData {
   rtspUrl: string;
   rtspSubUrl: string;
   protocol: 'TCP' | 'UDP';
-  location: LocationType;
+  location: string;
+  locationInput?: string;
   alwaysRecord: boolean;
   videoLength: number;
   enable: boolean;
-  locationInput?: string;
 }
 
 const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
-  const { cameras, addCamera, loadCameras, connectionStatus } = useStore();
+  const { cameras, addCamera, loadCameras, connectionStatus, locationCategories, addLocationCategory, getLocationCategoryName } = useStore();
 
   const [formData, setFormData] = useState<CameraFormData>({
     id: '',
@@ -32,6 +32,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
     rtspSubUrl: '',
     protocol: 'TCP',
     location: 'unknown',
+    locationInput: '',
     alwaysRecord: true,
     videoLength: 60,
     enable: true
@@ -167,7 +168,7 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
     return generateCameraId();
   };
 
-  // ИСПРАВЛЕННАЯ обработка отправки формы
+  // обработка отправки формы
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -362,16 +363,9 @@ const AddCameraModal: React.FC<AddCameraModalProps> = ({ isOpen, onClose }) => {
                   <input
                     id="location"
                     type="text"
-                    value={formData.location === 'unknown' ? '' : getLocationCategoryName(formData.location)}
-                    onChange={(e) => {
-                      if (e.target.value.trim()) {
-                        // При вводе нового названия будем создавать категорию при сохранении
-                        setFormData(prev => ({ ...prev, locationInput: e.target.value }));
-                      } else {
-                        handleInputChange('location', 'unknown');
-                      }
-                    }}
-                    placeholder="Введите название категории или выберите существующую"
+                    value={formData.locationInput || ''}
+                    onChange={(e) => handleInputChange('locationInput', e.target.value)}
+                    placeholder="Введите название категории"
                     disabled={isSubmitting}
                     list="location-suggestions"
                   />
