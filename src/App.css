@@ -297,6 +297,7 @@ button:focus, button:focus-visible {
   cursor: pointer;
   transition: var(--transition);
   background-color: var(--white);
+  height: 350px;
 }
 
 .camera-card.camera-active {

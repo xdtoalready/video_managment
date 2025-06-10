@@ -62,44 +62,6 @@ const CameraGrid: React.FC = () => {
             </svg>
         </button>
 
-        {/* Кнопка добавления камеры в полноэкранном режиме для админов */}
-        {isAuthenticated && hasAdminRights && (
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            zIndex: 1000
-          }}>
-            <button 
-              onClick={handleAddCameraClick}
-              style={{
-                background: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-              title="Добавить новую камеру"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path 
-                  d="M12 5V19M5 12H19" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Добавить камеру
-            </button>
-          </div>
-        )}
-
         {/* Модальное окно добавления камеры */}
         <AddCameraModal 
           isOpen={isAddCameraModalOpen}
