@@ -422,17 +422,24 @@ export const sentryshotAPI = {
     return `${vodBase}/vod/vod.mp4?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheIdStr}`;
   },
 
-  // Получение списка записей
-  async getRecordings(monitorId: string, date: Date): Promise<RecordingInfo[]> {
+    // Получение списка записей
+    async getRecordings(monitorId: string, date: Date): Promise<RecordingInfo[]> {
     try {
       console.log(`Запрос записей для монитора ${monitorId} за ${date.toDateString()}`);
       
-      // Сначала получаем список всех записей без фильтрации
+      // Создаем recording-id для пагинации (используем максимальную дату для получения последних записей)
+      const maxDate = new Date('2099-12-31T23:59:59Z');
+      const recordingIdForPagination = maxDate.toISOString().replace(/[-:]/g, '').replace('T', '_').replace(/\.\d{3}Z/, '') + '_x';
+      
       const queryParams = new URLSearchParams({
-        "include-data": "true",
-        reverse: "true",
-        limit: "1000"
+        "recording-id": recordingIdForPagination,
+        "monitors": monitorId, // Фильтр по конкретному монитору
+        "limit": "200",
+        "reverse": "true", // true = по убыванию (от новых к старым)
+        "include-data": "true"
       });
+
+      console.log(`Запрос: ${API_BASE_URL}/api/recording/query?${queryParams.toString()}`);
 
       const response = await fetch(`${API_BASE_URL}/api/recording/query?${queryParams.toString()}`, {
         headers: this.auth.getAuthHeaders()
@@ -444,31 +451,32 @@ export const sentryshotAPI = {
       }
 
       const backendRecordings = await response.json();
-      console.log('Сырые данные записей:', backendRecordings);
+      console.log('Получен ответ от API:', backendRecordings);
 
-      if (!backendRecordings || Object.keys(backendRecordings).length === 0) {
-        console.log('Нет записей');
+      // API возвращает массив, а не объект
+      if (!Array.isArray(backendRecordings)) {
+        console.log('Неожиданный формат ответа (ожидался массив):', backendRecordings);
         return [];
       }
 
-      // Фильтруем записи по монитору и дате на клиенте
-      const recordings = Object.entries(backendRecordings)
-        .map(([recordingId, rec]: [string, any]) => {
-          try {
-            // Проверяем что запись относится к нужному монитору
-            if (rec.monitorID && rec.monitorID !== monitorId) {
-              return null;
-            }
+      if (backendRecordings.length === 0) {
+        console.log('Нет записей для данного монитора и даты');
+        return [];
+      }
 
+      // Преобразуем в нужный формат и фильтруем по дате
+      const recordings = backendRecordings
+        .map((rec: any) => {
+          try {
             if (!rec.data || !rec.data.start || !rec.data.end) {
-              console.warn(`Запись ${recordingId} не содержит необходимых данных времени`);
+              console.warn(`Запись ${rec.id} не содержит необходимых данных времени`);
               return null;
             }
 
             const startTime = new Date(TimeUtils.unixNanoToIso(rec.data.start));
             const endTime = new Date(TimeUtils.unixNanoToIso(rec.data.end));
             
-            // Фильтруем по дате
+            // Фильтруем по дате (проверяем что запись пересекается с нужным днем)
             const recordingDate = new Date(startTime);
             recordingDate.setHours(0, 0, 0, 0);
             const filterDate = new Date(date);
@@ -480,18 +488,18 @@ export const sentryshotAPI = {
             }
 
             return {
-              id: recordingId,
-              monitorId: rec.monitorID || monitorId,
+              id: rec.id,
+              monitorId: rec.monitorId || monitorId,
               monitorName: rec.data?.monitorName || `Monitor ${monitorId}`,
               startTime: startTime,
               endTime: endTime,
               duration: (rec.data.end - rec.data.start) / 1_000_000_000,
-              fileUrl: this.getVodUrl(monitorId, startTime, endTime, recordingId),
+              fileUrl: this.getVodUrl(monitorId, startTime, endTime, rec.id),
               fileSize: rec.data?.sizeBytes,
-              thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${recordingId}`
+              thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${rec.id}`
             };
           } catch (error) {
-            console.error(`Ошибка обработки записи ${recordingId}:`, error);
+            console.error(`Ошибка обработки записи ${rec.id}:`, error);
             return null;
           }
         })
