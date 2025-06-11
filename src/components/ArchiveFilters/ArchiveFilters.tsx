@@ -11,7 +11,8 @@ const ArchiveFilters: React.FC = () => {
     loadRecordings,
     connectionStatus,
     locationCategories,
-    getLocationCategoryName
+    getLocationCategoryName,
+    loadCameras
   } = useStore();
 
   const [startDate, setStartDate] = useState<string>('');
@@ -39,6 +40,15 @@ const ArchiveFilters: React.FC = () => {
       }));
     }
   }, [archiveFilters]);
+
+  useEffect(() => {
+    if (cameras.length === 0 && connectionStatus === 'connected') {
+      console.log('Загружаем камеры для архивных фильтров...');
+      loadCameras().catch(error => {
+        console.error('Ошибка загрузки камер в архивных фильтрах:', error);
+      });
+    }
+  }, [cameras.length, connectionStatus, loadCameras]);
 
   // Форматирование даты для input
   const formatDateForInput = (date: Date): string => {
@@ -220,12 +230,13 @@ const ArchiveFilters: React.FC = () => {
   };
 
   // Получаем доступные локации из камер
-  const availableLocations = Array.from(
-    new Set(cameras.map(camera => getLocationForMonitor(camera.id)))
-  ).filter(location => location !== 'unknown') as LocationType[];
+  const availableLocations = cameras.length > 0 
+    ? Array.from(new Set(cameras.map(camera => getLocationForMonitor(camera.id))))
+        .filter(location => location !== 'unknown') as LocationType[]
+    : [];
 
   // Фильтрация камер по выбранным локациям
-  const filteredCameras = selectedLocations.length > 0
+  const filteredCameras = cameras.length > 0 && selectedLocations.length > 0
     ? cameras.filter(camera => selectedLocations.includes(getLocationForMonitor(camera.id)))
     : cameras;
 
