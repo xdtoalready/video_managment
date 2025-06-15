@@ -49,7 +49,7 @@ export interface ArchiveEvent {
 export const archiveAPI = {
   // === ПОЛУЧЕНИЕ ЗАПИСЕЙ ===
 
-    async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
+  async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
     try {
       console.log('Запрос записей с параметрами:', params);
 
@@ -70,52 +70,48 @@ export const archiveAPI = {
         });
       }
 
+      if (filteredMonitors.length === 0) {
+        console.log('Нет мониторов для запроса записей');
+        return [];
+      }
+
       console.log(`Поиск записей для ${filteredMonitors.length} мониторов`);
 
-      // Если нужны записи только одного монитора - используем прямой запрос
+      // ✅ УЛУЧШЕНО: используем новый метод getRecordingsInRange 
+      // вместо итерации по дням
+      const monitorIds = filteredMonitors.map(m => m.id);
+      
+      // Используем тип из sentryshot.ts, потом преобразуем
+      let rawRecordings: import('./sentryshot').RecordingInfo[];
+      
       if (filteredMonitors.length === 1) {
-        return await this.getRecordingsForMonitor(
-          filteredMonitors[0].id,
-          params.startDate,
-          params.endDate
+        // Для одного монитора используем прямой запрос
+        rawRecordings = await sentryshotAPI.getRecordingsInRange(
+          [filteredMonitors[0].id], 
+          params.startDate, 
+          params.endDate,
+          1000 // Увеличиваем лимит для большого диапазона
+        );
+      } else {
+        // Для нескольких мониторов - общий запрос
+        rawRecordings = await sentryshotAPI.getRecordingsInRange(
+          monitorIds, 
+          params.startDate, 
+          params.endDate,
+          2000 // Еще больший лимит для множественных мониторов
         );
       }
 
-      // Если нужны записи всех мониторов или их много - используем getAllRecordings
-      const allRecordings = await sentryshotAPI.getAllRecordings(1000);
-      console.log(`Получено ${allRecordings.length} записей со всех мониторов`);
+      console.log(`Получено ${rawRecordings.length} записей со всех выбранных мониторов`);
 
-      // Фильтруем записи на клиенте
-      let filteredRecordings = allRecordings;
-
-      // Фильтр по мониторам
-      if (filteredMonitors.length > 0) {
-        const monitorIds = filteredMonitors.map(m => m.id);
-        filteredRecordings = filteredRecordings.filter(rec => 
-          monitorIds.includes(rec.monitorId)
-        );
-      }
-
-      // Фильтр по временному диапазону
-      filteredRecordings = filteredRecordings.filter(recording => {
-        const recordingStart = new Date(recording.startTime);
-        const recordingEnd = new Date(recording.endTime);
-        return recordingStart <= params.endDate && recordingEnd >= params.startDate;
-      });
-
-      // Добавляем недостающие поля
-      const enhancedRecordings = filteredRecordings.map(recording => {
+      // Преобразуем в RecordingInfo с полем location (тип из archiveAPI.ts)
+      const enhancedRecordings: RecordingInfo[] = rawRecordings.map(recording => {
         const monitor = monitors.find(m => m.id === recording.monitorId);
         return {
           ...recording,
           location: this._getLocationByMonitorId(recording.monitorId),
           monitorName: monitor?.name || recording.monitorName || `Monitor ${recording.monitorId}`,
-          fileUrl: sentryshotAPI.getVodUrl(
-            recording.monitorId,
-            new Date(recording.startTime),
-            new Date(recording.endTime),
-            recording.id
-          )
+          // fileUrl уже должен быть правильно установлен в getRecordingsInRange
         };
       });
 
@@ -124,7 +120,7 @@ export const archiveAPI = {
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
       );
 
-      console.log(`Итого найдено записей после фильтрации: ${enhancedRecordings.length}`);
+      console.log(`Итого записей после обработки: ${enhancedRecordings.length}`);
       return enhancedRecordings;
 
     } catch (error) {
