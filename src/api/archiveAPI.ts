@@ -365,7 +365,7 @@ export const archiveAPI = {
 
   // === СОБЫТИЯ В АРХИВЕ ===
 
-   async getArchiveEvents(
+  async getArchiveEvents(
     monitorId: string,
     startTime: Date,
     endTime: Date
@@ -387,14 +387,14 @@ export const archiveAPI = {
       const events: ArchiveEvent[] = logs
         .filter(log => log.time >= startTimeUnix && log.time <= endTimeUnix)
         .map(log => ({
-          id: `${log.time}_${log.source}_${log.level}`,
+          id: `${log.time}_${log.src}_${log.level}`,
           monitorId: monitorId,
           timestamp: new Date(log.time / 1000), // Конвертируем из микросекунд
-          type: this._mapLogToEventType(log.source),
+          type: this._mapLogToEventType(log.src),
           label: log.msg,
           confidence: this._extractConfidenceFromMessage(log.msg),
-          data: { level: log.level, source: log.source },
-          color: this._getEventColor(this._mapLogToEventType(log.source))
+          data: { level: log.level, source: log.src },
+          color: this._getEventColor(this._mapLogToEventType(log.src))
         }));
 
       console.log(`Найдено ${events.length} событий для монитора ${monitorId}`);
