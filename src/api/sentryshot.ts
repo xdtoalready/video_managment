@@ -656,94 +656,141 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
 },
 
    // Получение записей для всех мониторов (когда monitors не указан)
- async getAllRecordings(limit: number = 200): Promise<RecordingInfo[]> {
-    try {
-      console.log('🚀 [SENTRYSHOT] Запрос записей для всех мониторов, лимит:', limit);
-      
-      const maxRecordingId = "2200-12-28_23-59-59_x";
-      
-      const queryParams = new URLSearchParams();
-      queryParams.set("recording-id", maxRecordingId);
-      queryParams.set("limit", Math.min(limit, 1000).toString());
-      queryParams.set("reverse", "false");
-      queryParams.set("include-data", "true");
+  async getAllRecordings(limit: number = 200): Promise<RecordingInfo[]> {
+  try {
+    console.log('🚀 [SENTRYSHOT] Запрос записей для всех мониторов, лимит:', limit);
+    
+    const maxRecordingId = "2200-12-28_23-59-59_x";
+    
+    const queryParams = new URLSearchParams();
+    queryParams.set("recording-id", maxRecordingId);
+    queryParams.set("limit", Math.min(limit, 100).toString());
+    queryParams.set("reverse", "false");
+    queryParams.set("include-data", "true");
+    // НЕ указываем monitors - получаем записи всех камер
 
-      const url = `${API_BASE_URL}/api/recording/query?${queryParams.toString()}`;
-      console.log('🌐 [SENTRYSHOT] URL запроса:', url);
+    const url = `${API_BASE_URL}/api/recording/query?${queryParams.toString()}`;
+    console.log('🌐 [SENTRYSHOT] URL запроса:', url);
 
-      const response = await fetch(url, {
-        headers: this.auth.getAuthHeaders()
-      });
+    const response = await fetch(url, {
+      headers: this.auth.getAuthHeaders()
+    });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ [SENTRYSHOT] Ошибка HTTP:', response.status, errorText);
-        throw new Error(`Ошибка получения записей: ${response.status}`);
-      }
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ [SENTRYSHOT] Ошибка HTTP:', response.status, errorText);
+      throw new Error(`Ошибка получения записей: ${response.status}`);
+    }
 
-      const rawData = await response.json();
-      console.log('📄 [SENTRYSHOT] Сырые данные от API:', Object.keys(rawData).length, 'записей');
+    const backendRecordings = await response.json();
+    console.log('📄 [SENTRYSHOT] RAW данные с сервера:', backendRecordings);
+    console.log('📊 [SENTRYSHOT] Количество ключей в ответе:', Object.keys(backendRecordings).length);
 
-      // 🔥 ИСПРАВЛЕНИЕ: Правильная обработка структуры от вашего API
-      const recordings: RecordingInfo[] = [];
-
-      for (const [recordingId, recordData] of Object.entries(rawData as APIRecordingResponse)) {
-        try {
-          if (!recordData.data?.start || !recordData.data?.end) {
-            console.warn(`⚠️ [SENTRYSHOT] Пропуск записи без временных меток: ${recordingId}`);
-            continue;
-          }
-
-          // 🔥 ИСПРАВЛЕНИЕ: Правильно извлекаем monitorId из вашего формата ID
-          const monitorId = this.extractMonitorIdFromRecordingId(recordingId);
-          if (!monitorId) {
-            console.warn(`⚠️ [SENTRYSHOT] Не удалось извлечь monitorId из: ${recordingId}`);
-            continue;
-          }
-
-          // 🔥 ИСПРАВЛЕНИЕ: Правильная конвертация наносекунд в Date
-          const startTime = new Date(recordData.data.start / 1_000_000); // Конвертируем наносекунды в миллисекунды
-          const endTime = new Date(recordData.data.end / 1_000_000);
-
-          const recordingInfo: RecordingInfo = {
-            id: recordingId,
-            monitorId: monitorId,
-            monitorName: `Monitor ${monitorId}`, // Будет заменено в archiveAPI
-            startTime: startTime,
-            endTime: endTime,
-            duration: (recordData.data.end - recordData.data.start) / 1_000_000_000, // В секундах
-            fileUrl: this.getVodUrl(monitorId, startTime, endTime, recordingId),
-            fileSize: undefined, // Нет в API данных
-            thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${recordingId}`
-          };
-
-          recordings.push(recordingInfo);
-
-          console.log(`✅ [SENTRYSHOT] Создан объект записи:`, {
-            id: recordingInfo.id,
-            monitorId: recordingInfo.monitorId,
-            startTime: recordingInfo.startTime.toISOString(),
-            duration: recordingInfo.duration
-          });
-
-        } catch (error) {
-          console.error(`❌ [SENTRYSHOT] Ошибка обработки записи ${recordingId}:`, error);
-          console.log(`📄 [SENTRYSHOT] Данные проблемной записи:`, recordData);
-        }
-      }
-
-      console.log(`🎯 [SENTRYSHOT] ИТОГО обработано ${recordings.length} записей из ${Object.keys(rawData).length}`);
-      
-      if (recordings.length > 0) {
-        console.log(`🎯 [SENTRYSHOT] Примеры обработанных записей:`, recordings.slice(0, 2));
-      }
-
-      return recordings;
-    } catch (error) {
-      console.error('💥 [SENTRYSHOT] Критическая ошибка в getAllRecordings:', error);
+    if (!backendRecordings || Object.keys(backendRecordings).length === 0) {
+      console.log('⚠️ [SENTRYSHOT] Пустой ответ от сервера');
       return [];
     }
-  },
+
+    // ✅ ИСПРАВЛЕННАЯ ОБРАБОТКА: смотрим на структуру данных
+    const recordings = Object.entries(backendRecordings).map(([recordingId, rec]: [string, any]) => {
+      console.log(`🔄 [SENTRYSHOT] Обрабатываем запись: ${recordingId}`, rec);
+      
+      try {
+        if (!rec) {
+          console.warn(`⚠️ [SENTRYSHOT] Пустая запись для ID ${recordingId}`);
+          return null;
+        }
+
+        if (!rec.data || !rec.data.start || !rec.data.end) {
+          console.warn(`⚠️ [SENTRYSHOT] Нет полей data/start/end в записи ${recordingId}`, rec);
+          return null;
+        }
+
+        // ✅ ИСПРАВЛЕНО: ищем monitorId в разных полях
+        let monitorId = 'unknown';
+        
+        // Попробуем разные варианты
+        if (rec.monitorID) {
+          monitorId = rec.monitorID;
+          console.log(`✅ [SENTRYSHOT] MonitorId найден в rec.monitorID: ${monitorId}`);
+        } else if (rec.data.monitorID) {
+          monitorId = rec.data.monitorID;
+          console.log(`✅ [SENTRYSHOT] MonitorId найден в rec.data.monitorID: ${monitorId}`);
+        } else if (rec.data.monitor) {
+          monitorId = rec.data.monitor;
+          console.log(`✅ [SENTRYSHOT] MonitorId найден в rec.data.monitor: ${monitorId}`);
+        } else if (rec.id && rec.id.includes('_')) {
+          // Пробуем извлечь из полного ID если есть underscores
+          const parts = rec.id.split('_');
+          if (parts.length >= 3) {
+            monitorId = parts[parts.length - 1];
+            console.log(`✅ [SENTRYSHOT] MonitorId извлечен из rec.id: ${monitorId}`);
+          }
+        } else {
+          // Если ничего не найдено, логируем структуру для анализа
+          console.warn(`❌ [SENTRYSHOT] Не удалось найти monitorId в записи ${recordingId}. Структура:`, {
+            topLevel: Object.keys(rec),
+            dataLevel: rec.data ? Object.keys(rec.data) : 'нет data',
+            monitorID: rec.monitorID,
+            dataMonitorID: rec.data?.monitorID,
+            dataMonitor: rec.data?.monitor,
+            id: rec.id
+          });
+          return null; // Пропускаем записи без monitorId
+        }
+
+        console.log(`✅ [SENTRYSHOT] Финальный monitorId: ${monitorId} для записи ${recordingId}`);
+
+        const startTime = new Date(TimeUtils.unixNanoToIso(rec.data.start));
+        const endTime = new Date(TimeUtils.unixNanoToIso(rec.data.end));
+
+        console.log(`🕐 [SENTRYSHOT] Время записи ${recordingId}:`, {
+          start: startTime.toISOString(),
+          end: endTime.toISOString()
+        });
+
+        const recordingInfo = {
+          id: recordingId,
+          monitorId: monitorId,
+          monitorName: rec.data?.monitorName || `Monitor ${monitorId}`,
+          startTime: startTime,
+          endTime: endTime,
+          duration: (rec.data.end - rec.data.start) / 1_000_000_000,
+          fileUrl: this.getVodUrl(monitorId, startTime, endTime, recordingId),
+          fileSize: rec.data?.sizeBytes,
+          thumbnailUrl: `${API_BASE_URL}/api/recording/thumbnail/${recordingId}`
+        };
+
+        console.log(`✅ [SENTRYSHOT] Создан объект записи:`, {
+          id: recordingInfo.id,
+          monitorId: recordingInfo.monitorId,
+          startTime: recordingInfo.startTime.toISOString(),
+          duration: recordingInfo.duration
+        });
+
+        return recordingInfo;
+
+      } catch (error) {
+        console.error(`❌ [SENTRYSHOT] Ошибка обработки записи ${recordingId}:`, error);
+        console.log(`📄 [SENTRYSHOT] Данные проблемной записи:`, rec);
+        return null;
+      }
+    }).filter(Boolean) as RecordingInfo[];
+
+    console.log(`🎯 [SENTRYSHOT] ИТОГО обработано ${recordings.length} записей из ${Object.keys(backendRecordings).length}`);
+    
+    if (recordings.length > 0) {
+      console.log(`🎯 [SENTRYSHOT] Примеры обработанных записей:`, recordings.slice(0, 2));
+    } else {
+      console.warn(`⚠️ [SENTRYSHOT] Ни одна запись не была успешно обработана! Проверьте структуру данных.`);
+    }
+
+    return recordings;
+  } catch (error) {
+    console.error('💥 [SENTRYSHOT] Критическая ошибка в getAllRecordings:', error);
+    return [];
+  }
+},
 
    // Извлечение monitorId из ID записи
 extractMonitorIdFromRecordingId(recordingId: string): string | null {
