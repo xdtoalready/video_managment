@@ -734,103 +734,183 @@ export const useStore = create<AppState>((set, get) => ({
   // === АРХИВНЫЕ ЗАПИСИ ===
 
   loadRecordings: async () => {
-    try {
-      const { archiveFilters, cameras } = get();
-      
-      console.log('Загрузка записей с фильтрами:', archiveFilters);
-      
-      // Показываем статус загрузки
-      set({ connectionStatus: 'connecting' });
+  try {
+    const { archiveFilters, cameras } = get();
+    
+    console.log('🏪 [STORE] === НАЧАЛО ЗАГРУЗКИ ЗАПИСЕЙ ===');
+    console.log('🏪 [STORE] Фильтры архива:', {
+      dateRange: {
+        start: archiveFilters.dateRange.start.toISOString(),
+        end: archiveFilters.dateRange.end.toISOString()
+      },
+      cameras: archiveFilters.cameras,
+      locations: archiveFilters.locations
+    });
+    console.log('🏪 [STORE] Доступные камеры:', cameras.map(c => ({id: c.id, name: c.name})));
+    
+    // Показываем статус загрузки
+    set({ connectionStatus: 'connecting' });
 
-      // Определяем мониторы для запроса
-      let monitorIds: string[] = [];
-      
-      if (archiveFilters.cameras.length > 0) {
-        // Используем выбранные камеры
-        monitorIds = archiveFilters.cameras;
-      } else if (archiveFilters.locations.length > 0) {
-        // Фильтруем камеры по локациям
-        monitorIds = cameras
-          .filter(camera => {
-            const location = get().getLocationForMonitor(camera.id);
-            return archiveFilters.locations.includes(location);
-          })
-          .map(camera => camera.id);
-      } else {
-        // Используем все доступные камеры
-        monitorIds = cameras.map(camera => camera.id);
-      }
+    // Определяем мониторы для запроса
+    let monitorIds: string[] = [];
+    
+    if (archiveFilters.cameras.length > 0) {
+      // Используем выбранные камеры
+      monitorIds = archiveFilters.cameras;
+      console.log('🎯 [STORE] Используем выбранные камеры:', monitorIds);
+    } else if (archiveFilters.locations.length > 0) {
+      // Фильтруем камеры по локациям
+      monitorIds = cameras
+        .filter(camera => {
+          const location = get().getLocationForMonitor(camera.id);
+          return archiveFilters.locations.includes(location);
+        })
+        .map(camera => camera.id);
+      console.log('🗺️ [STORE] Камеры по локациям:', monitorIds);
+    } else {
+      // Используем все доступные камеры
+      monitorIds = cameras.map(camera => camera.id);
+      console.log('🌐 [STORE] Используем все камеры:', monitorIds);
+    }
 
-      if (monitorIds.length === 0) {
-        console.log('Нет камер для запроса записей');
-        set({ 
-          recordings: [], 
-          connectionStatus: 'connected' 
-        });
-        return;
-      }
-
-      console.log(`Запрос записей для ${monitorIds.length} мониторов:`, monitorIds);
-
-      const recordings = await archiveAPI.getRecordings({
-        startDate: archiveFilters.dateRange.start,
-        endDate: archiveFilters.dateRange.end,
-        monitors: monitorIds,
-        locations: archiveFilters.locations.length > 0 ? archiveFilters.locations : undefined
-      });
-
-      console.log(`Получено ${recordings.length} записей`);
-
-      // Обновляем видимый диапазон таймлайна на основе найденных записей
-      if (recordings.length > 0) {
-        let minTime = new Date(recordings[0].startTime).getTime();
-        let maxTime = new Date(recordings[0].endTime).getTime();
-
-        recordings.forEach(recording => {
-          const startTime = new Date(recording.startTime).getTime();
-          const endTime = new Date(recording.endTime).getTime();
-
-          if (startTime < minTime) minTime = startTime;
-          if (endTime > maxTime) maxTime = endTime;
-        });
-
-        // Добавляем отступ (10% от общей длительности)
-        const totalDuration = maxTime - minTime;
-        const padding = Math.max(totalDuration * 0.1, 3600000); // Минимум 1 час отступа
-
-        set({
-          recordings,
-          timelineVisibleRange: {
-            start: new Date(minTime - padding),
-            end: new Date(maxTime + padding)
-          },
-          connectionStatus: 'connected'
-        });
-      } else {
-        // Если записей нет, устанавливаем диапазон на основе фильтров
-        set({
-          recordings: [],
-          timelineVisibleRange: {
-            start: archiveFilters.dateRange.start,
-            end: archiveFilters.dateRange.end
-          },
-          connectionStatus: 'connected'
-        });
-      }
-    } catch (error) {
-      console.error('Ошибка при загрузке записей:', error);
+    if (monitorIds.length === 0) {
+      console.log('⚠️ [STORE] Нет камер для запроса записей');
       set({ 
         recordings: [], 
-        connectionStatus: 'error' 
+        connectionStatus: 'connected' 
       });
-      
-      // Показываем уведомление пользователю
-      if (error instanceof Error) {
-        // Можно добавить toast уведомление
-        console.error('Детали ошибки:', error.message);
-      }
+      return;
     }
-  },
+
+    console.log(`🔍 [STORE] Запрос записей для ${monitorIds.length} мониторов:`, monitorIds);
+
+    // Вызываем archiveAPI с детальным логированием
+    console.log('📞 [STORE] Вызываем archiveAPI.getRecordings с параметрами:', {
+      startDate: archiveFilters.dateRange.start.toISOString(),
+      endDate: archiveFilters.dateRange.end.toISOString(),
+      monitors: monitorIds,
+      locations: archiveFilters.locations.length > 0 ? archiveFilters.locations : undefined
+    });
+
+    const recordings = await archiveAPI.getRecordings({
+      startDate: archiveFilters.dateRange.start,
+      endDate: archiveFilters.dateRange.end,
+      monitors: monitorIds,
+      locations: archiveFilters.locations.length > 0 ? archiveFilters.locations : undefined
+    });
+
+    console.log(`📦 [STORE] Получено записей от archiveAPI: ${recordings.length}`);
+    
+    if (recordings.length > 0) {
+      console.log(`📦 [STORE] Примеры полученных записей:`, recordings.slice(0, 3).map(r => ({
+        id: r.id,
+        monitorId: r.monitorId,
+        monitorName: r.monitorName,
+        startTime: r.startTime.toISOString(),
+        location: r.location,
+        duration: r.duration
+      })));
+    } else {
+      console.log('⚠️ [STORE] Записи не найдены - проверьте фильтры и соединение');
+    }
+
+    // Обновляем видимый диапазон таймлайна на основе найденных записей
+    if (recordings.length > 0) {
+      let minTime = new Date(recordings[0].startTime).getTime();
+      let maxTime = new Date(recordings[0].endTime).getTime();
+
+      recordings.forEach(recording => {
+        const startTime = new Date(recording.startTime).getTime();
+        const endTime = new Date(recording.endTime).getTime();
+
+        if (startTime < minTime) minTime = startTime;
+        if (endTime > maxTime) maxTime = endTime;
+      });
+
+      // Добавляем отступ (10% от общей длительности)
+      const totalDuration = maxTime - minTime;
+      const padding = Math.max(totalDuration * 0.1, 3600000); // Минимум 1 час отступа
+
+      const newState = {
+        recordings,
+        timelineVisibleRange: {
+          start: new Date(minTime - padding),
+          end: new Date(maxTime + padding)
+        },
+        connectionStatus: 'connected' as const
+      };
+
+      console.log('✅ [STORE] Обновляем состояние store с записями:', {
+        recordingsCount: newState.recordings.length,
+        timelineRange: {
+          start: newState.timelineVisibleRange.start.toISOString(),
+          end: newState.timelineVisibleRange.end.toISOString()
+        },
+        connectionStatus: newState.connectionStatus
+      });
+
+      set(newState);
+
+      // ✅ ПРОВЕРЯЕМ ЧТО СОХРАНИЛОСЬ В STORE
+      const currentState = get();
+      console.log('🔍 [STORE] Проверка состояния после set():', {
+        recordingsInStore: currentState.recordings.length,
+        firstRecording: currentState.recordings[0] ? {
+          id: currentState.recordings[0].id,
+          monitorName: currentState.recordings[0].monitorName,
+          startTime: currentState.recordings[0].startTime.toISOString()
+        } : null,
+        archiveViewMode: currentState.archiveViewMode
+      });
+
+    } else {
+      // Если записей нет, устанавливаем диапазон на основе фильтров
+      const emptyState = {
+        recordings: [],
+        timelineVisibleRange: {
+          start: archiveFilters.dateRange.start,
+          end: archiveFilters.dateRange.end
+        },
+        connectionStatus: 'connected' as const
+      };
+
+      console.log('⚠️ [STORE] Нет записей, устанавливаем пустое состояние:', {
+        timelineRange: {
+          start: emptyState.timelineVisibleRange.start.toISOString(),
+          end: emptyState.timelineVisibleRange.end.toISOString()
+        }
+      });
+
+      set(emptyState);
+    }
+
+    console.log('🏪 [STORE] === КОНЕЦ ЗАГРУЗКИ ЗАПИСЕЙ ===');
+    console.log('🏪 [STORE] Итоговое состояние:', {
+      recordingsCount: get().recordings.length,
+      connectionStatus: get().connectionStatus,
+      archiveViewMode: get().archiveViewMode
+    });
+
+  } catch (error) {
+    console.error('💥 [STORE] Ошибка при загрузке записей:', error);
+    
+    set({ 
+      recordings: [], 
+      connectionStatus: 'error' 
+    });
+    
+    // Детальная информация об ошибке
+    if (error instanceof Error) {
+      console.error('💥 [STORE] Детали ошибки:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    } else {
+      console.error('💥 [STORE] Неизвестная ошибка:', error);
+    }
+  }
+},
 
   selectRecording: (recordingId: string) => {
     const { recordings } = get();

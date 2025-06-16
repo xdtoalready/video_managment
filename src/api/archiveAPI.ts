@@ -50,84 +50,127 @@ export const archiveAPI = {
   // === ПОЛУЧЕНИЕ ЗАПИСЕЙ ===
 
   async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
-    try {
-      console.log('Запрос записей с параметрами:', params);
+  try {
+    console.log('🎬 [ARCHIVE] Запрос записей с параметрами:', params);
 
-      // Получаем все мониторы для фильтрации
-      const monitors = await sentryshotAPI.getMonitors();
-      let filteredMonitors = monitors;
+    // Получаем все мониторы для фильтрации
+    const monitors = await sentryshotAPI.getMonitors();
+    console.log('📹 [ARCHIVE] Доступные мониторы:', monitors.map(m => ({id: m.id, name: m.name})));
+    
+    let filteredMonitors = monitors;
 
-      // Фильтрация по выбранным мониторам
-      if (params.monitors?.length) {
-        filteredMonitors = monitors.filter(m => params.monitors!.includes(m.id));
-      }
+    // Фильтрация по выбранным мониторам
+    if (params.monitors?.length) {
+      filteredMonitors = monitors.filter(m => params.monitors!.includes(m.id));
+      console.log('🎯 [ARCHIVE] После фильтрации по мониторам:', filteredMonitors.map(m => m.id));
+    }
 
-      // Фильтрация по локациям (если указаны)
-      if (params.locations?.length) {
-        filteredMonitors = filteredMonitors.filter(m => {
-          const location = this._getLocationByMonitorId(m.id);
-          return params.locations!.includes(location);
-        });
-      }
-
-      if (filteredMonitors.length === 0) {
-        console.log('Нет мониторов для запроса записей');
-        return [];
-      }
-
-      console.log(`Поиск записей для ${filteredMonitors.length} мониторов`);
-
-      // ✅ УЛУЧШЕНО: используем новый метод getRecordingsInRange 
-      // вместо итерации по дням
-      const monitorIds = filteredMonitors.map(m => m.id);
-      
-      // Используем тип из sentryshot.ts, потом преобразуем
-      let rawRecordings: import('./sentryshot').RecordingInfo[];
-      
-      if (filteredMonitors.length === 1) {
-        // Для одного монитора используем прямой запрос
-        rawRecordings = await sentryshotAPI.getRecordingsInRange(
-          [filteredMonitors[0].id], 
-          params.startDate, 
-          params.endDate,
-          1000 // Увеличиваем лимит для большого диапазона
-        );
-      } else {
-        // Для нескольких мониторов - общий запрос
-        rawRecordings = await sentryshotAPI.getRecordingsInRange(
-          monitorIds, 
-          params.startDate, 
-          params.endDate,
-          2000 // Еще больший лимит для множественных мониторов
-        );
-      }
-
-      console.log(`Получено ${rawRecordings.length} записей со всех выбранных мониторов`);
-
-      // Преобразуем в RecordingInfo с полем location (тип из archiveAPI.ts)
-      const enhancedRecordings: RecordingInfo[] = rawRecordings.map(recording => {
-        const monitor = monitors.find(m => m.id === recording.monitorId);
-        return {
-          ...recording,
-          location: this._getLocationByMonitorId(recording.monitorId),
-          monitorName: monitor?.name || recording.monitorName || `Monitor ${recording.monitorId}`,
-          // fileUrl уже должен быть правильно установлен в getRecordingsInRange
-        };
+    // Фильтрация по локациям (если указаны)
+    if (params.locations?.length) {
+      filteredMonitors = filteredMonitors.filter(m => {
+        const location = this._getLocationByMonitorId(m.id);
+        return params.locations!.includes(location);
       });
+      console.log('🗺️ [ARCHIVE] После фильтрации по локациям:', filteredMonitors.map(m => m.id));
+    }
 
-      // Сортируем записи по времени начала (от новых к старым)
-      enhancedRecordings.sort((a, b) =>
-        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-      );
-
-      console.log(`Итого записей после обработки: ${enhancedRecordings.length}`);
-      return enhancedRecordings;
-
-    } catch (error) {
-      console.error('Ошибка при получении архивных записей:', error);
+    if (filteredMonitors.length === 0) {
+      console.log('⚠️ [ARCHIVE] Нет мониторов для запроса записей');
       return [];
     }
-  },
+
+    console.log(`🔍 [ARCHIVE] Поиск записей для ${filteredMonitors.length} мониторов`);
+
+    // ✅ ПРОСТОЙ ПОДХОД: получаем ВСЕ записи и фильтруем на клиенте
+    console.log('📞 [ARCHIVE] Вызываем sentryshot getAllRecordings...');
+    const allRawRecordings = await sentryshotAPI.getAllRecordings(300);
+    console.log(`📊 [ARCHIVE] Получено RAW записей: ${allRawRecordings.length}`);
+
+    if (allRawRecordings.length === 0) {
+      console.log('⚠️ [ARCHIVE] Нет записей от API');
+      return [];
+    }
+
+    // Логируем примеры полученных записей
+    console.log('📋 [ARCHIVE] Примеры RAW записей:', allRawRecordings.slice(0, 3).map(r => ({
+      id: r.id,
+      monitorId: r.monitorId,
+      startTime: r.startTime.toISOString()
+    })));
+
+    // Фильтрация по мониторам
+    const monitorIds = filteredMonitors.map(m => m.id);
+    let filteredRecordings = allRawRecordings.filter(recording => {
+      const match = monitorIds.includes(recording.monitorId);
+      if (!match) {
+        console.log(`❌ [ARCHIVE] Отфильтрована запись ${recording.id} (монитор ${recording.monitorId} не в списке [${monitorIds.join(', ')}])`);
+      }
+      return match;
+    });
+
+    console.log(`🎯 [ARCHIVE] После фильтрации по мониторам: ${filteredRecordings.length} записей`);
+
+    // Фильтрация по временному диапазону
+    const timeFilteredRecordings = filteredRecordings.filter(recording => {
+      const recordingStart = new Date(recording.startTime);
+      const recordingEnd = new Date(recording.endTime);
+      const matchesTime = recordingStart <= params.endDate && recordingEnd >= params.startDate;
+      
+      if (!matchesTime) {
+        console.log(`🕐 [ARCHIVE] Отфильтрована запись ${recording.id} по времени:`, {
+          recordingStart: recordingStart.toISOString(),
+          recordingEnd: recordingEnd.toISOString(),
+          filterStart: params.startDate.toISOString(),
+          filterEnd: params.endDate.toISOString()
+        });
+      }
+      
+      return matchesTime;
+    });
+
+    console.log(`⏰ [ARCHIVE] После фильтрации по времени: ${timeFilteredRecordings.length} записей`);
+
+    // Преобразуем в формат archiveAPI с добавлением location
+    const enhancedRecordings: RecordingInfo[] = timeFilteredRecordings.map(recording => {
+      const monitor = monitors.find(m => m.id === recording.monitorId);
+      
+      // Создаем новый объект с правильным типом
+      const enhancedRecording: RecordingInfo = {
+        id: recording.id,
+        monitorId: recording.monitorId,
+        monitorName: monitor?.name || recording.monitorName || `Monitor ${recording.monitorId}`,
+        location: this._getLocationByMonitorId(recording.monitorId), // Добавляем location
+        startTime: recording.startTime,
+        endTime: recording.endTime,
+        duration: recording.duration,
+        fileUrl: recording.fileUrl, // Уже правильно сформирован в sentryshot.ts
+        fileSize: recording.fileSize,
+        thumbnailUrl: recording.thumbnailUrl
+      };
+      
+      return enhancedRecording;
+    });
+
+    // Сортируем записи по времени начала (от новых к старым)
+    enhancedRecordings.sort((a, b) =>
+      new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+    );
+
+    console.log(`🏆 [ARCHIVE] ИТОГО записей после обработки: ${enhancedRecordings.length}`);
+    console.log(`🏆 [ARCHIVE] Финальные записи (первые 3):`, enhancedRecordings.slice(0, 3).map(r => ({
+      id: r.id,
+      monitorName: r.monitorName,
+      startTime: r.startTime.toISOString(),
+      location: r.location
+    })));
+
+    return enhancedRecordings;
+
+  } catch (error) {
+    console.error('💥 [ARCHIVE] Ошибка при получении архивных записей:', error);
+    return [];
+  }
+},
 
   // Получение записей для конкретного монитора и временного диапазона
    async getRecordingsForMonitor(
