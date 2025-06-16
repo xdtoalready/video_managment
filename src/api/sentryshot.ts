@@ -543,7 +543,61 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
     
     const cacheIdStr = typeof cacheId === 'number' ? cacheId.toString() : cacheId;
     
-    return `${vodBase}/vod/vod.mp4?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheIdStr}`;
+    console.log('🎬 [SENTRYSHOT] Формирование VOD URL:', {
+      monitorId,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      startNano: start,
+      endNano: end,
+      cacheId: cacheIdStr
+    });
+    
+    const vodUrl = `${vodBase}/vod?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheIdStr}`;
+    
+    console.log('🌐 [SENTRYSHOT] Сформированный VOD URL:', vodUrl);
+    
+    return vodUrl;
+  },
+
+  // АЛЬТЕРНАТИВНЫЙ метод для HLS VOD (если основной не работает)
+  getVodHlsUrl(monitorId: string, startTime: Date, endTime: Date, cacheId: string | number = Date.now()): string {
+    const start = TimeUtils.isoToUnixNano(startTime.toISOString());
+    const end = TimeUtils.isoToUnixNano(endTime.toISOString());
+    const vodBase = STREAM_BASE_URL || '';
+    
+    const cacheIdStr = typeof cacheId === 'number' ? cacheId.toString() : cacheId;
+    
+    // Пробуем HLS манифест для архивного видео
+    const hlsUrl = `${vodBase}/vod/index.m3u8?monitor-id=${monitorId}&start=${start}&end=${end}&cache-id=${cacheIdStr}`;
+    
+    console.log('🎥 [SENTRYSHOT] HLS VOD URL:', hlsUrl);
+    
+    return hlsUrl;
+  },
+
+  // метод с проверкой доступности
+  async getValidVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId: string | number = Date.now()): Promise<string> {
+    const baseVodUrl = this.getVodUrl(monitorId, startTime, endTime, cacheId);
+    
+    try {
+      // Проверяем доступность базового VOD URL
+      const response = await fetch(baseVodUrl, { 
+        method: 'HEAD',
+        headers: this.auth.getAuthHeaders()
+      });
+      
+      if (response.ok) {
+        console.log('✅ [SENTRYSHOT] Базовый VOD URL доступен');
+        return baseVodUrl;
+      } else {
+        console.warn(`⚠️ [SENTRYSHOT] Базовый VOD URL недоступен (${response.status}), пробуем HLS`);
+        return this.getVodHlsUrl(monitorId, startTime, endTime, cacheId);
+      }
+    } catch (error) {
+      console.error('❌ [SENTRYSHOT] Ошибка проверки VOD URL:', error);
+      // Возвращаем HLS версию как fallback
+      return this.getVodHlsUrl(monitorId, startTime, endTime, cacheId);
+    }
   },
 
   // Получение списка записей
