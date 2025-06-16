@@ -173,14 +173,25 @@ export const getLocationForMonitor = (monitorId: string): LocationType => {
     return locationMappingManager.getLocationForMonitor(monitorId);
 };
 
+// ✅ ИСПРАВЛЕНО: убираем require и используем динамический импорт или прямой доступ к store
 export const getLocationNameForMonitor = (monitorId: string): string => {
     const location = locationMappingManager.getLocationForMonitor(monitorId);
-    // Получаем store напрямую для доступа к getLocationCategoryName
-    const { useStore } = require('../store/useStore');
-    return useStore.getState().getLocationCategoryName(location);
+    
+    // Используем базовые названия локаций без зависимости от store
+    const locationNames: Record<LocationType, string> = {
+        'street': 'Улица',
+        'house': 'Дом',
+        'elevator': 'Лифт',
+        'utility': 'Бытовка',
+        'security': 'Охрана',
+        'playground': 'Площадка',
+        'parking': 'Парковка',
+        'unknown': 'Неизвестно'
+    };
+    
+    return locationNames[location] || 'Неизвестно';
 };
 
-// Новые функции для управления маппингом
 export const setLocationForMonitor = (monitorId: string, location: LocationType): void => {
     locationMappingManager.setLocationForMonitor(monitorId, location);
 };
@@ -199,11 +210,9 @@ export const getMonitorsByLocation = (location: LocationType): string[] => {
 
 // Хук React для использования маппинга локаций
 import { useState, useEffect } from 'react';
-import { useStore } from '../store/useStore';
 
 export const useLocationMapping = () => {
   const [mappings, setMappings] = useState(locationMappingManager.getAllMappings());
-  const { locationCategories, getLocationCategoryName } = useStore();
 
   useEffect(() => {
     const handleMappingUpdate = () => {
@@ -219,8 +228,6 @@ export const useLocationMapping = () => {
 
   return {
     mappings,
-    locationCategories,
-    getLocationCategoryName,
     getLocationForMonitor: locationMappingManager.getLocationForMonitor.bind(locationMappingManager),
     setLocationForMonitor: locationMappingManager.setLocationForMonitor.bind(locationMappingManager),
     removeLocationMapping: locationMappingManager.removeLocationMapping.bind(locationMappingManager),

@@ -1,3 +1,5 @@
+// src/components/RecordingsList/RecordingsList.tsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
 import React, { useEffect, useState } from 'react';
 import { useStore, Recording } from '../../store/useStore.ts';
 import './RecordingsList.css';
@@ -10,65 +12,55 @@ const RecordingsList: React.FC = () => {
     loadRecordings,
     selectRecording,
     archiveFilters,
-    updateArchiveFilters,
     cameras,
     connectionStatus,
     getLocationCategoryName
   } = useStore();
 
-  const [isLoading, setIsLoading] = useState(false);
+  // 🔥 ИСПРАВЛЕНИЕ: Убираем локальное состояние isLoading - используем только из store
   const [error, setError] = useState<string | null>(null);
-  const [loadingProgress, setLoadingProgress] = useState<string>('');
 
-  // Загрузка записей при монтировании и при изменении фильтров
+  // 🔥 ИСПРАВЛЕНИЕ: Убираем двойной вызов loadRecordings
+  // useEffect убран - загрузка происходит только из ArchiveView
+
+  // 🔥 ДИАГНОСТИКА: Логирование состояния компонента
   useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      setError(null);
-      setLoadingProgress('Подключение к серверу...');
-
-      try {
-        await loadRecordings();
-        setLoadingProgress('');
-      } catch (err) {
-        console.error('Ошибка при загрузке записей:', err);
-        setError('Не удалось загрузить записи. Проверьте подключение к серверу SentryShot.');
-        setLoadingProgress('');
-      } finally {
-        setIsLoading(false);
+    console.log('📊 [RecordingsList] Компонент обновлен:', {
+      recordingsCount: recordings.length,
+      connectionStatus,
+      archiveFilters: {
+        cameras: archiveFilters.cameras.length,
+        locations: archiveFilters.locations.length,
+        dateRange: {
+          start: archiveFilters.dateRange.start.toISOString(),
+          end: archiveFilters.dateRange.end.toISOString()
+        }
       }
-    };
+    });
 
-    loadData();
-  }, [loadRecordings, archiveFilters]);
+    if (recordings.length > 0) {
+      console.log('📊 [RecordingsList] Примеры записей в компоненте:', 
+        recordings.slice(0, 3).map(r => ({
+          id: r.id,
+          monitorName: r.monitorName,
+          startTime: r.startTime.toISOString()
+        }))
+      );
+    }
+  }, [recordings, connectionStatus, archiveFilters]);
 
-  // Отслеживаем статус подключения для обновления состояния загрузки
+  // Отслеживаем статус подключения для отображения ошибок
   useEffect(() => {
-    if (connectionStatus === 'connecting') {
-      setLoadingProgress('Подключение к SentryShot...');
-    } else if (connectionStatus === 'connected') {
-      setLoadingProgress('');
-    } else if (connectionStatus === 'error') {
+    if (connectionStatus === 'error') {
       setError('Потеряно соединение с сервером SentryShot');
-      setLoadingProgress('');
+    } else {
+      setError(null);
     }
   }, [connectionStatus]);
 
   // Форматирование времени
   const formatTime = (date: Date): string => {
     return date.toLocaleString('ru-RU', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
-
-  // Форматирование полного времени
-  const formatFullTime = (date: Date): string => {
-    return date.toLocaleString('ru-RU', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
@@ -84,7 +76,7 @@ const RecordingsList: React.FC = () => {
   // Форматирование длительности
   const formatDuration = (duration: number): string => {
     const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
+    const seconds = Math.floor(duration % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
@@ -96,24 +88,21 @@ const RecordingsList: React.FC = () => {
 
   // Обработчик клика по записи
   const handleRecordingClick = (recording: Recording) => {
+    console.log('📺 [RecordingsList] Выбрана запись:', recording.id);
     selectRecording(recording.id);
   };
 
-  // Обновление фильтра и загрузка новых данных
+  // Обновление записей
   const refreshRecordings = async () => {
-    setIsLoading(true);
+    console.log('🔄 [RecordingsList] Обновление записей...');
     setError(null);
-    setLoadingProgress('Обновление списка записей...');
 
     try {
       await loadRecordings();
-      console.log('Записи успешно обновлены');
+      console.log('✅ [RecordingsList] Записи обновлены');
     } catch (err) {
-      console.error('Ошибка при обновлении записей:', err);
+      console.error('❌ [RecordingsList] Ошибка при обновлении записей:', err);
       setError('Не удалось обновить записи');
-    } finally {
-      setIsLoading(false);
-      setLoadingProgress('');
     }
   };
 
@@ -122,31 +111,26 @@ const RecordingsList: React.FC = () => {
     e.stopPropagation();
 
     try {
-      setLoadingProgress(`Подготовка скачивания записи ${recording.monitorName}...`);
+      console.log('⬇️ [RecordingsList] Скачивание записи:', recording.id);
       
-      // Для SentryShot нужно построить правильный URL для скачивания
       const downloadUrl = sentryshotAPI.getVodUrl(
         recording.monitorId,
         recording.startTime,
         recording.endTime
       );
       
-      // Создаем временную ссылку для скачивания
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `${generateFileName(recording)}.mp4`;
       
-      // Добавляем аутентификацию через headers если возможно
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      console.log('Скачивание записи начато:', downloadUrl);
+      console.log('✅ [RecordingsList] Скачивание начато:', downloadUrl);
     } catch (error) {
-      console.error('Ошибка при скачивании записи:', error);
+      console.error('❌ [RecordingsList] Ошибка скачивания:', error);
       setError('Не удалось скачать запись. Проверьте подключение к серверу.');
-    } finally {
-      setLoadingProgress('');
     }
   };
 
@@ -168,6 +152,9 @@ const RecordingsList: React.FC = () => {
 
   const stats = getRecordingsStats();
 
+  // 🔥 ИСПРАВЛЕНИЕ: Используем connectionStatus из store для определения загрузки
+  const isLoading = connectionStatus === 'connecting';
+
   // Состояние загрузки
   if (isLoading && recordings.length === 0) {
     return (
@@ -177,10 +164,9 @@ const RecordingsList: React.FC = () => {
         </div>
         <div className="recordings-loading">
           <div className="loading-spinner"></div>
-          <p>{loadingProgress || 'Загрузка записей...'}</p>
+          <p>Загрузка записей...</p>
           <small>Получение данных с сервера SentryShot</small>
           
-          {/* Показываем детали фильтров во время загрузки */}
           <div className="loading-details">
             <div>Период: {archiveFilters.dateRange.start.toLocaleDateString()} - {archiveFilters.dateRange.end.toLocaleDateString()}</div>
             {archiveFilters.cameras.length > 0 && (
@@ -215,7 +201,6 @@ const RecordingsList: React.FC = () => {
             </button>
           </div>
           
-          {/* Информация о текущих фильтрах */}
           <div className="error-details">
             <h4>Параметры запроса:</h4>
             <ul>
@@ -229,7 +214,7 @@ const RecordingsList: React.FC = () => {
     );
   }
 
-  // Если записей нет
+  // 🔥 ИСПРАВЛЕНИЕ: Четкая проверка пустого состояния после загрузки
   if (recordings.length === 0 && !isLoading) {
     return (
       <div className="recordings-list-container">
@@ -252,15 +237,25 @@ const RecordingsList: React.FC = () => {
               <li>Проблемы с доступом к архиву на сервере</li>
             </ul>
           </div>
+
+          <div className="current-filters">
+            <h4>Текущие фильтры:</h4>
+            <div>Период: {archiveFilters.dateRange.start.toLocaleDateString()} - {archiveFilters.dateRange.end.toLocaleDateString()}</div>
+            <div>Камеры: {archiveFilters.cameras.length > 0 ? `${archiveFilters.cameras.length} выбрано (${archiveFilters.cameras.join(', ')})` : 'Все'}</div>
+            <div>Локации: {archiveFilters.locations.length > 0 ? archiveFilters.locations.map(loc => getLocationCategoryName(loc)).join(', ') : 'Все'}</div>
+          </div>
         </div>
       </div>
     );
   }
 
+  // 🔥 ОСНОВНОЙ КОНТЕНТ: Список записей
+  console.log('📊 [RecordingsList] Отображаем записи:', recordings.length);
+
   return (
     <div className="recordings-list-container">
       <div className="recordings-header">
-        <h2>Архивные записи</h2>
+        <h2>Архивные записи ({recordings.length})</h2>
         <div className="recordings-actions">
           <button 
             className="refresh-button" 
@@ -268,48 +263,35 @@ const RecordingsList: React.FC = () => {
             disabled={isLoading}
             title="Обновить список записей"
           >
-            {isLoading ? 'Обновление...' : 'Обновить'}
+            {isLoading ? 'Загрузка...' : 'Обновить'}
           </button>
         </div>
       </div>
 
-      {/* Статистика записей */}
-      <div className="recordings-stats">
-        <div className="stats-item">
-          <span className="stats-label">Найдено записей:</span>
-          <span className="stats-value">{recordings.length}</span>
+      {/* Статистика */}
+      {stats && (
+        <div className="recordings-stats">
+          <div className="stats-item">
+            <span className="stats-label">Записей найдено</span>
+            <span className="stats-value">{stats.count}</span>
+          </div>
+          <div className="stats-item">
+            <span className="stats-label">Общая длительность</span>
+            <span className="stats-value">{Math.round(stats.totalDuration / 60)} мин</span>
+          </div>
+          <div className="stats-item">
+            <span className="stats-label">Средняя длительность</span>
+            <span className="stats-value">{Math.round(stats.avgDuration / 60)} мин</span>
+          </div>
         </div>
-        
-        {stats && (
-          <>
-            <div className="stats-item">
-              <span className="stats-label">Общая длительность:</span>
-              <span className="stats-value">{formatDuration(stats.totalDuration)}</span>
-            </div>
-            
-            <div className="stats-item">
-              <span className="stats-label">Средняя длительность:</span>
-              <span className="stats-value">{formatDuration(stats.avgDuration)}</span>
-            </div>
-            
-            {stats.totalSize > 0 && (
-              <div className="stats-item">
-                <span className="stats-label">Общий размер:</span>
-                <span className="stats-value">{(stats.totalSize / 1024 / 1024 / 1024).toFixed(2)} ГБ</span>
-              </div>
-            )}
-          </>
-        )}
-        
-        {isLoading && <span className="loading-indicator">Загрузка...</span>}
-        {loadingProgress && <span className="loading-progress">{loadingProgress}</span>}
-      </div>
+      )}
 
+      {/* Таблица записей */}
       <div className="recordings-table">
         <div className="recordings-table-header">
           <div className="recording-cell">Дата</div>
-          <div className="recording-cell">Время начала</div>
-          <div className="recording-cell">Время окончания</div>
+          <div className="recording-cell">Начало</div>
+          <div className="recording-cell">Конец</div>
           <div className="recording-cell">Длительность</div>
           <div className="recording-cell">Камера</div>
           <div className="recording-cell">Локация</div>
@@ -368,7 +350,7 @@ const RecordingsList: React.FC = () => {
         </div>
       </div>
 
-      {/* Дополнительная информация о записях */}
+      {/* Дополнительная информация */}
       <div className="recordings-summary">
         <div className="summary-item">
           <span className="summary-label">Временной диапазон фильтра:</span>
@@ -403,7 +385,7 @@ const RecordingsList: React.FC = () => {
         )}
       </div>
 
-      {/* Индикатор состояния подключения */}
+      {/* Предупреждение о проблемах с подключением */}
       {connectionStatus === 'error' && (
         <div className="connection-status-warning">
           <span className="warning-icon">⚠️</span>

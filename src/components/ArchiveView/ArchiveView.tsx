@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+// src/components/ArchiveView/ArchiveView.tsx - ИСПРАВЛЕННАЯ ВЕРСИЯ
+
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore.ts';
 import ArchiveFilters from '../ArchiveFilters/ArchiveFilters.tsx';
 import RecordingsList from '../RecordingsList/RecordingsList.tsx';
@@ -13,16 +15,58 @@ const ArchiveView: React.FC = () => {
     archiveViewMode,
     activeRecording,
     loadRecordings,
-    setArchiveViewMode
+    setArchiveViewMode,
+    recordings,
+    connectionStatus,
+    archiveFilters
   } = useStore();
 
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [showEventsSearch, setShowEventsSearch] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Загрузка записей при монтировании компонента
-  React.useEffect(() => {
-    loadRecordings();
-  }, [loadRecordings]);
+  // 🔥 ИСПРАВЛЕНИЕ: Загрузка записей только при монтировании или изменении фильтров
+  useEffect(() => {
+    const loadInitialData = async () => {
+      console.log('🏛️ [ArchiveView] Начальная загрузка данных...');
+      console.log('🏛️ [ArchiveView] Текущие фильтры:', {
+        dateRange: {
+          start: archiveFilters.dateRange.start.toISOString(),
+          end: archiveFilters.dateRange.end.toISOString()
+        },
+        cameras: archiveFilters.cameras,
+        locations: archiveFilters.locations
+      });
+
+      try {
+        await loadRecordings();
+        console.log('✅ [ArchiveView] Начальная загрузка завершена');
+      } catch (error) {
+        console.error('❌ [ArchiveView] Ошибка начальной загрузки:', error);
+      } finally {
+        setIsInitialLoad(false);
+      }
+    };
+
+    // Загружаем данные только при первом монтировании
+    if (isInitialLoad) {
+      loadInitialData();
+    }
+  }, [loadRecordings, isInitialLoad]);
+
+  // 🔥 ДИАГНОСТИКА: Отслеживаем изменения состояния
+  useEffect(() => {
+    console.log('🏛️ [ArchiveView] Состояние обновлено:', {
+      archiveViewMode,
+      recordingsCount: recordings.length,
+      connectionStatus,
+      activeRecordingId: activeRecording?.id,
+      filtersState: {
+        cameras: archiveFilters.cameras.length,
+        locations: archiveFilters.locations.length
+      }
+    });
+  }, [archiveViewMode, recordings, connectionStatus, activeRecording, archiveFilters]);
 
   // Обработчик для выбора времени из закладки или события
   const handleTimeSelected = (time: Date) => {
@@ -88,76 +132,132 @@ const ArchiveView: React.FC = () => {
     switch (archiveViewMode) {
       case 'single':
         // Просмотр одной записи
-        if (!activeRecording) return null;
-
-        return (
+        if (!activeRecording) {
+          console.warn('🏛️ [ArchiveView] Режим single, но нет активной записи');
+          return (
             <div className="archive-single-view">
-              <div className="archive-main-content">
-                <div className="archive-player-container">
-                  <div className="archive-toolbar">
-                    <button className="back-button" onClick={() => setArchiveViewMode('list')}>
-                      ← Назад к списку
-                    </button>
-                    <div className="archive-tools">
-                      <button
-                          className={`tool-button ${showBookmarks ? 'active' : ''}`}
-                          onClick={toggleBookmarksPanel}
-                          title="Закладки"
-                      >
-                        Закладки
-                      </button>
-                      <button
-                          className={`tool-button ${showEventsSearch ? 'active' : ''}`}
-                          onClick={toggleEventsSearch}
-                          title="События"
-                      >
-                        События
-                      </button>
-                      <button
-                          className="tool-button"
-                          onClick={createBookmarkAtCurrentTime}
-                          title="Добавить закладку"
-                      >
-                        + Закладка
-                      </button>
-                    </div>
-                  </div>
-
-                  <ArchivePlayer recording={activeRecording} />
-                </div>
-
-                {showBookmarks && (
-                    <div className="archive-sidebar">
-                      <BookmarksPanel onSelectBookmark={handleTimeSelected} />
-                    </div>
-                )}
-
-                {showEventsSearch && (
-                    <div className="archive-sidebar">
-                      <EventsSearch onSelectEvent={handleTimeSelected} />
-                    </div>
-                )}
+              <div className="archive-toolbar">
+                <button className="back-button" onClick={() => setArchiveViewMode('list')}>
+                  ← Назад к списку
+                </button>
+              </div>
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <p>Запись не выбрана</p>
+                <button onClick={() => setArchiveViewMode('list')}>
+                  Вернуться к списку
+                </button>
               </div>
             </div>
+          );
+        }
+
+        console.log('🏛️ [ArchiveView] Отображение single режима для записи:', activeRecording.id);
+
+        return (
+          <div className="archive-single-view">
+            <div className="archive-main-content">
+              <div className="archive-player-container">
+                <div className="archive-toolbar">
+                  <button className="back-button" onClick={() => setArchiveViewMode('list')}>
+                    ← Назад к списку
+                  </button>
+                  <div className="archive-tools">
+                    <button
+                      className={`tool-button ${showBookmarks ? 'active' : ''}`}
+                      onClick={toggleBookmarksPanel}
+                      title="Закладки"
+                    >
+                      Закладки
+                    </button>
+                    <button
+                      className={`tool-button ${showEventsSearch ? 'active' : ''}`}
+                      onClick={toggleEventsSearch}
+                      title="События"
+                    >
+                      События
+                    </button>
+                    <button
+                      className="tool-button"
+                      onClick={createBookmarkAtCurrentTime}
+                      title="Добавить закладку"
+                    >
+                      + Закладка
+                    </button>
+                  </div>
+                </div>
+
+                <h2 className="recording-title">
+                  {activeRecording.monitorName} - {activeRecording.startTime.toLocaleString('ru-RU')}
+                </h2>
+
+                <ArchivePlayer recording={activeRecording} />
+              </div>
+
+              {showBookmarks && (
+                <div className="archive-sidebar">
+                  <BookmarksPanel onSelectBookmark={handleTimeSelected} />
+                </div>
+              )}
+
+              {showEventsSearch && (
+                <div className="archive-sidebar">
+                  <EventsSearch onSelectEvent={handleTimeSelected} />
+                </div>
+              )}
+            </div>
+          </div>
         );
 
       case 'list':
       default:
         // Список записей
+        console.log('🏛️ [ArchiveView] Отображение list режима, записей в store:', recordings.length);
+        
         return (
-            <>
-              <ArchiveFilters />
-              <RecordingsList />
-            </>
+          <>
+            <ArchiveFilters />
+            <RecordingsList />
+          </>
         );
     }
   };
 
-  return (
+  // 🔥 ДИАГНОСТИКА: Показываем состояние загрузки для отладки
+  if (isInitialLoad) {
+    return (
       <div className="archive-view-container">
-        {renderContent()}
-        {archiveViewMode === 'single' && <FooterPlayer />}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '400px',
+          textAlign: 'center'
+        }}>
+          <div className="loading-spinner" style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            marginBottom: '20px'
+          }}></div>
+          <h3>Инициализация архива...</h3>
+          <p>Подготовка данных для отображения</p>
+          <small style={{ color: '#666', marginTop: '10px' }}>
+            Статус: {connectionStatus} | Записей: {recordings.length}
+          </small>
+        </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="archive-view-container">
+      {renderContent()}
+      {archiveViewMode === 'single' && <FooterPlayer />}
+    </div>
   );
 };
 
