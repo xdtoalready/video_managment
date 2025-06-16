@@ -136,9 +136,9 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
             // ✅ ИСПРАВЛЕНО: правильная аутентификация для XHR запросов
             xhrSetup: (xhr, url) => {
               try {
-                const authHeaders = sentryshotAPI.auth.getAuthHeaders();
+                const authHeaders = sentryshotAPI.auth.getAuthHeaders() as Record<string, string>;
                 // ✅ ИСПРАВЛЕНО: проверяем наличие заголовка и используем правильный тип
-                const authHeader = authHeaders['Authorization'];
+                const authHeader = authHeaders.Authorization;
                 if (authHeader) {
                   xhr.setRequestHeader('Authorization', authHeader);
                 }
