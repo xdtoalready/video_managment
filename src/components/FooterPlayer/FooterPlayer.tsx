@@ -66,17 +66,40 @@ const FooterPlayer: React.FC = () => {
 
   // Обработчик выбора времени на таймлайне
   const handleTimeSelected = (time: Date) => {
-    if (!activeRecording) return;
+      if (!activeRecording) return;
 
-    const videoElement = getVideoElement();
-    if (!videoElement) return;
+      const videoElement = getVideoElement();
+      if (!videoElement) return;
 
-    // Если выбранное время находится в текущей записи
-    if (time >= new Date(activeRecording.startTime) && time <= new Date(activeRecording.endTime)) {
-      // Вычисляем смещение в секундах от начала записи
-      const offsetSeconds = (time.getTime() - new Date(activeRecording.startTime).getTime()) / 1000;
-      videoElement.currentTime = offsetSeconds;
-    }
+      // Преобразуем глобальное время в локальное время записи
+      const recordingStartTime = new Date(activeRecording.startTime).getTime();
+      const recordingEndTime = new Date(activeRecording.endTime).getTime();
+      const selectedTime = time.getTime();
+
+      // Проверяем, находится ли выбранное время в пределах текущей записи
+      if (selectedTime >= recordingStartTime && selectedTime <= recordingEndTime) {
+          // Вычисляем смещение в секундах от начала записи
+          const offsetSeconds = (selectedTime - recordingStartTime) / 1000;
+          
+          console.log('🎯 [FooterPlayer] Установка времени видео:', {
+              globalTime: time.toISOString(),
+              recordingStart: activeRecording.startTime,
+              offsetSeconds,
+              videoDuration: videoElement.duration
+          });
+          
+          // Устанавливаем время с проверкой границ
+          if (offsetSeconds >= 0 && offsetSeconds <= videoElement.duration) {
+              videoElement.currentTime = offsetSeconds;
+          }
+      } else {
+          console.log('⚠️ [FooterPlayer] Время вне текущей записи:', {
+              selectedTime: time.toISOString(),
+              recordingRange: [activeRecording.startTime, activeRecording.endTime]
+          });
+          
+          // TODO: Здесь позже добавим логику переключения на другую запись
+      }
   };
 
   // Эффект для обновления видимого диапазона при изменении активной записи
