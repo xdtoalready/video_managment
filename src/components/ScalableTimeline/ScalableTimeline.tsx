@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useStore } from '../../store/useStore.ts';
+import { useStore, Recording } from '../../store/useStore.ts';
 import './ScalableTimeline.css';
 
 interface ScalableTimelineProps {
@@ -9,6 +9,7 @@ interface ScalableTimelineProps {
     clipEnd?: number | null;
     onClipStartSet?: (time: number) => void;
     onClipEndSet?: (time: number) => void;
+    recordings?: Recording[];
 }
 
 // Хук для определения мобильного устройства
@@ -35,7 +36,8 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
    clipStart = null,
    clipEnd = null,
    onClipStartSet,
-   onClipEndSet
+   onClipEndSet,
+   recordings = []
 }) => {
     const {
         timelineZoomLevel,
@@ -530,6 +532,44 @@ if (onClipEndSet) onClipEndSet(0);
         handleMouseUp();
     }, [isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, setVideoTime, isMobile, handleMouseUp, animateToOffset, ANIMATION_DURATION]);
 
+    // Функция для вычисления позиций записей на таймлайне
+    const calculateRecordingBlocks = useCallback(() => {
+        if (!recordings.length || !timelineRef.current) return [];
+
+        const containerWidth = timelineRef.current.clientWidth;
+        const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+
+        return recordings.map(recording => {
+            const recordingStart = recording.startTime.getTime();
+            const recordingEnd = recording.endTime.getTime();
+            
+            // Вычисляем пересечение с видимым диапазоном
+            const visibleStart = Math.max(recordingStart, timelineVisibleRange.start.getTime());
+            const visibleEnd = Math.min(recordingEnd, timelineVisibleRange.end.getTime());
+            
+            // Если записи нет в видимом диапазоне, пропускаем
+            if (visibleStart >= visibleEnd) return null;
+            
+            // Вычисляем позицию и ширину
+            const startOffset = visibleStart - timelineVisibleRange.start.getTime();
+            const endOffset = visibleEnd - timelineVisibleRange.start.getTime();
+            
+            const left = (startOffset / visibleDuration) * containerWidth;
+            const width = ((endOffset - startOffset) / visibleDuration) * containerWidth;
+            
+            return {
+                id: recording.id,
+                recording,
+                left: left + 'px',
+                width: width + 'px',
+                isActive: activeRecording?.id === recording.id
+            };
+        }).filter(Boolean);
+    }, [recordings, timelineVisibleRange, activeRecording]);
+
+    // Мемоизированные блоки записей
+    const recordingBlocks = calculateRecordingBlocks();
+
     // Очистка при размонтировании
     useEffect(() => {
         return () => {
@@ -607,17 +647,36 @@ if (onClipEndSet) onClipEndSet(0);
                         })}
                     </div>
 
+                    {/* Блоки записей */}
+                    <div className="timeline-recordings">
+                        {recordingBlocks.map(block => (
+                            <div
+                                key={block.id}
+                                className={`timeline-recording-block ${block.isActive ? 'active' : ''}`}
+                                style={{
+                                    left: block.left,
+                                    width: block.width
+                                }}
+                                title={`${block.recording.monitorName}: ${block.recording.startTime.toLocaleString()}`}
+                            >
+                                <div className="recording-monitor-label">
+                                    {block.recording.monitorName}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
                     {/* Маркеры обрезки */}
-                    if (isClipMode && activeRecording && clipStart !== null && (
-                    <div
-                        className="clip-marker start-marker"
-                        style={{
-                            left: `${activeRecording && timelineVisibleRange ?
-                                (((activeRecording.startTime.getTime() + (clipStart as number * 1000) - timelineVisibleRange.start.getTime()) /
-                                    (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
-                        }}
-                    />
-                    )
+                    {isClipMode && activeRecording && clipStart !== null && (
+                        <div
+                            className="clip-marker start-marker"
+                            style={{
+                                left: `${activeRecording && timelineVisibleRange ?
+                                    (((activeRecording.startTime.getTime() + (clipStart as number * 1000) - timelineVisibleRange.start.getTime()) /
+                                        (timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime())) * 100) : 0}%`
+                            }}
+                        />
+                    )}
 
                     {isClipMode && activeRecording && clipEnd !== null && (
                         <div

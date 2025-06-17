@@ -9,7 +9,8 @@ import ScalableTimeline from '../ScalableTimeline/ScalableTimeline.tsx';
 const FooterPlayer: React.FC = () => {
   const {
     activeRecording,
-    archiveViewMode
+    archiveViewMode,
+    recordings
   } = useStore();
 
   const footerRef = useRef<HTMLDivElement>(null);
@@ -655,6 +656,7 @@ const FooterPlayer: React.FC = () => {
             clipEnd={clipEnd}
             onClipStartSet={(time) => setClipStart(time)}
             onClipEndSet={(time) => setClipEnd(time)}
+            recordings={recordings}
         />
       </div>
   );
