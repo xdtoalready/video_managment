@@ -187,6 +187,14 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
         const targetOffset = calculateTimelineOffset();
         
+        console.log('🎯 [ScalableTimeline] Центрирование таймлайна:', {
+            useDirectUpdate,
+            targetOffset: targetOffset.toFixed(1),
+            currentOffset: currentOffsetRef.current.toFixed(1),
+            activeRecording: activeRecording.id,
+            currentTime: getCurrentVideoTime().toFixed(2)
+        });
+
         // Проверяем, не слишком ли большое смещение (избегаем резких скачков)
         const maxOffset = timelineRef.current.clientWidth * 0.8;
         if (Math.abs(targetOffset) > maxOffset && useDirectUpdate) {
@@ -493,6 +501,20 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
     }, [timelineOffset, isDragging, isAnimating, updateTimelineOffsetDirect]);
 
+    useEffect(() => {
+        // Принудительно обновляем блоки записей при изменении видимого диапазона
+        // Это гарантирует синхронизацию позиций
+        if (!isDragging && !isAnimating) {
+            // Используем более корректный способ обновления
+            const timeoutId = setTimeout(() => {
+                // Принудительно обновляем DOM-смещение для синхронизации
+                updateTimelineOffsetDirect(currentOffsetRef.current);
+            }, 10);
+            
+            return () => clearTimeout(timeoutId);
+        }
+    }, [timelineVisibleRange, isDragging, isAnimating, updateTimelineOffsetDirect]);
+
     // Глобальные обработчики событий мыши
     useEffect(() => {
         const handleGlobalMouseMove = (e: MouseEvent) => {
@@ -672,47 +694,65 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
     // Функция для вычисления позиций записей на таймлайне
     const calculateRecordingBlocks = useCallback((): RecordingBlock[] => {
-        if (!recordings.length || !timelineRef.current) return [];
+    if (!recordings.length || !timelineRef.current) return [];
 
-        const containerWidth = timelineRef.current.clientWidth;
-        const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+    const blocks: RecordingBlock[] = [];
+    
+    // Используем timelineVisibleRange для расчета позиций
+    const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+
+    recordings.forEach(recording => {
+        const recordingStart = recording.startTime.getTime();
+        const recordingEnd = recording.endTime.getTime();
         
-        // ИСПРАВЛЕНИЕ: учитываем текущее смещение таймлайна
-        const pixelsPerMs = containerWidth / visibleDuration;
-        const offsetMs = -currentOffsetRef.current / pixelsPerMs;
-        const effectiveStartTime = timelineVisibleRange.start.getTime() + offsetMs;
-        const effectiveEndTime = timelineVisibleRange.end.getTime() + offsetMs;
+        // Проверяем пересечение с видимым диапазоном (с учетом возможного смещения)
+        const extendedStart = timelineVisibleRange.start.getTime() - visibleDuration * 0.5;
+        const extendedEnd = timelineVisibleRange.end.getTime() + visibleDuration * 0.5;
+        
+        if (recordingEnd < extendedStart || recordingStart > extendedEnd) {
+            return; // Запись точно не видна даже с учетом возможного смещения
+        }
 
-        const blocks: RecordingBlock[] = [];
+        // Рассчитываем позицию относительно видимого диапазона В ПРОЦЕНТАХ
+        // Это критично для синхронизации с timeline-marks и другими элементами
+        const startPosition = ((recordingStart - timelineVisibleRange.start.getTime()) / visibleDuration) * 100;
+        const endPosition = ((recordingEnd - timelineVisibleRange.start.getTime()) / visibleDuration) * 100;
+        
+        // Ограничиваем видимую часть записи
+        const visibleStartPosition = Math.max(startPosition, -50); // Позволяем выходить за левый край
+        const visibleEndPosition = Math.min(endPosition, 150);     // Позволяем выходить за правый край
+        const width = visibleEndPosition - visibleStartPosition;
+        
+        // Пропускаем слишком узкие записи
+        if (width <= 0) return;
 
-        recordings.forEach(recording => {
-            const recordingStart = recording.startTime.getTime();
-            const recordingEnd = recording.endTime.getTime();
-
-            // Проверяем пересечение с эффективным видимым диапазоном
-            if (recordingEnd < effectiveStartTime || recordingStart > effectiveEndTime) {
-                return; // Запись не видна
-            }
-
-            // Вычисляем видимую часть записи
-            const visibleStart = Math.max(recordingStart, effectiveStartTime);
-            const visibleEnd = Math.min(recordingEnd, effectiveEndTime);
-
-            // Позиция относительно эффективного диапазона
-            const leftPosition = ((visibleStart - effectiveStartTime) / (effectiveEndTime - effectiveStartTime)) * 100;
-            const width = ((visibleEnd - visibleStart) / (effectiveEndTime - effectiveStartTime)) * 100;
-
-            blocks.push({
-                id: recording.id,
-                recording,
-                left: `${leftPosition}%`,
-                width: `${width}%`,
-                isActive: activeRecording?.id === recording.id
-            });
+        blocks.push({
+            id: recording.id,
+            recording,
+            left: `${visibleStartPosition}%`,
+            width: `${width}%`,
+            isActive: activeRecording?.id === recording.id
         });
+    });
 
-        return blocks;
-    }, [recordings, timelineVisibleRange, activeRecording]);
+    console.log('📊 [ScalableTimeline] Обновлены позиции записей:', {
+        blocksCount: blocks.length,
+        visibleRange: {
+            start: timelineVisibleRange.start.toISOString(),
+            end: timelineVisibleRange.end.toISOString()
+        },
+        activeRecordingId: activeRecording?.id,
+        blocks: blocks.map(b => ({
+            id: b.id,
+            left: b.left,
+            width: b.width,
+            isActive: b.isActive,
+            monitorName: b.recording.monitorName
+        }))
+    });
+
+    return blocks;
+}, [recordings, timelineVisibleRange, activeRecording]);
 
     // Мемоизированные блоки записей
     const recordingBlocks: RecordingBlock[] = calculateRecordingBlocks();
