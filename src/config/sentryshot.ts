@@ -185,11 +185,11 @@ export class SentryShotConfigManager {
     }
 
     public getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId?: string): string {
-        const startNano = startTime.getTime() * 1000000; // Убрали toISOString()
+        const startNano = startTime.getTime() * 1000000;
         const endNano = endTime.getTime() * 1000000;
         const cache = cacheId || `${monitorId}_${Date.now()}`;
 
-        return `${this.getBaseUrl()}/vod?monitor-id=${monitorId}&start=${startNano}&end=${endNano}&cache-id=${cache}`;
+        return `${this.getBaseUrl()}/vod/vod.mp4?monitor-id=${monitorId}&start=${startNano}&end=${endNano}&cache-id=${cache}`;
     }
 
     public getAuthHeader(): string {

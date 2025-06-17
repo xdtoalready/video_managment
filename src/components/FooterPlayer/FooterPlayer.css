@@ -409,9 +409,9 @@ color: var(--gray2-color);
   padding-bottom: var(--footer-height);
 }
 
-.archive-main-content {
+/* .archive-main-content {
   height: calc(100vh - 150px - var(--footer-height));
-}
+} */
 
 .archive-player-video::-webkit-media-controls {
   display: none !important;

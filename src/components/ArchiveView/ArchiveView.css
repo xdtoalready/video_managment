@@ -28,7 +28,7 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
 .archive-main-content {
   display: flex;
   gap: 15px;
-  height: calc(100vh - 150px);
+  /* height: calc(100vh - 150px); */
 }
 
 .archive-player-container {
@@ -303,5 +303,11 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     right: auto;
     margin: 10px;
     max-width: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .archive-player-container {
+    height: calc(100% - 150px);
   }
 }
