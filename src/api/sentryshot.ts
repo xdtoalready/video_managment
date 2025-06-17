@@ -740,6 +740,11 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
           return null;
         }
 
+        if (rec.state === 'active') {
+          console.warn(`🔴 [SENTRYSHOT] Пропускаем активную запись: ${recordingId}`);
+          return null; // Исключаем активные записи из результатов
+        }
+
         if (!rec.data || !rec.data.start || !rec.data.end) {
           console.warn(`⚠️ [SENTRYSHOT] Нет полей data/start/end в записи ${recordingId}`, rec);
           return null;
