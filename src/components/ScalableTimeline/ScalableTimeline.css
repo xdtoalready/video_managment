@@ -6,6 +6,7 @@
     background-color: var(--text-color);
     border-radius: 4px;
     margin-bottom: 10px;
+    touch-action: manipulation;
 }
 
 .timeline-controls {
@@ -51,7 +52,9 @@
     border-radius: 4px;
     overflow: hidden;
     cursor: grab;
-    touch-action: pan-y;
+    touch-action: pan-y pinch-zoom;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .timeline-container.dragging {

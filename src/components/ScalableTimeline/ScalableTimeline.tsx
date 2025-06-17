@@ -73,6 +73,11 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     // Для плавности анимации
     const [isAnimating, setIsAnimating] = useState(false);
 
+    // pinch-to-zoom
+    const [pinchStartDistance, setPinchStartDistance] = useState(0);
+    const [pinchStartZoom, setPinchStartZoom] = useState<TimelineZoomLevel>('hours');
+    const [isPinching, setIsPinching] = useState(false);
+
     const timelineRef = useRef<HTMLDivElement>(null);
     const timelineContentRef = useRef<HTMLDivElement>(null);
     const animationRef = useRef<number | null>(null);
@@ -106,12 +111,23 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
     }, []);
 
+    // Функция для расчета расстояния между пальцами
+    const getTouchDistance = (touches: TouchList): number => {
+        if (touches.length < 2) return 0;
+        const touch1 = touches[0];
+        const touch2 = touches[1];
+        return Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) + 
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+    };
+    
     // Функция для расчета смещения таймлайна
     const calculateTimelineOffset = useCallback(() => {
         if (!activeRecording || !timelineRef.current) return 0;
 
         const currentTime = getCurrentVideoTime();
-const recordingStart = new Date(activeRecording.startTime).getTime();
+        const recordingStart = new Date(activeRecording.startTime).getTime();
         const currentTimeMs = recordingStart + currentTime * 1000;
 
         const visibleStart = timelineVisibleRange.start.getTime();
@@ -449,28 +465,38 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
 
     // Обработчики для сенсорных событий
     const handleTouchStart = useCallback((e: React.TouchEvent) => {
-        if (e.touches.length !== 1 || !timelineRef.current || isAnimating) return;
+        if (!timelineRef.current || isAnimating) return;
 
-        const touch = e.touches[0];
-        setTouchStartTime(Date.now());
-
-        // Останавливаем анимацию если она есть
+        // Останавливаем анимацию
         if (animationRef.current) {
             cancelAnimationFrame(animationRef.current);
             setIsAnimating(false);
         }
 
-        setIsDragging(true);
-        setDragStartX(touch.clientX);
-        setDragStartOffset(currentOffsetRef.current);
+        if (e.touches.length === 2) {
+            // Pinch gesture
+            setIsPinching(true);
+            setPinchStartDistance(getTouchDistance(e.touches));
+            setPinchStartZoom(timelineZoomLevel);
+            e.preventDefault();
+            return;
+        }
 
-        // Добавляем тактильную обратную связь на поддерживающих устройствах
-        if ('vibrate' in navigator && isMobile) {
-            navigator.vibrate(10);
+        if (e.touches.length === 1) {
+            // Обычный drag (ваш существующий код)
+            const touch = e.touches[0];
+            setTouchStartTime(Date.now());
+            setIsDragging(true);
+            setDragStartX(touch.clientX);
+            setDragStartOffset(currentOffsetRef.current);
+
+            if ('vibrate' in navigator && isMobile) {
+                navigator.vibrate(10);
+            }
         }
 
         e.preventDefault();
-    }, [isAnimating, isMobile]);
+    }, [isAnimating, isMobile, timelineZoomLevel, getTouchDistance]);
 
     // Эффект для предотвращения случайного зума на мобильных:
     useEffect(() => {
@@ -502,15 +528,46 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
     }, [isMobile, touchStartTime]);
 
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2 && isPinching) {
+            // Pinch zoom
+            const currentDistance = getTouchDistance(e.touches);
+            const distanceRatio = currentDistance / pinchStartDistance;
+            
+            // Определяем направление зума
+            if (distanceRatio > 1.2) {
+                // Zoom in
+                if (timelineZoomLevel !== 'seconds') {
+                    zoomTimelineIn();
+                    setPinchStartDistance(currentDistance);
+                }
+            } else if (distanceRatio < 0.8) {
+                // Zoom out  
+                if (timelineZoomLevel !== 'years') {
+                    zoomTimelineOut();
+                    setPinchStartDistance(currentDistance);
+                }
+            }
+            
+            e.preventDefault();
+            return;
+        }
+
         if (!isDragging || e.touches.length !== 1) return;
 
+        // Обычный drag (ваш существующий код)
         const touch = e.touches[0];
         handleDrag(touch.clientX);
-
         e.preventDefault();
-    }, [isDragging, handleDrag]);
+    }, [isPinching, pinchStartDistance, isDragging, handleDrag, timelineZoomLevel, zoomTimelineIn, zoomTimelineOut, getTouchDistance]);
 
     const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+
+        if (isPinching) {
+            setIsPinching(false);
+            setPinchStartDistance(0);
+            return;
+        }
+
         if (!isDragging) return;
 
         const touchDuration = Date.now() - touchStartTime;
@@ -572,7 +629,7 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
         }
 
         handleMouseUp();
-    }, [isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, setVideoTime, isMobile, handleMouseUp, animateToOffset, ANIMATION_DURATION]);
+    }, [isPinching, isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, setVideoTime, isMobile, handleMouseUp, animateToOffset, ANIMATION_DURATION]);
 
     // Функция для вычисления позиций записей на таймлайне
     const calculateRecordingBlocks = useCallback((): RecordingBlock[] => {
