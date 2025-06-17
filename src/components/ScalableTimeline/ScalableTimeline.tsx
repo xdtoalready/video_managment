@@ -70,6 +70,9 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const UPDATE_THRESHOLD = isMobile ? 0.02 : 0.01; // Больший порог для мобильных
     const ANIMATION_DURATION = isMobile ? 150 : 200; // Быстрее анимация на мобильных
 
+    const [wasDragging, setWasDragging] = useState(false);
+    const [dragDistance, setDragDistance] = useState(0);
+
     // Для плавности анимации
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -266,6 +269,8 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
 
         setIsDragging(true);
+        setWasDragging(false); // Сбрасываем флаг
+        setDragDistance(0);    // Сбрасываем расстояние
         setDragStartX(e.clientX);
         setDragStartOffset(currentOffsetRef.current);
 
@@ -280,9 +285,17 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const deltaX = clientX - dragStartX;
         const newOffset = dragStartOffset + deltaX;
 
+        // Отслеживаем расстояние drag'а
+        const currentDistance = Math.abs(deltaX);
+        setDragDistance(currentDistance);
+        
+        // Если drag больше 5px, считаем это drag'ом, а не кликом
+        if (currentDistance > 5) {
+            setWasDragging(true);
+        }
+
         // Обновляем напрямую DOM для мгновенной реакции
         updateTimelineOffsetDirect(newOffset);
-        
     }, [isDragging, dragStartX, dragStartOffset, updateTimelineOffsetDirect]);
 
     // Обработчик окончания перетаскивания
@@ -293,6 +306,14 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
         // Синхронизируем React состояние с DOM
         setTimelineOffset(currentOffsetRef.current);
+
+        if (wasDragging || dragDistance > 5) {
+            // Блокируем onClick на 100ms после drag'а
+            setTimeout(() => {
+                setWasDragging(false);
+                setDragDistance(0);
+            }, 100);
+        }
 
         if (activeRecording && timelineRef.current) {
             const containerWidth = timelineRef.current.clientWidth;
@@ -315,7 +336,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                 updateTimelineOffsetDirect(0);
             }
         }
-    }, [isDragging, activeRecording, timelineRef, timelineVisibleRange, setTimelineVisibleRange, updateTimelineOffsetDirect]);
+    }, [isDragging, wasDragging, dragDistance, activeRecording, timelineRef, timelineVisibleRange, setTimelineVisibleRange, updateTimelineOffsetDirect]);
 
     // Обработчик колесика мыши для масштабирования
     const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -340,73 +361,77 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
     // Обработчик клика по таймлайну
     const handleTimelineClick = useCallback((e: React.MouseEvent) => {
-    if (!timelineRef.current || isDragging || isAnimating) return;
-
-    const rect = timelineRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const containerWidth = rect.width;
-
-    // Рассчитываем смещение клика от центра
-    const offsetFromCenter = clickX - containerWidth / 2;
-
-    // Рассчитываем время для клика с учетом текущего смещения таймлайна
-    const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
-    const pixelsPerMs = containerWidth / visibleDuration;
-    
-    // учитываем текущее смещение таймлайна
-    const totalOffsetMs = (offsetFromCenter - currentOffsetRef.current) / pixelsPerMs;
-    const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + totalOffsetMs;
-
-    console.log('🖱️ [ScalableTimeline] Детали клика (исправленные):', {
-        offsetFromCenter,
-        currentOffset: currentOffsetRef.current,
-        totalOffsetMs,
-        clickTimeMs,
-        visibleRange: {
-            start: timelineVisibleRange.start.toISOString(),
-            end: timelineVisibleRange.end.toISOString()
+        if (!timelineRef.current || isDragging || isAnimating || wasDragging || dragDistance > 5) {
+            console.log('🚫 [ScalableTimeline] Клик заблокирован после drag\'а:', {
+                isDragging,
+                isAnimating, 
+                wasDragging,
+                dragDistance
+            });
+            return;
         }
-    });
 
-    if (activeRecording) {
-        const recordingStart = activeRecording.startTime.getTime();
-        const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
+        const rect = timelineRef.current.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const containerWidth = rect.width;
 
-        if (isClipMode) {
-            // Логика для режима обрезки (остается без изменений)
-            if (clipStart === null && onClipStartSet) {
-                onClipStartSet(localTimeSeconds);
-            } else if (clipEnd === null && onClipEndSet) {
-                if (localTimeSeconds > clipStart!) {
-                    onClipEndSet(localTimeSeconds);
+        // Рассчитываем смещение клика от центра
+        const offsetFromCenter = clickX - containerWidth / 2;
+
+        // Рассчитываем время для клика с учетом текущего смещения таймлайна
+        const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
+        const pixelsPerMs = containerWidth / visibleDuration;
+        
+        // учитываем текущее смещение таймлайна
+        const totalOffsetMs = (offsetFromCenter - currentOffsetRef.current) / pixelsPerMs;
+        const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + totalOffsetMs;
+
+        console.log('🖱️ [ScalableTimeline] Валидный клик:', {
+            offsetFromCenter,
+            currentOffset: currentOffsetRef.current,
+            totalOffsetMs,
+            clickTimeMs
+        });
+
+        if (activeRecording) {
+            const recordingStart = activeRecording.startTime.getTime();
+            const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
+
+            if (isClipMode) {
+                // Логика для режима обрезки (остается без изменений)
+                if (clipStart === null && onClipStartSet) {
+                    onClipStartSet(localTimeSeconds);
+                } else if (clipEnd === null && onClipEndSet) {
+                    if (localTimeSeconds > clipStart!) {
+                        onClipEndSet(localTimeSeconds);
+                    } else {
+                        if (onClipEndSet) onClipEndSet(clipStart!);
+                        if (onClipStartSet) onClipStartSet(localTimeSeconds);
+                    }
                 } else {
-                    if (onClipEndSet) onClipEndSet(clipStart!);
                     if (onClipStartSet) onClipStartSet(localTimeSeconds);
+                    if (onClipEndSet) onClipEndSet(0);
                 }
             } else {
-                if (onClipStartSet) onClipStartSet(localTimeSeconds);
-                if (onClipEndSet) onClipEndSet(0);
+                // Обычный режим - используем пропс onTimeSelected
+                const globalTime = new Date(clickTimeMs);
+                
+                console.log('🖱️ [ScalableTimeline] Клик по таймлайну:', {
+                    clickTimeMs,
+                    globalTime: globalTime.toISOString(),
+                    localTimeSeconds
+                });
+                
+                // Используем пропс onTimeSelected вместо прямого setVideoTime
+                onTimeSelected(globalTime);
+
+                // НЕ ЦЕНТРИРУЕМ автоматически - оставляем таймлайн где кликнул пользователь
             }
-        } else {
-            // Обычный режим - используем пропс onTimeSelected
-            const globalTime = new Date(clickTimeMs);
-            
-            console.log('🖱️ [ScalableTimeline] Клик по таймлайну:', {
-                clickTimeMs,
-                globalTime: globalTime.toISOString(),
-                localTimeSeconds
-            });
-            
-            // Используем пропс onTimeSelected вместо прямого setVideoTime
-            onTimeSelected(globalTime);
-
-            // НЕ ЦЕНТРИРУЕМ автоматически - оставляем таймлайн где кликнул пользователь
         }
-    }
 
-    e.preventDefault();
-    e.stopPropagation();
-}, [timelineVisibleRange, isClipMode, clipStart, clipEnd, onClipStartSet, onClipEndSet, activeRecording, isDragging, isAnimating, setVideoTime, onTimeSelected]);
+        e.preventDefault();
+        e.stopPropagation();
+    }, [timelineVisibleRange, wasDragging, dragDistance, isClipMode, clipStart, clipEnd, onClipStartSet, onClipEndSet, activeRecording, isDragging, isAnimating, setVideoTime, onTimeSelected]);
 
     // Плавное обновление во время воспроизведения
     useEffect(() => {
@@ -644,10 +669,11 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
         if (!isDragging) return;
         
+        const touchEndTime = Date.now();
         const touchDuration = Date.now() - touchStartTime;
 
         // Если это был быстрый тап (меньше 200мс), обрабатываем как клик
-        if (touchDuration < 200 && !isAnimating) {
+        if (!isDragging && touchDuration < 300 && !wasDragging && dragDistance <= 5) {
             const rect = timelineRef.current?.getBoundingClientRect();
             if (rect && e.changedTouches[0]) {
                 const touch = e.changedTouches[0];
