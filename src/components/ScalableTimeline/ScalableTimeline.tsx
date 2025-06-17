@@ -12,6 +12,14 @@ interface ScalableTimelineProps {
     recordings?: Recording[];
 }
 
+interface RecordingBlock {
+    id: string;
+    recording: Recording;
+    left: string;
+    width: string;
+    isActive: boolean;
+}
+
 // Хук для определения мобильного устройства
 const useIsMobile = () => {
     const [isMobile, setIsMobile] = useState(false);
@@ -533,13 +541,15 @@ if (onClipEndSet) onClipEndSet(0);
     }, [isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, setVideoTime, isMobile, handleMouseUp, animateToOffset, ANIMATION_DURATION]);
 
     // Функция для вычисления позиций записей на таймлайне
-    const calculateRecordingBlocks = useCallback(() => {
+    const calculateRecordingBlocks = useCallback((): RecordingBlock[] => {
         if (!recordings.length || !timelineRef.current) return [];
 
         const containerWidth = timelineRef.current.clientWidth;
         const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
 
-        return recordings.map(recording => {
+        const blocks: RecordingBlock[] = [];
+
+        recordings.forEach(recording => {
             const recordingStart = recording.startTime.getTime();
             const recordingEnd = recording.endTime.getTime();
             
@@ -548,7 +558,7 @@ if (onClipEndSet) onClipEndSet(0);
             const visibleEnd = Math.min(recordingEnd, timelineVisibleRange.end.getTime());
             
             // Если записи нет в видимом диапазоне, пропускаем
-            if (visibleStart >= visibleEnd) return null;
+            if (visibleStart >= visibleEnd) return;
             
             // Вычисляем позицию и ширину
             const startOffset = visibleStart - timelineVisibleRange.start.getTime();
@@ -557,18 +567,20 @@ if (onClipEndSet) onClipEndSet(0);
             const left = (startOffset / visibleDuration) * containerWidth;
             const width = ((endOffset - startOffset) / visibleDuration) * containerWidth;
             
-            return {
+            blocks.push({
                 id: recording.id,
                 recording,
                 left: left + 'px',
                 width: width + 'px',
                 isActive: activeRecording?.id === recording.id
-            };
-        }).filter(Boolean);
+            });
+        });
+
+        return blocks;
     }, [recordings, timelineVisibleRange, activeRecording]);
 
     // Мемоизированные блоки записей
-    const recordingBlocks = calculateRecordingBlocks();
+    const recordingBlocks: RecordingBlock[] = calculateRecordingBlocks();
 
     // Очистка при размонтировании
     useEffect(() => {
