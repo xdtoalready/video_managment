@@ -168,6 +168,11 @@ export class SentryShotConfigManager {
     }
 
     public getBaseUrl(): string {
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
+
+        // Fallback для SSR или других случаев
         const protocol = this.config.useHttps ? 'https' : 'http';
         const port = this.config.port !== (this.config.useHttps ? 443 : 80)
             ? `:${this.config.port}`
@@ -180,14 +185,31 @@ export class SentryShotConfigManager {
         return `${this.getBaseUrl()}/stream/${monitorId}/index.m3u8`;
     }
 
+    public getHlsUrl(monitorId: string): string {
+        return `${this.getBaseUrl()}/hls/${monitorId}/index.m3u8`;
+    }
+
+    public isDockerMode(): boolean {
+        if (typeof window === 'undefined') return false;
+        
+        // Если порт не стандартный (80/443), значит это dev режим
+        const isStandardPort = window.location.port === '' || 
+                                window.location.port === '80' || 
+                                window.location.port === '443';
+        
+        // В Docker через nginx порт будет стандартным
+        return isStandardPort && window.location.hostname !== 'localhost';
+    }
+
     public getApiUrl(endpoint: string): string {
-        return `${this.getBaseUrl()}/api${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+        return `${this.getBaseUrl()}/api${cleanEndpoint}`;
     }
 
     public getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId?: string): string {
         const startNano = startTime.getTime() * 1000000;
         const endNano = endTime.getTime() * 1000000;
-        const cache = cacheId || `${monitorId}_${Date.now()}`;
+        const cache = cacheId ? parseInt(cacheId) : Date.now();
 
         return `${this.getBaseUrl()}/vod/vod.mp4?monitor-id=${monitorId}&start=${startNano}&end=${endNano}&cache-id=${cache}`;
     }
