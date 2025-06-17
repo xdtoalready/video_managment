@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useStore, Recording } from '../../store/useStore.ts';
+import { useStore, Recording, TimelineZoomLevel } from '../../store/useStore.ts';
 import './ScalableTimeline.css';
 
 interface ScalableTimelineProps {
