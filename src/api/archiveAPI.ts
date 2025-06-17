@@ -446,8 +446,8 @@ export const archiveAPI = {
     endTime: Date
   ): Promise<string | null> {
     try {
-      // Используем VOD API для создания клипа
-      const clipUrl = sentryshotAPI.getVodUrl(monitorId, startTime, endTime);
+      const cacheId = Date.now();
+      const clipUrl = sentryshotAPI.getVodUrl(monitorId, startTime, endTime, cacheId);
       return clipUrl;
     } catch (error) {
       console.error('Ошибка при создании клипа:', error);
@@ -463,7 +463,8 @@ export const archiveAPI = {
     filename?: string
   ): Promise<boolean> {
     try {
-      const clipUrl = sentryshotAPI.getVodUrl(monitorId, startTime, endTime);
+      const cacheId = Date.now();
+      const clipUrl = sentryshotAPI.getVodUrl(monitorId, startTime, endTime, cacheId);
 
       // Создаем ссылку для скачивания
       const link = document.createElement('a');

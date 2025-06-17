@@ -169,16 +169,13 @@ export class SentryShotConfigManager {
 
     public getBaseUrl(): string {
         if (typeof window !== 'undefined') {
-            return window.location.origin;
+            const currentOrigin = window.location.origin;
+            return currentOrigin;
         }
 
-        // Fallback для SSR или других случаев
+        // Fallback для SSR
         const protocol = this.config.useHttps ? 'https' : 'http';
-        const port = this.config.port !== (this.config.useHttps ? 443 : 80)
-            ? `:${this.config.port}`
-            : '';
-
-        return `${protocol}://${this.config.serverUrl}${port}`;
+        return `${protocol}://${this.config.serverUrl}`;
     }
 
     public getStreamUrl(monitorId: string): string {
@@ -206,12 +203,40 @@ export class SentryShotConfigManager {
         return `${this.getBaseUrl()}/api${cleanEndpoint}`;
     }
 
-    public getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId?: string): string {
+    public getVodUrl(monitorId: string, startTime: Date, endTime: Date, cacheId?: string | number): string {
         const startNano = startTime.getTime() * 1000000;
         const endNano = endTime.getTime() * 1000000;
-        const cache = cacheId ? parseInt(cacheId) : Date.now();
+        
+        let cacheIdNumber: number;
+        
+        if (typeof cacheId === 'number') {
+            cacheIdNumber = cacheId;
+        } else if (typeof cacheId === 'string') {
+            // Извлекаем число из строки или используем timestamp
+            const extractedNumber = cacheId.match(/\d+/);
+            cacheIdNumber = extractedNumber ? parseInt(extractedNumber[0], 10) : Date.now();
+        } else {
+            cacheIdNumber = Date.now();
+        }
 
-        return `${this.getBaseUrl()}/vod/vod.mp4?monitor-id=${monitorId}&start=${startNano}&end=${endNano}&cache-id=${cache}`;
+        // Проверяем на NaN и используем fallback
+        if (isNaN(cacheIdNumber)) {
+            cacheIdNumber = Date.now();
+        }
+
+        console.log('🎬 [SentryShot Config] Формирование VOD URL:', {
+            monitorId,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            startNano,
+            endNano,
+            originalCacheId: cacheId,
+            finalCacheId: cacheIdNumber
+        });
+
+        const vodUrl = `${this.getBaseUrl()}/vod/vod.mp4?monitor-id=${monitorId}&start=${startNano}&end=${endNano}&cache-id=${cacheIdNumber}`;
+        
+        return vodUrl;
     }
 
     public getAuthHeader(): string {

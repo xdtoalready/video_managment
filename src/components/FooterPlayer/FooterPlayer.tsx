@@ -402,12 +402,14 @@ const FooterPlayer: React.FC = () => {
       const startTime = new Date(activeRecording.startTime.getTime() + clipStart * 1000);
       const endTime = new Date(activeRecording.startTime.getTime() + clipEnd * 1000);
 
+      const cacheId = Date.now();
+
       // Получаем URL для скачивания через VOD API
       const downloadUrl = sentryShotConfig.getVodUrl(
           activeRecording.monitorId,
           startTime,
           endTime,
-          `clip_${Date.now()}`
+          cacheId
       );
 
       // Создаем скрытую ссылку для скачивания
