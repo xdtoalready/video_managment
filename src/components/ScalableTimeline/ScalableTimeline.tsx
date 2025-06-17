@@ -75,7 +75,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
     // pinch-to-zoom
     const [pinchStartDistance, setPinchStartDistance] = useState(0);
-    const [pinchStartZoom, setPinchStartZoom] = useState<TimelineZoomLevel>('hours');
+    const [pinchStartZoom, setPinchStartZoom] = useState<TimelineZoomLevel>('hours'); // Было TimeZoomLevel
     const [isPinching, setIsPinching] = useState(false);
 
     const timelineRef = useRef<HTMLDivElement>(null);
@@ -87,6 +87,17 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const currentOffsetRef = useRef(0);
     const isPlayingRef = useRef(false);
     const lastVideoTimeRef = useRef(0);
+
+    // Функция для расчета расстояния между пальцами
+    const getTouchDistance = (touches: React.TouchList): number => {
+        if (touches.length < 2) return 0;
+        const touch1 = touches[0];
+        const touch2 = touches[1];
+        return Math.sqrt(
+            Math.pow(touch2.clientX - touch1.clientX, 2) + 
+            Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+    };
 
     // Функция для получения текущего времени видео
     const getCurrentVideoTime = useCallback(() => {
@@ -110,17 +121,6 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             currentOffsetRef.current = offset;
         }
     }, []);
-
-    // Функция для расчета расстояния между пальцами
-    const getTouchDistance = (touches: TouchList): number => {
-        if (touches.length < 2) return 0;
-        const touch1 = touches[0];
-        const touch2 = touches[1];
-        return Math.sqrt(
-            Math.pow(touch2.clientX - touch1.clientX, 2) + 
-            Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-    };
     
     // Функция для расчета смещения таймлайна
     const calculateTimelineOffset = useCallback(() => {
@@ -496,7 +496,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
 
         e.preventDefault();
-    }, [isAnimating, isMobile, timelineZoomLevel, getTouchDistance]);
+    }, [isAnimating, isMobile, timelineZoomLevel]);
 
     // Эффект для предотвращения случайного зума на мобильных:
     useEffect(() => {
@@ -531,18 +531,16 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         if (e.touches.length === 2 && isPinching) {
             // Pinch zoom
             const currentDistance = getTouchDistance(e.touches);
-            const distanceRatio = currentDistance / pinchStartDistance;
-            
-            // Определяем направление зума
-            if (distanceRatio > 1.2) {
-                // Zoom in
-                if (timelineZoomLevel !== 'seconds') {
+            if (pinchStartDistance > 0) {
+                const distanceRatio = currentDistance / pinchStartDistance;
+                
+                // Определяем направление зума
+                if (distanceRatio > 1.2) {
+                    // Zoom in
                     zoomTimelineIn();
                     setPinchStartDistance(currentDistance);
-                }
-            } else if (distanceRatio < 0.8) {
-                // Zoom out  
-                if (timelineZoomLevel !== 'years') {
+                } else if (distanceRatio < 0.8) {
+                    // Zoom out  
                     zoomTimelineOut();
                     setPinchStartDistance(currentDistance);
                 }
@@ -558,10 +556,9 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         const touch = e.touches[0];
         handleDrag(touch.clientX);
         e.preventDefault();
-    }, [isPinching, pinchStartDistance, isDragging, handleDrag, timelineZoomLevel, zoomTimelineIn, zoomTimelineOut, getTouchDistance]);
+    }, [isPinching, pinchStartDistance, isDragging, handleDrag, zoomTimelineIn, zoomTimelineOut]);
 
     const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-
         if (isPinching) {
             setIsPinching(false);
             setPinchStartDistance(0);
@@ -569,7 +566,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
 
         if (!isDragging) return;
-
+        
         const touchDuration = Date.now() - touchStartTime;
 
         // Если это был быстрый тап (меньше 200мс), обрабатываем как клик
@@ -590,25 +587,12 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
 
                 const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
 
-                console.log('👆 [ScalableTimeline] Детали тача:', {
-                    offsetFromCenter,
-                    pixelsPerMs, 
-                    offsetMs,
-                    clickTimeMs
-                });
-
                 if (activeRecording) {
                     const recordingStart = activeRecording.startTime.getTime();
                     const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
 
                     if (localTimeSeconds >= 0) {
                         const globalTime = new Date(clickTimeMs);
-                        
-                        console.log('👆 [ScalableTimeline] Тач по таймлайну:', {
-                            clickTimeMs,
-                            globalTime: globalTime.toISOString(),
-                            localTimeSeconds
-                        });
                         
                         // Используем пропс onTimeSelected
                         onTimeSelected(globalTime);
@@ -621,7 +605,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
                         // Плавно центрируем таймлайн
                         setTimeout(() => {
                             const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
-                            animateToOffset(targetOffset, ANIMATION_DURATION);
+                            animateToOffset(targetOffset);
                         }, 50);
                     }
                 }
@@ -629,7 +613,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         }
 
         handleMouseUp();
-    }, [isPinching, isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, setVideoTime, isMobile, handleMouseUp, animateToOffset, ANIMATION_DURATION]);
+    }, [isPinching, isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, isMobile, handleMouseUp, animateToOffset, onTimeSelected]);
 
     // Функция для вычисления позиций записей на таймлайне
     const calculateRecordingBlocks = useCallback((): RecordingBlock[] => {
