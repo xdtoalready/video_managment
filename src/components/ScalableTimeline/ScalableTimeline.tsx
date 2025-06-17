@@ -303,24 +303,31 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
                         if (onClipStartSet) onClipStartSet(localTimeSeconds);
                     }
                 } else {
-                    if (onClipStartSet) onClipStartSet(localTimeSeconds);
-if (onClipEndSet) onClipEndSet(0);
+                if (onClipStartSet) onClipStartSet(localTimeSeconds);
+                if (onClipEndSet) onClipEndSet(0);
                 }
             } else {
-                // Обычный режим - перемотка
-                if (localTimeSeconds >= 0) {
-                    setVideoTime(localTimeSeconds);
+                // Обычный режим - используем пропс onTimeSelected
+                const globalTime = new Date(clickTimeMs);
+                
+                console.log('🖱️ [ScalableTimeline] Клик по таймлайну:', {
+                    clickTimeMs,
+                    globalTime: globalTime.toISOString(),
+                    localTimeSeconds
+                });
+                
+                // Используем пропс onTimeSelected вместо прямого setVideoTime
+                onTimeSelected(globalTime);
 
-                    // Плавно центрируем таймлайн
-                    if (updateTimeoutRef.current) {
-                        clearTimeout(updateTimeoutRef.current);
-                    }
-
-                    updateTimeoutRef.current = setTimeout(() => {
-                        const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
-                        animateToOffset(targetOffset);
-                    }, 50);
+                // Плавно центрируем таймлайн
+                if (updateTimeoutRef.current) {
+                    clearTimeout(updateTimeoutRef.current);
                 }
+
+                updateTimeoutRef.current = setTimeout(() => {
+                    const targetOffset = (0.5 - (clickTimeMs - timelineVisibleRange.start.getTime()) / visibleDuration) * containerWidth;
+                    animateToOffset(targetOffset);
+                }, 50);
             }
         }
 
@@ -520,8 +527,17 @@ if (onClipEndSet) onClipEndSet(0);
                     const localTimeSeconds = (clickTimeMs - recordingStart) / 1000;
 
                     if (localTimeSeconds >= 0) {
-                        setVideoTime(localTimeSeconds);
-
+                        const globalTime = new Date(clickTimeMs);
+                        
+                        console.log('👆 [ScalableTimeline] Тач по таймлайну:', {
+                            clickTimeMs,
+                            globalTime: globalTime.toISOString(),
+                            localTimeSeconds
+                        });
+                        
+                        // Используем пропс onTimeSelected
+                        onTimeSelected(globalTime);
+                        
                         // Добавляем тактильную обратную связь
                         if ('vibrate' in navigator && isMobile) {
                             navigator.vibrate(20);
