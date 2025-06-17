@@ -213,10 +213,10 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
         const pixelsPerMs = containerWidth / visibleDuration;
 
         // Смещение от центра в миллисекундах
-        const offsetFromCenterMs = -newOffset / pixelsPerMs;
+        const offsetFromCenterMs = newOffset / pixelsPerMs;
 
         // Время, которое должно быть в центре
-        const centerTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetFromCenterMs;
+        const centerTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 - offsetFromCenterMs;
 
         // Рассчитываем локальное время внутри записи
         const recordingStart = activeRecording.startTime.getTime();
@@ -286,6 +286,17 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
         const offsetMs = offsetFromCenter / pixelsPerMs;
 
         const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
+
+        console.log('🖱️ [ScalableTimeline] Детали клика:', {
+            offsetFromCenter,
+            pixelsPerMs,
+            offsetMs,
+            clickTimeMs,
+            visibleRange: {
+                start: timelineVisibleRange.start.toISOString(),
+                end: timelineVisibleRange.end.toISOString()
+            }
+        });
 
         if (activeRecording) {
             const recordingStart = activeRecording.startTime.getTime();
@@ -521,6 +532,13 @@ const recordingStart = new Date(activeRecording.startTime).getTime();
                 const offsetMs = offsetFromCenter / pixelsPerMs;
 
                 const clickTimeMs = timelineVisibleRange.start.getTime() + visibleDuration / 2 + offsetMs;
+
+                console.log('👆 [ScalableTimeline] Детали тача:', {
+                    offsetFromCenter,
+                    pixelsPerMs, 
+                    offsetMs,
+                    clickTimeMs
+                });
 
                 if (activeRecording) {
                     const recordingStart = activeRecording.startTime.getTime();
