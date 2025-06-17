@@ -82,6 +82,7 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const timelineContentRef = useRef<HTMLDivElement>(null);
     const animationRef = useRef<number | null>(null);
     const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastForceSyncRef = useRef(0);
 
     // Ref для плавного обновления без re-render
     const currentOffsetRef = useRef(0);
@@ -126,38 +127,89 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
     const calculateTimelineOffset = useCallback(() => {
         if (!activeRecording || !timelineRef.current) return 0;
 
+        const containerWidth = timelineRef.current.clientWidth;
         const currentTime = getCurrentVideoTime();
-        const recordingStart = new Date(activeRecording.startTime).getTime();
-        const currentTimeMs = recordingStart + currentTime * 1000;
-
+        
+        // Глобальное время текущей позиции в видео
+        const recordingStart = activeRecording.startTime.getTime();
+        const currentGlobalTimeMs = recordingStart + (currentTime * 1000);
+        
+        // Видимый диапазон таймлайна
         const visibleStart = timelineVisibleRange.start.getTime();
         const visibleEnd = timelineVisibleRange.end.getTime();
         const visibleDuration = visibleEnd - visibleStart;
-
-        // Рассчитываем, где должно быть текущее время в процентах от ширины таймлайна
-        const currentTimePosition = (currentTimeMs - visibleStart) / visibleDuration;
-
-        // Рассчитываем смещение в пикселях, чтобы текущее время оказалось по центру
-        const containerWidth = timelineRef.current.clientWidth;
-        const targetOffset = (0.5 - currentTimePosition) * containerWidth;
-
+        
+        // Проверяем, находится ли текущее время в видимом диапазоне
+        if (currentGlobalTimeMs < visibleStart || currentGlobalTimeMs > visibleEnd) {
+            // Если время вне видимого диапазона, центрируем весь таймлайн на текущем времени
+            const centerTime = currentGlobalTimeMs;
+            const halfDuration = visibleDuration / 2;
+            
+            // Обновляем видимый диапазон
+            const newStart = new Date(centerTime - halfDuration);
+            const newEnd = new Date(centerTime + halfDuration);
+            
+            // Используем setTimeout для избежания состояния гонки
+            setTimeout(() => {
+                setTimelineVisibleRange({
+                    start: newStart,
+                    end: newEnd
+                });
+            }, 0);
+            
+            return 0; // После обновления диапазона смещение будет 0
+        }
+        
+        // Рассчитываем позицию текущего времени в видимом диапазоне (0-1)
+        const normalizedPosition = (currentGlobalTimeMs - visibleStart) / visibleDuration;
+        
+        // Смещение для центрирования (красная линия должна быть по центру)
+        const targetOffset = (0.5 - normalizedPosition) * containerWidth;
+        
+        console.log('🎯 [ScalableTimeline] Расчет смещения:', {
+            currentTime: currentTime.toFixed(2),
+            currentGlobalTime: new Date(currentGlobalTimeMs).toISOString(),
+            visibleRange: {
+                start: new Date(visibleStart).toISOString(),
+                end: new Date(visibleEnd).toISOString()
+            },
+            normalizedPosition: normalizedPosition.toFixed(3),
+            targetOffset: targetOffset.toFixed(1),
+            containerWidth
+        });
+        
         return targetOffset;
-    }, [activeRecording, timelineVisibleRange, getCurrentVideoTime]);
+    }, [activeRecording, timelineVisibleRange, getCurrentVideoTime, setTimelineVisibleRange]);
 
     // Функция для центрирования таймлайна относительно текущего времени
     const centerTimelineOnCurrentTime = useCallback((useDirectUpdate = false) => {
         if (!activeRecording || !timelineRef.current || isDragging) return;
 
         const targetOffset = calculateTimelineOffset();
+        
+        // Проверяем, не слишком ли большое смещение (избегаем резких скачков)
+        const maxOffset = timelineRef.current.clientWidth * 0.8;
+        if (Math.abs(targetOffset) > maxOffset && useDirectUpdate) {
+            // Если смещение слишком большое, используем React state для плавного перехода
+            setTimelineOffset(targetOffset);
+            return;
+        }
 
         if (useDirectUpdate) {
-            // Прямое обновление DOM для плавности во время воспроизведения
-            updateTimelineOffsetDirect(targetOffset);
+            // Прямое обновление DOM с плавной интерполяцией
+            const currentOffset = currentOffsetRef.current;
+            const offsetDiff = targetOffset - currentOffset;
+            
+            // Плавная интерполяция (lerp) для избежания резких движений
+            const lerpFactor = isMobile ? 0.3 : 0.2;
+            const newOffset = currentOffset + (offsetDiff * lerpFactor);
+            
+            updateTimelineOffsetDirect(newOffset);
         } else {
-            // Обновление React состояния для других случаев
+            // Обновление React состояния для точности
             setTimelineOffset(targetOffset);
         }
-    }, [activeRecording, calculateTimelineOffset, isDragging, updateTimelineOffsetDirect]);
+    }, [activeRecording, calculateTimelineOffset, isDragging, updateTimelineOffsetDirect, isMobile]);
 
     // Плавная анимация для программных изменений
     const animateToOffset = useCallback((targetOffset: number, duration = ANIMATION_DURATION) => {
@@ -375,20 +427,37 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
             if (!isDragging && !isAnimating) {
                 const currentTime = videoElement.currentTime;
                 const isPlaying = !videoElement.paused;
-
-                // Адаптируем порог обновления для мобильных устройств
-                const threshold = isMobile ? 0.02 : 0.01;
-
-                // Обновляем только если видео воспроизводится и время изменилось
-                if (isPlaying && Math.abs(currentTime - lastVideoTimeRef.current) > threshold) {
-                    centerTimelineOnCurrentTime(true); // Используем прямое обновление DOM
+                
+                // Адаптивный порог в зависимости от уровня зума
+                const getUpdateThreshold = () => {
+                    switch (timelineZoomLevel) {
+                        case 'seconds': return 0.1;   // Очень частые обновления
+                        case 'minutes': return 0.5;   // Частые обновления  
+                        case 'hours': return 1.0;     // Средние обновления
+                        case 'days': return 5.0;      // Редкие обновления
+                        default: return 1.0;
+                    }
+                };
+                
+                const threshold = getUpdateThreshold();
+                const timeDiff = Math.abs(currentTime - lastVideoTimeRef.current);
+                
+                // Обновляем только если время достаточно изменилось или это первый кадр
+                if (isPlaying && (timeDiff > threshold || lastVideoTimeRef.current === 0)) {
+                    centerTimelineOnCurrentTime(true); // Прямое обновление DOM для плавности
                     lastVideoTimeRef.current = currentTime;
                 }
-
+                
+                // Принудительная синхронизация каждые 2 секунды для точности
+                if (isPlaying && Date.now() - lastForceSyncRef.current > 2000) {
+                    centerTimelineOnCurrentTime(false); // React state для точности
+                    lastForceSyncRef.current = Date.now();
+                }
+                
                 isPlayingRef.current = isPlaying;
             }
 
-            // Продолжаем анимацию только если видео воспроизводится
+            // Продолжаем анимацию
             if (!videoElement.paused || isDragging || isAnimating) {
                 animationId = requestAnimationFrame(smoothUpdate);
             }
