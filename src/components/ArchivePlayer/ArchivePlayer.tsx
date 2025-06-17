@@ -56,8 +56,6 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
     const videoElement = videoRef.current;
     if (!videoElement) return;
 
-    let hls: Hls | null = null;
-
     const setupPlayer = async () => {
       setIsLoading(true);
       setHasError(false);
@@ -70,140 +68,30 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
           endTime: recording.endTime.toISOString()
         });
 
-        // ✅ ИСПРАВЛЕНО: альтернативные методы воспроизведения (объявляем заранее)
-        const tryAlternativePlayback = async () => {
-          console.log('🔄 [ArchivePlayer] Пробуем альтернативные методы воспроизведения');
-          
-          try {
-            // Пробуем HLS URL
-            const hlsUrl = sentryshotAPI.getVodHlsUrl(
-              recording.monitorId,
-              recording.startTime,
-              recording.endTime,
-              recording.id
-            );
-            
-            console.log('🎥 [ArchivePlayer] Пробуем HLS URL:', hlsUrl);
-            
-            if (hls) {
-              hls.loadSource(hlsUrl);
-            } else {
-              videoElement.src = hlsUrl;
-            }
-            
-          } catch (alternativeError) {
-            console.error('❌ [ArchivePlayer] Альтернативные методы также не сработали:', alternativeError);
-            setHasError(true);
-          }
-        };
-
-        // ✅ ИСПРАВЛЕНО: получаем VOD URL через улучшенный метод
-        let vodUrl: string;
-        
-        try {
-          // Сначала пробуем получить проверенный URL
-          vodUrl = await sentryshotAPI.getValidVodUrl(
-            recording.monitorId,
-            recording.startTime,
-            recording.endTime,
-            recording.id
-          );
-        } catch (error) {
-          console.warn('⚠️ [ArchivePlayer] Ошибка получения проверенного URL, используем базовый:', error);
-          vodUrl = sentryshotAPI.getVodUrl(
-            recording.monitorId,
-            recording.startTime,
-            recording.endTime,
-            recording.id
-          );
-        }
+        // ✅ ИСПРАВЛЕНО: получаем только MP4 URL
+        const vodUrl = sentryshotAPI.getVodUrl(
+          recording.monitorId,
+          recording.startTime,
+          recording.endTime,
+          recording.id
+        );
 
         console.log('🌐 [ArchivePlayer] Используемый VOD URL:', vodUrl);
 
-        if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-          // Нативная поддержка HLS (Safari)
-          console.log('📱 [ArchivePlayer] Используем нативный HLS');
-          videoElement.src = vodUrl;
-        } else if (Hls.isSupported()) {
-          // Используем HLS.js для других браузеров
-          console.log('🔧 [ArchivePlayer] Используем HLS.js');
-          
-          hls = new Hls({
-            enableWorker: true,
-            maxBufferLength: 30,
-            maxMaxBufferLength: 600,
-            lowLatencyMode: false, // Для архивного видео низкая задержка не критична
-            // ✅ ИСПРАВЛЕНО: правильная аутентификация для XHR запросов
-            xhrSetup: (xhr, url) => {
-              try {
-                const authHeaders = sentryshotAPI.auth.getAuthHeaders() as Record<string, string>;
-                // ✅ ИСПРАВЛЕНО: проверяем наличие заголовка и используем правильный тип
-                const authHeader = authHeaders.Authorization;
-                if (authHeader) {
-                  xhr.setRequestHeader('Authorization', authHeader);
-                }
-              } catch (authError) {
-                console.warn('⚠️ [ArchivePlayer] Ошибка добавления аутентификации:', authError);
-              }
-            }
-          });
+        // ✅ ИСПРАВЛЕНО: НЕ используем HLS.js для MP4 файлов
+        // Используем стандартный HTML5 video плеер
+        videoElement.src = vodUrl;
 
-          hls.loadSource(vodUrl);
-          hls.attachMedia(videoElement);
-
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            setIsLoading(false);
-            console.log('✅ [ArchivePlayer] Archive manifest parsed successfully');
-          });
-
-          hls.on(Hls.Events.ERROR, (event, data) => {
-            console.error('❌ [ArchivePlayer] HLS ошибка:', event, data);
-            
-            if (data.fatal) {
-              setHasError(true);
-              setIsLoading(false);
-              
-              // ✅ ИСПРАВЛЕНО: проверка на null для hls
-              if (hls) {
-                // ✅ Пробуем альтернативные методы
-                switch(data.type) {
-                  case Hls.ErrorTypes.NETWORK_ERROR:
-                    console.log('🔄 [ArchivePlayer] Попытка восстановления сетевого соединения...');
-                    hls.startLoad();
-                    break;
-                    
-                  case Hls.ErrorTypes.MEDIA_ERROR:
-                    console.log('🔄 [ArchivePlayer] Попытка восстановления медиа...');
-                    hls.recoverMediaError();
-                    break;
-                    
-                  default:
-                    console.log('🔄 [ArchivePlayer] Попытка альтернативного URL...');
-                    tryAlternativePlayback();
-                    break;
-                }
-              } else {
-                tryAlternativePlayback();
-              }
-            }
-          });
-
-          hls.on(Hls.Events.FRAG_LOADED, () => {
-            if (isLoading) {
-              setIsLoading(false);
-            }
-          });
-
-        } else {
-          console.error('❌ [ArchivePlayer] HLS не поддерживается браузером');
-          setHasError(true);
-          setIsLoading(false);
-        }
-
-        // ✅ Добавляем обработчики событий видео (ваши оригинальные)
+        // Добавляем обработчики событий видео
         const handleLoadedMetadata = () => {
           console.log('📊 [ArchivePlayer] Метаданные загружены, длительность:', videoElement.duration);
           setDuration(videoElement.duration);
+          setIsLoading(false);
+        };
+
+        const handleError = (e: Event) => {
+          console.error('❌ [ArchivePlayer] Ошибка загрузки видео:', e);
+          setHasError(true);
           setIsLoading(false);
         };
 
@@ -216,21 +104,22 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
         };
 
         videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.addEventListener('error', handleError);
         videoElement.addEventListener('timeupdate', handleTimeUpdate);
         videoElement.addEventListener('play', handlePlay);
         videoElement.addEventListener('pause', handlePause);
         videoElement.addEventListener('volumechange', handleVolumeChange);
 
-        // ✅ ИСПРАВЛЕНО: возвращаем функцию очистки правильно
+        // Функция очистки
         const cleanup = () => {
           videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+          videoElement.removeEventListener('error', handleError);
           videoElement.removeEventListener('timeupdate', handleTimeUpdate);
           videoElement.removeEventListener('play', handlePlay);
           videoElement.removeEventListener('pause', handlePause);
           videoElement.removeEventListener('volumechange', handleVolumeChange);
         };
 
-        // Возвращаем функцию очистки
         return cleanup;
 
       } catch (error) {
@@ -255,17 +144,6 @@ const ArchivePlayer: React.FC<ArchivePlayerProps> = ({ recording }) => {
     return () => {
       if (cleanup) {
         cleanup();
-      }
-      
-      if (hls) {
-        hls.destroy();
-        hls = null;
-      }
-      
-      if (videoElement) {
-        videoElement.pause();
-        videoElement.src = '';
-        videoElement.load();
       }
     };
   }, [recording]);
