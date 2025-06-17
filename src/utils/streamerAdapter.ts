@@ -123,29 +123,31 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
       // Создаем новый инстанс HLS с оптимизированными настройками для SentryShot
       const hls = new Hls({
-        debug: false,
-        enableWorker: true,
-        lowLatencyMode: true,
+      debug: false,
+      enableWorker: true,
+      lowLatencyMode: false,
 
-        // Настройки буферизации для минимизации задержки
-        maxBufferLength: 10,        // Максимальный размер буфера (секунды)
-        maxMaxBufferLength: 20,     // Абсолютный максимум буфера
-        maxBufferSize: 60 * 1000 * 1000, // 60MB
-        maxBufferHole: 0.5,         // Максимальная дыра в буфере
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+      maxBufferSize: 60 * 1000 * 1000,
+      maxBufferHole: 2,
 
-        // Настройки для low-latency
-        liveSyncDurationCount: 1,   // Количество сегментов для синхронизации
-        liveMaxLatencyDurationCount: 3, // Максимальная задержка
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 5,
 
-        // Сетевые настройки
-        manifestLoadingTimeOut: 10000,
-        manifestLoadingMaxRetry: 3,
-        fragLoadingTimeOut: 8000,
-        fragLoadingMaxRetry: 3,
+      manifestLoadingTimeOut: 20000,
+      manifestLoadingMaxRetry: 5,
+      fragLoadingTimeOut: 15000,
+      fragLoadingMaxRetry: 5,
 
-        // Настройки для стабильности
-        startLevel: preferLowRes ? 0 : -1,
-        capLevelToPlayerSize: true
+      startLevel: preferLowRes ? 0 : -1,
+      capLevelToPlayerSize: false,
+      
+      levelLoadingTimeOut: 10000,
+      levelLoadingMaxRetry: 4,
+      abrEwmaDefaultEstimate: 5000000,
+      abrBandWidthFactor: 0.95,
+      abrBandWidthUpFactor: 0.7,
       });
 
       hlsRef.current = hls;

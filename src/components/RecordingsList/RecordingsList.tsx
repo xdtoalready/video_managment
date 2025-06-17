@@ -290,9 +290,9 @@ const RecordingsList: React.FC = () => {
       <div className="recordings-table">
         <div className="recordings-table-header">
           <div className="recording-cell">Дата</div>
-          <div className="recording-cell">Начало</div>
-          <div className="recording-cell">Конец</div>
-          <div className="recording-cell">Длительность</div>
+          <div className="recording-cell">Время начала</div>
+          <div className="recording-cell">Время конца</div>
+          {/* <div className="recording-cell">Длительность</div> */}
           <div className="recording-cell">Камера</div>
           <div className="recording-cell">Локация</div>
           <div className="recording-cell">Действия</div>
@@ -315,19 +315,19 @@ const RecordingsList: React.FC = () => {
               <div className="recording-cell">
                 {formatTime(recording.endTime)}
               </div>
-              <div className="recording-cell">
+              {/* <div className="recording-cell">
                 {formatDuration(recording.duration)}
-              </div>
+              </div> */}
               <div className="recording-cell">
                 <span className="camera-name">{getCameraName(recording.monitorId)}</span>
-                <small className="monitor-id">ID: {recording.monitorId}</small>
+                {/* <small className="monitor-id">ID: {recording.monitorId}</small> */}
               </div>
               <div className="recording-cell">
                 {getLocationCategoryName(recording.location)}
               </div>
               <div className="recording-cell recording-actions">
                 <button
-                  className="recording-action-btn play"
+                  className="recording-action-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     selectRecording(recording.id);
@@ -337,7 +337,7 @@ const RecordingsList: React.FC = () => {
                   Смотреть
                 </button>
                 <button
-                  className="recording-action-btn download"
+                  className="recording-action-btn"
                   onClick={(e) => handleDownloadRecording(recording, e)}
                   title="Скачать запись"
                   disabled={isLoading}

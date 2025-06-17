@@ -477,7 +477,7 @@ color: var(--gray2-color);
   margin-top: 2px;
 }
 
-.recording-action-btn {
+/* .recording-action-btn {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
@@ -503,7 +503,7 @@ color: var(--gray2-color);
 
 .recording-action-btn.download:hover {
   background: #059669;
-}
+} */
 
 .recording-action-btn:disabled {
   opacity: 0.5;
