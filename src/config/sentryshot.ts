@@ -95,7 +95,7 @@ export const developmentConfig: SentryShotConfig = {
 
     streaming: {
         ...defaultConfig.streaming,
-        preferLowRes: true, // В разработке используем низкое разрешение
+        preferLowRes: false,
         maxBufferLength: 10,
         retryAttempts: 1
     },
