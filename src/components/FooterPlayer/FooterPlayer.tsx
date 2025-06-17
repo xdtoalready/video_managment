@@ -76,45 +76,62 @@ const FooterPlayer: React.FC = () => {
       const recordingEndTime = new Date(activeRecording.endTime).getTime();
       const selectedTime = time.getTime();
 
+      console.log('🎯 [FooterPlayer] Выбор времени:', {
+          globalTime: time.toISOString(),
+          currentRecording: {
+              id: activeRecording.id,
+              start: activeRecording.startTime,
+              end: activeRecording.endTime
+          },
+          isInCurrentRecording: selectedTime >= recordingStartTime && selectedTime <= recordingEndTime
+      });
+
       // Проверяем, находится ли выбранное время в пределах текущей записи
       if (selectedTime >= recordingStartTime && selectedTime <= recordingEndTime) {
-          // Вычисляем смещение в секундах от начала записи
+          // ✅ Время в текущей записи - просто перематываем
           const offsetSeconds = (selectedTime - recordingStartTime) / 1000;
           
-          console.log('🎯 [FooterPlayer] Установка времени видео:', {
-              globalTime: time.toISOString(),
-              recordingStart: activeRecording.startTime,
-              offsetSeconds,
-              videoDuration: videoElement.duration
-          });
-          
-          // Устанавливаем время с проверкой границ
           if (offsetSeconds >= 0 && offsetSeconds <= videoElement.duration) {
               videoElement.currentTime = offsetSeconds;
+              console.log('✅ [FooterPlayer] Установлено время в текущей записи:', offsetSeconds);
           }
       } else {
-          console.log('⚠️ [FooterPlayer] Время вне текущей записи:', {
-              selectedTime: time.toISOString(),
-              recordingRange: [activeRecording.startTime, activeRecording.endTime]
-          });
+          // 🔍 Время вне текущей записи - ищем подходящую запись
+          const { recordings, selectRecording } = useStore.getState();
           
-          // TODO: Здесь позже добавим логику переключения на другую запись
+          const targetRecording = recordings.find(recording => {
+              const start = new Date(recording.startTime).getTime();
+              const end = new Date(recording.endTime).getTime();
+              return selectedTime >= start && selectedTime <= end;
+          });
+
+          if (targetRecording) {
+              console.log('🔄 [FooterPlayer] Переключение на запись:', {
+                  from: activeRecording.id,
+                  to: targetRecording.id,
+                  targetTime: time.toISOString()
+              });
+              
+              // Переключаемся на найденную запись
+              selectRecording(targetRecording.id);
+              
+              // После переключения устанавливаем время (с небольшой задержкой)
+              setTimeout(() => {
+                  const newVideoElement = getVideoElement();
+                  if (newVideoElement) {
+                      const offsetInNewRecording = (selectedTime - new Date(targetRecording.startTime).getTime()) / 1000;
+                      if (offsetInNewRecording >= 0) {
+                          newVideoElement.currentTime = offsetInNewRecording;
+                          console.log('✅ [FooterPlayer] Установлено время в новой записи:', offsetInNewRecording);
+                      }
+                  }
+              }, 100);
+          } else {
+              console.log('⚠️ [FooterPlayer] Нет записи для выбранного времени:', time.toISOString());
+              // TODO: здесь можно показать уведомление пользователю
+          }
       }
   };
-
-  // Эффект для обновления видимого диапазона при изменении активной записи
-  useEffect(() => {
-    if (activeRecording) {
-      // Устанавливаем видимый диапазон вокруг текущей записи
-      const recordingDuration = activeRecording.endTime.getTime() - activeRecording.startTime.getTime();
-      const padding = recordingDuration * 0.5; // 50% отступ с каждой стороны
-
-      useStore.getState().setTimelineVisibleRange({
-        start: new Date(activeRecording.startTime.getTime() - padding),
-        end: new Date(activeRecording.endTime.getTime() + padding)
-      });
-    }
-  }, [activeRecording]);
 
   // Воспроизведение/пауза
   const togglePlay = () => {

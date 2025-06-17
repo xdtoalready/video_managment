@@ -932,6 +932,19 @@ export const useStore = create<AppState>((set, get) => ({
     const recordingDuration = recording.endTime.getTime() - recording.startTime.getTime();
     const padding = Math.max(recordingDuration * 0.5, 1800000); // Минимум 30 минут отступа
 
+    console.log('🎯 [STORE] Устанавливаем диапазон таймлайна:', {
+      recording: {
+        id: recording.id,
+        start: recording.startTime,
+        end: recording.endTime,
+        duration: recordingDuration
+      },
+      newRange: {
+        start: new Date(recording.startTime.getTime() - padding),
+        end: new Date(recording.endTime.getTime() + padding)
+      }
+    });
+
     set({
       timelineVisibleRange: {
         start: new Date(recording.startTime.getTime() - padding),
