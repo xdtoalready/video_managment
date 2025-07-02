@@ -1,0 +1,12 @@
+{
+  "alwaysRecord": true,
+  "enable": true,
+  "id": "jua9a",
+  "name": "09_etag_2",
+  "source": "rtsp",
+  "sourcertsp": {
+    "mainStream": "rtsp://askr:Askr1234@172.18.109.2:554/H264",
+    "protocol": "tcp"
+  },
+  "videoLength": 10
+}
