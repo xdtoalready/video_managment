@@ -62,6 +62,23 @@ export const archiveAPI = {
   // === ПОЛУЧЕНИЕ ЗАПИСЕЙ ===
 
    async getRecordings(params: RecordingsSearchParams): Promise<RecordingInfo[]> {
+
+    console.log('🌍 [TIMEZONE DEBUG] ==================== ДИАГНОСТИКА ЧАСОВЫХ ПОЯСОВ ====================');
+console.log('🌍 [TIMEZONE DEBUG] Информация о браузере и времени:');
+console.log('🌍 [TIMEZONE DEBUG] Браузер timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+console.log('🌍 [TIMEZONE DEBUG] Браузер locale:', Intl.DateTimeFormat().resolvedOptions().locale);
+console.log('🌍 [TIMEZONE DEBUG] Текущее время UTC:', new Date().toISOString());
+console.log('🌍 [TIMEZONE DEBUG] Текущее время местное:', new Date().toLocaleString('ru-RU'));
+console.log('🌍 [TIMEZONE DEBUG] Сдвиг часового пояса (минуты):', new Date().getTimezoneOffset());
+console.log('🌍 [TIMEZONE DEBUG] Сдвиг часового пояса (часы):', new Date().getTimezoneOffset() / 60);
+
+console.log('🌍 [TIMEZONE DEBUG] Параметры фильтра:');
+console.log('🌍 [TIMEZONE DEBUG] startDate UTC:', params.startDate.toISOString());
+console.log('🌍 [TIMEZONE DEBUG] startDate местное:', params.startDate.toLocaleString('ru-RU'));
+console.log('🌍 [TIMEZONE DEBUG] endDate UTC:', params.endDate.toISOString());
+console.log('🌍 [TIMEZONE DEBUG] endDate местное:', params.endDate.toLocaleString('ru-RU'));
+console.log('🌍 [TIMEZONE DEBUG] Диапазон фильтра (часы):', (params.endDate.getTime() - params.startDate.getTime()) / (1000 * 60 * 60));
+
     try {
       console.log('🎬 [ARCHIVE] Запрос записей с параметрами:', params);
 
@@ -123,9 +140,40 @@ export const archiveAPI = {
       console.log(`🎯 [ARCHIVE] После фильтрации по мониторам: ${filteredRecordings.length} записей`);
 
       // Более мягкая фильтрация по временному диапазону
-      const timeFilteredRecordings = filteredRecordings.filter(recording => {
+      const timeFilteredRecordings = filteredRecordings.filter((recording, index) => {
         const recordingStart = new Date(recording.startTime);
         const recordingEnd = new Date(recording.endTime);
+
+          if (index < 5) {
+    console.log(`🔍 [FILTER DEBUG] === Запись ${index + 1}: ${recording.id} ===`);
+    console.log('🔍 [FILTER DEBUG] recordingStart UTC:', recordingStart.toISOString());
+    console.log('🔍 [FILTER DEBUG] recordingStart местное:', recordingStart.toLocaleString('ru-RU'));
+    console.log('🔍 [FILTER DEBUG] recordingEnd UTC:', recordingEnd.toISOString());
+    console.log('🔍 [FILTER DEBUG] recordingEnd местное:', recordingEnd.toLocaleString('ru-RU'));
+    
+    console.log('🔍 [FILTER DEBUG] filterStart UTC:', params.startDate.toISOString());
+    console.log('🔍 [FILTER DEBUG] filterStart местное:', params.startDate.toLocaleString('ru-RU'));
+    console.log('🔍 [FILTER DEBUG] filterEnd UTC:', params.endDate.toISOString());
+    console.log('🔍 [FILTER DEBUG] filterEnd местное:', params.endDate.toLocaleString('ru-RU'));
+    
+    // Проверки условий фильтра
+    const condition1 = recordingStart < params.endDate;
+    const condition2 = recordingEnd > params.startDate;
+    const matchesTime = condition1 && condition2;
+    
+    console.log('🔍 [FILTER DEBUG] recordingStart < filterEnd:', condition1, 
+      `(${recordingStart.toISOString()} < ${params.endDate.toISOString()})`);
+    console.log('🔍 [FILTER DEBUG] recordingEnd > filterStart:', condition2,
+      `(${recordingEnd.toISOString()} > ${params.startDate.toISOString()})`);
+    console.log('🔍 [FILTER DEBUG] РЕЗУЛЬТАТ ФИЛЬТРА:', matchesTime ? '✅ ПРОШЛА' : '❌ ОТКЛОНЕНА');
+    
+    // Дополнительная информация о разнице времени
+    const diffStartHours = (recordingStart.getTime() - params.startDate.getTime()) / (1000 * 60 * 60);
+    const diffEndHours = (params.endDate.getTime() - recordingEnd.getTime()) / (1000 * 60 * 60);
+    console.log('🔍 [FILTER DEBUG] Запись начинается через', diffStartHours.toFixed(2), 'часов от начала фильтра');
+    console.log('🔍 [FILTER DEBUG] Запись заканчивается за', diffEndHours.toFixed(2), 'часов до конца фильтра');
+    console.log('🔍 [FILTER DEBUG] ====================================');
+  }
         
         // ✅ ДОПОЛНИТЕЛЬНЫЕ ЛОГИ для отладки
         console.log(`🔍 [ARCHIVE] Проверка записи ${recording.id}:`, {

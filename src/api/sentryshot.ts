@@ -730,7 +730,10 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
       return [];
     }
 
-    // ✅ ИСПРАВЛЕННАЯ ОБРАБОТКА: смотрим на структуру данных
+    console.log('🕐 [SENTRYSHOT DEBUG] ==================== RAW ДАННЫЕ ЗАПИСЕЙ ====================');
+    console.log('🕐 [SENTRYSHOT DEBUG] Количество RAW записей:', Object.keys(backendRecordings).length);
+
+    // смотрим на структуру данных
     const recordings = Object.entries(backendRecordings).map(([recordingId, rec]: [string, any]) => {
       console.log(`🔄 [SENTRYSHOT] Обрабатываем запись: ${recordingId}`, rec);
       
@@ -833,6 +836,33 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
   } catch (error) {
     console.error('💥 [SENTRYSHOT] Критическая ошибка в getAllRecordings:', error);
     return [];
+  }
+},
+
+async checkServerTime(): Promise<void> {
+  try {
+    console.log('🖥️ [SERVER TIME] Проверка времени сервера...');
+    
+    const response = await fetch(`${API_BASE_URL}/api/monitors`, {
+      headers: this.auth.getAuthHeaders()
+    });
+    
+    const serverDate = response.headers.get('date');
+    if (serverDate) {
+      const serverTime = new Date(serverDate);
+      const clientTime = new Date();
+      const diffMs = clientTime.getTime() - serverTime.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      
+      console.log('🖥️ [SERVER TIME] Время сервера UTC:', serverTime.toISOString());
+      console.log('🖥️ [SERVER TIME] Время сервера местное:', serverTime.toLocaleString('ru-RU'));
+      console.log('🖥️ [SERVER TIME] Время клиента UTC:', clientTime.toISOString());
+      console.log('🖥️ [SERVER TIME] Время клиента местное:', clientTime.toLocaleString('ru-RU'));
+      console.log('🖥️ [SERVER TIME] Разница (часы):', diffHours.toFixed(2));
+      console.log('🖥️ [SERVER TIME] Сервер отстает на:', diffHours > 0 ? `${diffHours.toFixed(2)} часов` : 'опережает');
+    }
+  } catch (error) {
+    console.error('🖥️ [SERVER TIME] Ошибка проверки времени сервера:', error);
   }
 },
 

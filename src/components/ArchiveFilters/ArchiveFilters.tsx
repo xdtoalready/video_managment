@@ -142,10 +142,37 @@ const ArchiveFilters: React.FC = () => {
 
   // Быстрые пресеты для выбора времени
   const setQuickTimeRange = async (hours: number) => {
-    console.log(`🕐 [FILTERS] Установка быстрого диапазона: ${hours} часов`);
+    console.log('⏰ [QUICK FILTER DEBUG] ==================== БЫСТРЫЙ ФИЛЬТР ====================');
+  console.log('⏰ [QUICK FILTER DEBUG] Установка диапазона:', hours, 'часов');
     
     const now = new Date();
     const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
+
+      console.log('⏰ [QUICK FILTER DEBUG] now UTC:', now.toISOString());
+  console.log('⏰ [QUICK FILTER DEBUG] now местное:', now.toLocaleString('ru-RU'));
+  console.log('⏰ [QUICK FILTER DEBUG] start UTC:', start.toISOString());
+  console.log('⏰ [QUICK FILTER DEBUG] start местное:', start.toLocaleString('ru-RU'));
+
+    const formattedStart = formatDateForInput(start);
+  const formattedEnd = formatDateForInput(now);
+  
+  console.log('⏰ [QUICK FILTER DEBUG] formatDateForInput start:', formattedStart);
+  console.log('⏰ [QUICK FILTER DEBUG] formatDateForInput end:', formattedEnd);
+  
+  // Проверяем обратное преобразование
+  const parsedStart = new Date(formattedStart);
+  const parsedEnd = new Date(formattedEnd);
+  
+  console.log('⏰ [QUICK FILTER DEBUG] parsedStart UTC:', parsedStart.toISOString());
+  console.log('⏰ [QUICK FILTER DEBUG] parsedStart местное:', parsedStart.toLocaleString('ru-RU'));
+  console.log('⏰ [QUICK FILTER DEBUG] parsedEnd UTC:', parsedEnd.toISOString());
+  console.log('⏰ [QUICK FILTER DEBUG] parsedEnd местное:', parsedEnd.toLocaleString('ru-RU'));
+  
+  console.log('⏰ [QUICK FILTER DEBUG] Разница start (мс):', parsedStart.getTime() - start.getTime());
+  console.log('⏰ [QUICK FILTER DEBUG] Разница end (мс):', parsedEnd.getTime() - now.getTime());
+  
+  setStartDate(formattedStart);
+  setEndDate(formattedEnd);
 
     console.log('🕐 [FILTERS] Временной диапазон:', {
       start: start.toISOString(),
@@ -154,8 +181,8 @@ const ArchiveFilters: React.FC = () => {
       endLocal: now.toLocaleString('ru-RU')
     });
 
-    setStartDate(formatDateForInput(start));
-    setEndDate(formatDateForInput(now));
+    // setStartDate(formatDateForInput(start));
+    // setEndDate(formatDateForInput(now));
 
     // автоматически применяем фильтры
     setIsLoading(true);
