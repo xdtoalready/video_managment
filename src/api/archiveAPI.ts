@@ -122,28 +122,36 @@ export const archiveAPI = {
 
       console.log(`🎯 [ARCHIVE] После фильтрации по мониторам: ${filteredRecordings.length} записей`);
 
-      // ✅ ИСПРАВЛЕНО: Более мягкая фильтрация по временному диапазону
+      // Более мягкая фильтрация по временному диапазону
       const timeFilteredRecordings = filteredRecordings.filter(recording => {
         const recordingStart = new Date(recording.startTime);
         const recordingEnd = new Date(recording.endTime);
         
-        // ✅ ИСПРАВЛЕНО: проверяем пересечение временных диапазонов
-        // Запись попадает в диапазон если:
-        // - начинается до конца диапазона И
-        // - заканчивается после начала диапазона
+        // ✅ ДОПОЛНИТЕЛЬНЫЕ ЛОГИ для отладки
+        console.log(`🔍 [ARCHIVE] Проверка записи ${recording.id}:`, {
+          recordingStart: recordingStart.toISOString(),
+          recordingStartLocal: recordingStart.toLocaleString('ru-RU'),
+          recordingEnd: recordingEnd.toISOString(),
+          recordingEndLocal: recordingEnd.toLocaleString('ru-RU'),
+          filterStart: params.startDate.toISOString(),
+          filterStartLocal: params.startDate.toLocaleString('ru-RU'),
+          filterEnd: params.endDate.toISOString(),
+          filterEndLocal: params.endDate.toLocaleString('ru-RU'),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        });
+        
+        // Проверяем пересечение временных диапазонов
         const matchesTime = recordingStart < params.endDate && recordingEnd > params.startDate;
         
         if (!matchesTime) {
-          console.log(`🕐 [ARCHIVE] Отфильтрована запись ${recording.id} по времени:`, {
-            recordingStart: recordingStart.toISOString(),
-            recordingEnd: recordingEnd.toISOString(),
-            filterStart: params.startDate.toISOString(),
-            filterEnd: params.endDate.toISOString(),
+          console.log(`❌ [ARCHIVE] Запись ${recording.id} отфильтрована:`, {
             reason: recordingStart >= params.endDate ? 'запись начинается после конца диапазона' :
-                   recordingEnd <= params.startDate ? 'запись заканчивается до начала диапазона' : 'другая причина'
+                    recordingEnd <= params.startDate ? 'запись заканчивается до начала диапазона' : 'другая причина',
+            recordingStartVsFilterEnd: `${recordingStart.toISOString()} >= ${params.endDate.toISOString()} = ${recordingStart >= params.endDate}`,
+            recordingEndVsFilterStart: `${recordingEnd.toISOString()} <= ${params.startDate.toISOString()} = ${recordingEnd <= params.startDate}`
           });
         } else {
-          console.log(`✅ [ARCHIVE] Запись ${recording.id} прошла фильтрацию по времени`);
+          console.log(`✅ [ARCHIVE] Запись ${recording.id} прошла фильтр времени`);
         }
         
         return matchesTime;

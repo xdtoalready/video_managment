@@ -52,7 +52,14 @@ const ArchiveFilters: React.FC = () => {
 
   // Форматирование даты для input
   const formatDateForInput = (date: Date): string => {
-    return date.toISOString().slice(0, 16);
+    // используем локальное время вместо UTC
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   // Валидация временного диапазона
@@ -134,22 +141,78 @@ const ArchiveFilters: React.FC = () => {
   };
 
   // Быстрые пресеты для выбора времени
-  const setQuickTimeRange = (hours: number) => {
+  const setQuickTimeRange = async (hours: number) => {
+    console.log(`🕐 [FILTERS] Установка быстрого диапазона: ${hours} часов`);
+    
     const now = new Date();
     const start = new Date(now.getTime() - hours * 60 * 60 * 1000);
 
+    console.log('🕐 [FILTERS] Временной диапазон:', {
+      start: start.toISOString(),
+      end: now.toISOString(),
+      startLocal: start.toLocaleString('ru-RU'),
+      endLocal: now.toLocaleString('ru-RU')
+    });
+
     setStartDate(formatDateForInput(start));
     setEndDate(formatDateForInput(now));
+
+    // автоматически применяем фильтры
+    setIsLoading(true);
+    try {
+      // Валидация
+      const validationError = validateDateRange(start, now);
+      if (validationError) {
+        console.error('❌ [FILTERS] Ошибка валидации:', validationError);
+        alert(validationError);
+        return;
+      }
+
+      console.log('🔄 [FILTERS] Автоматическое применение фильтров...');
+
+      // Обновляем фильтры в store
+      updateArchiveFilters({
+        dateRange: {
+          start: start,
+          end: now
+        },
+        locations: selectedLocations,
+        cameras: selectedCameras
+      });
+
+      // Автоматически загружаем новые записи
+      await loadRecordings();
+      
+      console.log('✅ [FILTERS] Быстрый фильтр успешно применен');
+    } catch (error) {
+      console.error('❌ [FILTERS] Ошибка при применении быстрого фильтра:', error);
+      alert('Ошибка при загрузке записей. Проверьте подключение к серверу.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Применение фильтров
   const applyFilters = async () => {
+    console.log('🔄 [FILTERS] Начало применения фильтров...');
+    console.log('🔄 [FILTERS] Исходные значения полей:', { startDate, endDate });
+    
+    // ✅ ИСПРАВЛЕНО: правильная обработка datetime-local значений
     const startDateTime = startDate ? new Date(startDate) : archiveFilters.dateRange.start;
     const endDateTime = endDate ? new Date(endDate) : archiveFilters.dateRange.end;
+
+    console.log('🔄 [FILTERS] Преобразованные даты:', {
+      start: startDateTime.toISOString(),
+      end: endDateTime.toISOString(),
+      startLocal: startDateTime.toLocaleString('ru-RU'),
+      endLocal: endDateTime.toLocaleString('ru-RU'),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
 
     // Валидация
     const validationError = validateDateRange(startDateTime, endDateTime);
     if (validationError) {
+      console.error('❌ [FILTERS] Ошибка валидации:', validationError);
       alert(validationError);
       return;
     }
@@ -164,14 +227,14 @@ const ArchiveFilters: React.FC = () => {
         const unavailableCameras = selectedCameras.filter(cameraId => 
           !cameras.some(camera => camera.id === cameraId)
         );
-        console.warn('Некоторые выбранные камеры недоступны:', unavailableCameras);
+        console.warn('⚠️ [FILTERS] Некоторые выбранные камеры недоступны:', unavailableCameras);
       }
     }
 
     setIsLoading(true);
 
     try {
-      console.log('Применение фильтров:', {
+      console.log('📤 [FILTERS] Применение фильтров:', {
         dateRange: { start: startDateTime, end: endDateTime },
         locations: selectedLocations,
         cameras: selectedCameras
@@ -197,9 +260,9 @@ const ArchiveFilters: React.FC = () => {
       // Автоматически загружаем новые записи
       await loadRecordings();
       
-      console.log('Фильтры успешно применены');
+      console.log('✅ [FILTERS] Фильтры успешно применены');
     } catch (error) {
-      console.error('Ошибка при применении фильтров:', error);
+      console.error('❌ [FILTERS] Ошибка при применении фильтров:', error);
       alert('Ошибка при загрузке записей. Проверьте подключение к серверу SentryShot.');
     } finally {
       setIsLoading(false);
