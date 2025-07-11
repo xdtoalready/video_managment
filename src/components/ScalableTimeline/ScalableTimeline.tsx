@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useStore, Recording, TimelineZoomLevel } from '../../store/useStore.ts';
 import './ScalableTimeline.css';
 
@@ -718,67 +718,94 @@ const ScalableTimeline: React.FC<ScalableTimelineProps> = ({
         handleMouseUp();
     }, [isPinching, isDragging, touchStartTime, isAnimating, timelineVisibleRange, activeRecording, isMobile, handleMouseUp, animateToOffset, onTimeSelected]);
 
+    const filteredRecordingsByCamera = useMemo(() => {
+        if (!activeRecording) return recordings;
+        
+        return recordings.filter(recording => recording.monitorId === activeRecording.monitorId);
+    }, [recordings, activeRecording?.monitorId]);
+
     // Функция для вычисления позиций записей на таймлайне
     const calculateRecordingBlocks = useCallback((): RecordingBlock[] => {
-    if (!recordings.length || !timelineRef.current) return [];
+        const blocks: RecordingBlock[] = [];
 
-    const blocks: RecordingBlock[] = [];
-    
-    // Используем timelineVisibleRange для расчета позиций
-    const visibleDuration = timelineVisibleRange.end.getTime() - timelineVisibleRange.start.getTime();
-
-    recordings.forEach(recording => {
-        const recordingStart = recording.startTime.getTime();
-        const recordingEnd = recording.endTime.getTime();
-        
-        // Проверяем пересечение с видимым диапазоном (с учетом возможного смещения)
-        const extendedStart = timelineVisibleRange.start.getTime() - visibleDuration * 0.5;
-        const extendedEnd = timelineVisibleRange.end.getTime() + visibleDuration * 0.5;
-        
-        if (recordingEnd < extendedStart || recordingStart > extendedEnd) {
-            return; // Запись точно не видна даже с учетом возможного смещения
+        if (!timelineVisibleRange || recordings.length === 0) {
+            return blocks;
         }
 
-        // Рассчитываем позицию относительно видимого диапазона В ПРОЦЕНТАХ
-        // Это критично для синхронизации с timeline-marks и другими элементами
-        const startPosition = ((recordingStart - timelineVisibleRange.start.getTime()) / visibleDuration) * 100;
-        const endPosition = ((recordingEnd - timelineVisibleRange.start.getTime()) / visibleDuration) * 100;
-        
-        // Ограничиваем видимую часть записи
-        const visibleStartPosition = Math.max(startPosition, -50); // Позволяем выходить за левый край
-        const visibleEndPosition = Math.min(endPosition, 150);     // Позволяем выходить за правый край
-        const width = visibleEndPosition - visibleStartPosition;
-        
-        // Пропускаем слишком узкие записи
-        if (width <= 0) return;
-
-        blocks.push({
-            id: recording.id,
-            recording,
-            left: `${visibleStartPosition}%`,
-            width: `${width}%`,
-            isActive: activeRecording?.id === recording.id
+        console.log('📊 [ScalableTimeline] Расчет блоков записей:', {
+            recordingsCount: recordings.length,
+            visibleRange: {
+                start: timelineVisibleRange.start.toISOString(),
+                end: timelineVisibleRange.end.toISOString()
+            },
+            activeRecordingId: activeRecording?.id
         });
-    });
 
-    console.log('📊 [ScalableTimeline] Обновлены позиции записей:', {
-        blocksCount: blocks.length,
-        visibleRange: {
-            start: timelineVisibleRange.start.toISOString(),
-            end: timelineVisibleRange.end.toISOString()
-        },
-        activeRecordingId: activeRecording?.id,
-        blocks: blocks.map(b => ({
-            id: b.id,
-            left: b.left,
-            width: b.width,
-            isActive: b.isActive,
-            monitorName: b.recording.monitorName
-        }))
-    });
+        // ✅ ФИЛЬТРУЕМ записи только по активной камере
+        const filteredRecordings = activeRecording 
+            ? recordings.filter(recording => recording.monitorId === activeRecording.monitorId)
+            : recordings;
 
-    return blocks;
-}, [recordings, timelineVisibleRange, activeRecording]);
+        console.log('📊 [ScalableTimeline] Записи после фильтрации по камере:', {
+            originalCount: recordings.length,
+            filteredCount: filteredRecordings.length,
+            activeCamera: activeRecording?.monitorId,
+            filteredRecordings: filteredRecordings.map(r => ({
+                id: r.id,
+                monitorId: r.monitorId,
+                monitorName: r.monitorName
+            }))
+        });
+
+        filteredRecordingsByCamera.forEach(recording => {
+            // Вычисляем позицию записи на таймлайне
+            const recordingStart = recording.startTime.getTime();
+            const recordingEnd = recording.endTime.getTime();
+            const visibleStart = timelineVisibleRange.start.getTime();
+            const visibleEnd = timelineVisibleRange.end.getTime();
+            const visibleDuration = visibleEnd - visibleStart;
+
+            if (visibleDuration <= 0) return;
+
+            // Позиции в процентах
+            const startPosition = ((recordingStart - visibleStart) / visibleDuration) * 100;
+            const endPosition = ((recordingEnd - visibleStart) / visibleDuration) * 100;
+
+            // Позволяем частично видимые блоки
+            const visibleStartPosition = Math.max(startPosition, -50);  // Позволяем выходить за левый край
+            const visibleEndPosition = Math.min(endPosition, 150);     // Позволяем выходить за правый край
+            const width = visibleEndPosition - visibleStartPosition;
+            
+            // Пропускаем слишком узкие записи
+            if (width <= 0) return;
+
+            blocks.push({
+                id: recording.id,
+                recording,
+                left: `${visibleStartPosition}%`,
+                width: `${width}%`,
+                isActive: activeRecording?.id === recording.id
+            });
+        });
+
+        console.log('📊 [ScalableTimeline] Обновлены позиции записей:', {
+            blocksCount: blocks.length,
+            visibleRange: {
+                start: timelineVisibleRange.start.toISOString(),
+                end: timelineVisibleRange.end.toISOString()
+            },
+            activeRecordingId: activeRecording?.id,
+            blocks: blocks.map(b => ({
+                id: b.id,
+                left: b.left,
+                width: b.width,
+                isActive: b.isActive,
+                monitorName: b.recording.monitorName
+            }))
+        });
+
+        return blocks;
+    }, [recordings, timelineVisibleRange, activeRecording]);
 
     // Мемоизированные блоки записей
     const recordingBlocks: RecordingBlock[] = calculateRecordingBlocks();

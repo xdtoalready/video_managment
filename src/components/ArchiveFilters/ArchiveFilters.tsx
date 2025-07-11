@@ -527,48 +527,37 @@ const ArchiveFilters: React.FC = () => {
               </div>
               
               {/* Группировка камер по локациям для лучшей навигации */}
-              {availableLocations.map(location => {
-                const camerasInLocation = filteredCameras.filter(cam => getLocationForMonitor(cam.id) === location);
-                
-                if (camerasInLocation.length === 0) return null;
-                
-                return (
-                  <div key={location} className="camera-group">
-                    <div className="camera-group-header">
-                      <strong>{getLocationCategoryName(location)}</strong>
-                    </div>
-                    {camerasInLocation.map((camera) => (
-                      <div key={camera.id} className="filter-option camera-option">
-                        <label className="checkbox-label">
-                          <div className="checkbox-wrapper">
-                            <input
-                              type="checkbox"
-                              checked={selectedCameras.includes(camera.id)}
-                              onChange={() => toggleCamera(camera.id)}
-                              disabled={isLoading}
-                            />
-                            <div className="custom-checkbox">
-                              <div className="custom-checkbox-icon">
-                                <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                              </div>
-                            </div>
-                            <span>{camera.name}</span>
-                            <div className="camera-status">
-                              <span className={`status-indicator ${camera.isActive ? 'online' : 'offline'}`}>
-                                {camera.isActive ? '●' : '○'}
-                              </span>
-                              <small>ID: {camera.id}</small>
-                            </div>
-                          </div>
-                        </label>
+            {filteredCameras.map((camera) => (
+              <div key={camera.id} className="filter-option camera-option">
+                <label className="checkbox-label">
+                  <div className="checkbox-wrapper">
+                    <input
+                      type="checkbox"
+                      checked={selectedCameras.includes(camera.id)}
+                      onChange={() => toggleCamera(camera.id)}
+                      disabled={isLoading}
+                    />
+                    <div className="custom-checkbox">
+                      <div className="custom-checkbox-icon">
+                        <svg width="12" height="10" viewBox="0 0 8 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M1.0332 2.99996L3.01154 4.97746L6.96654 1.02246" stroke="#DEDFE3" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </div>
-                    ))}
+                    </div>
+                    <span>{camera.name}</span>
+                    <div className="camera-status">
+                      <span className={`status-indicator ${camera.isActive ? 'online' : 'offline'}`}>
+                        {camera.isActive ? '●' : '○'}
+                      </span>
+                      <small className="location-label">
+                        {getLocationCategoryName(getLocationForMonitor(camera.id))}
+                      </small>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                </label>
+              </div>
+            ))}
+          </div>
           )}
         </div>
       </div>
