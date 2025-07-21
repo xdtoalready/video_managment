@@ -117,6 +117,7 @@ export interface Camera {
   name: string;
   url: string;
   isActive: boolean;
+  enable: boolean;
 }
 
 export interface RecordingInfo {

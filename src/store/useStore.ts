@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sentryshotAPI, TimeUtils, CreateMonitorRequest, Account, CreateAccountRequest } from '../api/sentryshot';
+import { sentryshotAPI, TimeUtils, CreateMonitorRequest, Account, CreateAccountRequest, Camera } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
 import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
@@ -27,18 +27,6 @@ export interface TimelineMark {
   time: Date;
   label: string;
   major: boolean; // Основная или второстепенная метка
-}
-
-// Тип камеры (упрощенный, без архивных полей)
-export interface Camera {
-  id: string;
-  name: string;
-  url: string;
-  isActive: boolean;
-  enable?: boolean;
-  alwaysRecord?: boolean;
-  videoLength?: number;
-  hasSubStream?: boolean;
 }
 
 // Тип состояния для календаря (упрощенный)
