@@ -7,23 +7,19 @@ import { sentryshotAPI } from '../../api/sentryshot';
 import { safeFormatDate } from "../../utils/recordingHelpers.ts";
 
 const RecordingsList: React.FC = () => {
-  const {
-    recordings,
-    loadRecordings,
-    selectRecording,
-    archiveFilters,
-    cameras,
-    connectionStatus,
-    getLocationCategoryName
-  } = useStore();
+const {
+  recordings,
+  loadRecordings,
+  selectRecording,
+  archiveFilters,
+  cameras,
+  connectionStatus,
+  archiveConnectionStatus,
+  getLocationCategoryName
+} = useStore();
 
-  // 🔥 ИСПРАВЛЕНИЕ: Убираем локальное состояние isLoading - используем только из store
   const [error, setError] = useState<string | null>(null);
 
-  // 🔥 ИСПРАВЛЕНИЕ: Убираем двойной вызов loadRecordings
-  // useEffect убран - загрузка происходит только из ArchiveView
-
-  // 🔥 ДИАГНОСТИКА: Логирование состояния компонента
   useEffect(() => {
     console.log('📊 [RecordingsList] Компонент обновлен:', {
       recordingsCount: recordings.length,
@@ -51,12 +47,12 @@ const RecordingsList: React.FC = () => {
 
   // Отслеживаем статус подключения для отображения ошибок
   useEffect(() => {
-    if (connectionStatus === 'error') {
+    if (archiveConnectionStatus === 'error') {
       setError('Потеряно соединение с сервером SentryShot');
     } else {
       setError(null);
     }
-  }, [connectionStatus]);
+  }, [archiveConnectionStatus]);
 
   // Форматирование времени
   const formatTime = (date: Date): string => {
@@ -152,8 +148,8 @@ const RecordingsList: React.FC = () => {
 
   const stats = getRecordingsStats();
 
-  // 🔥 ИСПРАВЛЕНИЕ: Используем connectionStatus из store для определения загрузки
-  const isLoading = connectionStatus === 'connecting';
+  // Используем connectionStatus из store для определения загрузки
+  const isLoading = archiveConnectionStatus === 'connecting';
 
   // Состояние загрузки
   if (isLoading && recordings.length === 0) {
