@@ -282,7 +282,6 @@ export const useStore = create<AppState>((set, get) => ({
   connectionStatus: 'disconnected',
   camerasConnectionStatus: 'disconnected', 
   archiveConnectionStatus: 'disconnected',
-  cameraHealthCheckInterval: null,
 
   // Основные данные
   timelineEvents: [],
