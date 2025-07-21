@@ -183,8 +183,8 @@ const CameraView: React.FC<CameraViewProps> = ({
   }
 
   // Определяем состояние камеры
-  const isCameraOffline = camerasConnectionStatus !== 'connected' || !camera?.isActive;
-  const isCameraEnabled = camera?.isActive || false;
+  const isCameraOffline = camerasConnectionStatus !== 'connected' || !(camera?.enable ?? true);
+  const isCameraEnabled = camera?.enable ?? true;
 
   return (
       <>
@@ -213,9 +213,15 @@ const CameraView: React.FC<CameraViewProps> = ({
                   </span>
                   )}
 
-                  {camerasConnectionStatus === 'connected' && isCameraEnabled && (
+                  {camerasConnectionStatus === 'connected' && (camera?.enable ?? true) && (
                       <span className="status-indicator camera-online badge-sticker" title="Камера работает">
                     🟢 Онлайн
+                  </span>
+                  )}
+
+                  {camera?.alwaysRecord && (camera?.enable ?? true) && (
+                      <span className="status-indicator recording badge-sticker" title="Идет запись">
+                    🔴 Запись
                   </span>
                   )}
               </div>

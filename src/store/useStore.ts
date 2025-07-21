@@ -608,11 +608,12 @@ export const useStore = create<AppState>((set, get) => ({
 
       // Убираем архивные поля при создании камер
       const enhancedCameras = cameras.map(camera => ({
-        ...camera
-      }));
+          ...camera,
+          isActive: camera.enable ?? true
+        }));
       set({
         cameras: enhancedCameras,
-        activeCamera: enhancedCameras.length > 0 ? enhancedCameras[0] : null,
+        activeCamera: null,
         connectionStatus: 'connected',
         camerasConnectionStatus: 'connected',
         isOnline: true,
@@ -996,15 +997,9 @@ export const useStore = create<AppState>((set, get) => ({
 
   setActiveCamera: (monitorId: string) => {
     set(state => {
-      const updatedCameras = state.cameras.map(camera => ({
-        ...camera,
-        isActive: camera.id === monitorId
-      }));
-
-      const newActiveCamera = updatedCameras.find(camera => camera.id === monitorId) || null;
+      const newActiveCamera = state.cameras.find(camera => camera.id === monitorId) || null;
 
       return {
-        cameras: updatedCameras,
         activeCamera: newActiveCamera
       };
     });
