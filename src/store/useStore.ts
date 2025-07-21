@@ -45,6 +45,7 @@ export interface ExtendedCamera extends Camera {
   alwaysRecord?: boolean;
   videoLength?: number;
   hasSubStream?: boolean;
+  enable?: boolean;
 }
 
 // Интерфейс события
@@ -626,7 +627,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  addCamera: async (camera: Omit<Camera, 'isActive'>) => {
+  addCamera: async (camera: Omit<ExtendedCamera, 'isActive'>) => {
   try {
     console.log('Добавление камеры:', camera);
 
