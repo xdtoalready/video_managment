@@ -157,6 +157,8 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   isGridView: boolean;
   getLocationForMonitor: (monitorId: string) => LocationType;
 
+  cameraHealthCheckInterval: NodeJS.Timeout | null;
+
   playlist: {
     items: RecordingInfo[];
     events: ArchiveEvent[];
@@ -262,6 +264,8 @@ export const useStore = create<AppState>((set, get) => ({
   getLocationForMonitor: (monitorId: string) => {
     return getLocationFromMapping(monitorId);
   },
+
+  cameraHealthCheckInterval: null,
 
   // Аутентификация
   isAuthenticated: false,
