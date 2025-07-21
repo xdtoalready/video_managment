@@ -148,6 +148,7 @@ const {
 
   const stats = getRecordingsStats();
 
+  // Используем connectionStatus из store для определения загрузки
   const isLoading = archiveConnectionStatus === 'connecting';
 
   // Состояние загрузки

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { sentryshotAPI, TimeUtils, CreateMonitorRequest, Account, CreateAccountRequest } from '../api/sentryshot';
+import { sentryshotAPI, TimeUtils, CreateMonitorRequest, Account, CreateAccountRequest, Camera } from '../api/sentryshot';
 import { archiveAPI, RecordingInfo } from '../api/archiveAPI';
 import { ArchiveEvent } from '../api/archiveAPI';
 import { getLocationForMonitor as getLocationFromMapping } from '../constants/locationMapping';
@@ -29,18 +29,6 @@ export interface TimelineMark {
   major: boolean; // Основная или второстепенная метка
 }
 
-// Тип камеры (упрощенный, без архивных полей)
-export interface Camera {
-  id: string;
-  name: string;
-  url: string;
-  isActive: boolean;
-  enable?: boolean;
-  alwaysRecord?: boolean;
-  videoLength?: number;
-  hasSubStream?: boolean;
-}
-
 // Тип состояния для календаря (упрощенный)
 interface CalendarState {
   isOpen: boolean;
@@ -52,6 +40,13 @@ export type Recording = RecordingInfo;
 
 // Режим отображения архива
 export type ArchiveViewMode = 'list' | 'single';
+
+export interface ExtendedCamera extends Camera {
+  alwaysRecord?: boolean;
+  videoLength?: number;
+  hasSubStream?: boolean;
+  enable?: boolean;
+}
 
 // Интерфейс события
 export interface TimelineEvent {
@@ -150,12 +145,15 @@ interface SystemState {
 // Тип состояния приложения
 interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   // Данные
-  cameras: Camera[];
-  activeCamera: Camera | null;
+  cameras: ExtendedCamera[];
+  activeCamera: ExtendedCamera | null;
   selectedLocations: LocationType[];
   viewMode: ViewMode;
   isGridView: boolean;
   getLocationForMonitor: (monitorId: string) => LocationType;
+
+  setupCameraHealthCheck: () => void;
+  stopCameraHealthCheck: () => void;
 
   playlist: {
     items: RecordingInfo[];
@@ -168,6 +166,8 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
     currentItemIndex: number;
     absolutePosition: number;
   };
+
+  cameraHealthCheckInterval: NodeJS.Timeout | null;
 
   // Динамические категории
   locationCategories: LocationCategory[];
@@ -200,7 +200,7 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   setViewMode: (mode: ViewMode) => void;
   toggleLocationSelection: (location: LocationType) => void;
   clearLocationSelections: () => void;
-  addCamera: (camera: Omit<Camera, 'isActive'>) => Promise<boolean>;
+  addCamera: (camera: Omit<ExtendedCamera, 'isActive'>) => Promise<boolean>;
   removeCamera: (monitorId: string) => Promise<boolean>;
   loadCameras: () => Promise<void>;
 
@@ -220,7 +220,7 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   // Методы управления мониторами
   toggleMotionDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   toggleObjectDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
-  updateCameraSettings: (monitorId: string, settings: Partial<Camera>) => Promise<boolean>;
+  updateCameraSettings: (monitorId: string, settings: Partial<ExtendedCamera>) => Promise<boolean>;
 
   setupCameraHealthCheck: () => void;
   stopCameraHealthCheck: () => void;
@@ -599,35 +599,35 @@ export const useStore = create<AppState>((set, get) => ({
 
   // === МЕТОДЫ РАБОТЫ С КАМЕРАМИ ===
 
-  loadCameras: async () => {
-    try {
-      set({ camerasConnectionStatus: 'connecting' });
+loadCameras: async () => {
+  try {
+    set({ camerasConnectionStatus: 'connecting' });
 
-      const cameras = await sentryshotAPI.getCameras();
+    const cameras = await sentryshotAPI.getCameras();
 
-      const enhancedCameras = cameras.map(camera => ({
-        ...camera
-      }));
-      
-      set({
-        cameras: enhancedCameras,
-        activeCamera: null, // НЕ выбираем автоматически первую камеру
-        connectionStatus: 'connected',
-        camerasConnectionStatus: 'connected',
-        isOnline: true,
-        lastSync: new Date()
-      });
-    } catch (error) {
-      console.error('Ошибка при загрузке камер:', error);
-      set({
-        connectionStatus: 'error',
-        camerasConnectionStatus: 'error',
-        isOnline: false
-      });
-    }
-  },
+    const enhancedCameras = cameras.map(camera => ({
+      ...camera
+    }));
+    
+    set({
+      cameras: enhancedCameras,
+      activeCamera: null, // НЕ выбираем автоматически первую камеру
+      connectionStatus: 'connected',
+      camerasConnectionStatus: 'connected',
+      isOnline: true,
+      lastSync: new Date()
+    });
+  } catch (error) {
+    console.error('Ошибка при загрузке камер:', error);
+    set({
+      connectionStatus: 'error',
+      camerasConnectionStatus: 'error',
+      isOnline: false
+    });
+  }
+},
 
-  addCamera: async (camera: Omit<Camera, 'isActive'>) => {
+  addCamera: async (camera: Omit<ExtendedCamera, 'isActive'>) => {
   try {
     console.log('Добавление камеры:', camera);
 
@@ -759,7 +759,7 @@ export const useStore = create<AppState>((set, get) => ({
     console.log('🏪 [STORE] Доступные камеры:', cameras.map(c => ({id: c.id, name: c.name})));
     
     // Показываем статус загрузки
-    set({ connectionStatus: 'connecting' });
+    set({ archiveConnectionStatus: 'connecting' });
 
     // Определяем мониторы для запроса
     let monitorIds: string[] = [];
@@ -861,7 +861,6 @@ export const useStore = create<AppState>((set, get) => ({
 
       set(newState);
 
-      // ✅ ПРОВЕРЯЕМ ЧТО СОХРАНИЛОСЬ В STORE
       const currentState = get();
       console.log('🔍 [STORE] Проверка состояния после set():', {
         recordingsInStore: currentState.recordings.length,
@@ -901,7 +900,7 @@ export const useStore = create<AppState>((set, get) => ({
       archiveViewMode: get().archiveViewMode
     });
 
-        set({
+    set({
       recordings: recordings,
       archiveConnectionStatus: 'connected'
     });
@@ -1042,6 +1041,37 @@ export const useStore = create<AppState>((set, get) => ({
 
   clearLocationSelections: () => {
     set({ selectedLocations: [] });
+  },
+
+  // === АВТОПЕРЕПОДКЛЮЧЕНИЕ КАМЕР ===
+  
+  setupCameraHealthCheck: () => {
+    // Проверяем состояние камер каждые 30 секунд
+    const checkInterval = setInterval(async () => {
+      const { camerasConnectionStatus, loadCameras } = get();
+      
+      // Если статус камер не в порядке, пытаемся переподключиться
+      if (camerasConnectionStatus !== 'connected') {
+        console.log('🔄 Автопереподключение камер...');
+        try {
+          await loadCameras();
+          console.log('✅ Переподключение камер успешно');
+        } catch (error) {
+          console.error('❌ Ошибка автопереподключения камер:', error);
+        }
+      }
+    }, 30000); // 30 секунд
+
+    // Сохраняем интервал для возможности его отключения
+    set({ cameraHealthCheckInterval: checkInterval });
+  },
+
+  stopCameraHealthCheck: () => {
+    const { cameraHealthCheckInterval } = get();
+    if (cameraHealthCheckInterval) {
+      clearInterval(cameraHealthCheckInterval);
+      set({ cameraHealthCheckInterval: null });
+    }
   },
 
   // === МЕТОДЫ ТАЙМЛАЙНА ===
