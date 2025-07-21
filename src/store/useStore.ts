@@ -41,6 +41,12 @@ export type Recording = RecordingInfo;
 // Режим отображения архива
 export type ArchiveViewMode = 'list' | 'single';
 
+export interface ExtendedCamera extends Camera {
+  alwaysRecord?: boolean;
+  videoLength?: number;
+  hasSubStream?: boolean;
+}
+
 // Интерфейс события
 export interface TimelineEvent {
   id: string;
@@ -138,8 +144,8 @@ interface SystemState {
 // Тип состояния приложения
 interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   // Данные
-  cameras: Camera[];
-  activeCamera: Camera | null;
+  cameras: ExtendedCamera[];
+  activeCamera: ExtendedCamera | null;
   selectedLocations: LocationType[];
   viewMode: ViewMode;
   isGridView: boolean;
@@ -193,7 +199,7 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   setViewMode: (mode: ViewMode) => void;
   toggleLocationSelection: (location: LocationType) => void;
   clearLocationSelections: () => void;
-  addCamera: (camera: Omit<Camera, 'isActive'>) => Promise<boolean>;
+  addCamera: (camera: Omit<ExtendedCamera, 'isActive'>) => Promise<boolean>;
   removeCamera: (monitorId: string) => Promise<boolean>;
   loadCameras: () => Promise<void>;
 
@@ -213,7 +219,7 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   // Методы управления мониторами
   toggleMotionDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   toggleObjectDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
-  updateCameraSettings: (monitorId: string, settings: Partial<Camera>) => Promise<boolean>;
+  updateCameraSettings: (monitorId: string, settings: Partial<ExtendedCamera>) => Promise<boolean>;
 
   // Методы для работы с категориями
   addLocationCategory: (name: string) => string;
@@ -595,10 +601,13 @@ export const useStore = create<AppState>((set, get) => ({
       const cameras = await sentryshotAPI.getCameras();
 
       // Убираем архивные поля при создании камер
-      const enhancedCameras = cameras.map(camera => ({
-          ...camera,
-          isActive: camera.enable ?? true
-        }));
+      const enhancedCameras: ExtendedCamera[] = cameras.map(camera => ({
+        ...camera,
+        isActive: camera.enable,
+        alwaysRecord: undefined,
+        videoLength: undefined,
+        hasSubStream: undefined
+      }));
       set({
         cameras: enhancedCameras,
         activeCamera: null,
