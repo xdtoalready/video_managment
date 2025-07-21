@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CameraView from './CameraView.tsx';
 import AddCameraCard from './AddCameraCard.tsx';
 import AddCameraModal from './AddCameraModal.tsx';
@@ -37,6 +37,16 @@ const CameraGrid: React.FC = () => {
   const handleCloseAddCameraModal = () => {
     setIsAddCameraModalOpen(false);
   };
+
+  useEffect(() => {
+  const { setupCameraHealthCheck } = useStore.getState();
+  setupCameraHealthCheck();
+  
+  return () => {
+    const { stopCameraHealthCheck } = useStore.getState();
+    stopCameraHealthCheck();
+  };
+}, []);
   
   // Если включен режим одной камеры и есть активная камера
   if (!isGridView && activeCamera) {

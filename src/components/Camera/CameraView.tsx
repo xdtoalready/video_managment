@@ -26,6 +26,7 @@ const CameraView: React.FC<CameraViewProps> = ({
     isGridView,
     isAuthenticated,
     connectionStatus,
+    camerasConnectionStatus,
     cameras,
     removeCamera,
     hasAdminRights
@@ -182,7 +183,7 @@ const CameraView: React.FC<CameraViewProps> = ({
   }
 
   // Определяем состояние камеры
-  const isCameraOffline = connectionStatus !== 'connected' || !camera?.isActive;
+  const isCameraOffline = camerasConnectionStatus !== 'connected' || !camera?.isActive;
   const isCameraEnabled = camera?.isActive || false;
 
   return (
@@ -200,24 +201,23 @@ const CameraView: React.FC<CameraViewProps> = ({
 
               {/* Индикаторы состояния */}
               <div className="camera-status-indicators">
-                {connectionStatus !== 'connected' && (
+                {camerasConnectionStatus !== 'connected' && (
                     <span className="status-indicator server-offline badge-sticker" title="Нет соединения с сервером">
                   🔴 Сервер
                 </span>
                 )}
-                
-                {connectionStatus === 'connected' && !isCameraEnabled && (
+
+                {camerasConnectionStatus === 'connected' && !isCameraEnabled && (
                     <span className="status-indicator camera-disabled badge-sticker" title="Камера отключена">
                   ⭕ Отключена
                 </span>
                 )}
-                
-                {connectionStatus === 'connected' && isCameraEnabled && (
+
+                {camerasConnectionStatus === 'connected' && isCameraEnabled && (
                     <span className="status-indicator camera-online badge-sticker" title="Камера работает">
                   🟢 Онлайн
                 </span>
                 )}
-                
                 {camera?.alwaysRecord && isCameraEnabled && (
                     <span className="status-indicator recording badge-sticker" title="Идет запись">
                   🔴 Запись
@@ -262,15 +262,25 @@ const CameraView: React.FC<CameraViewProps> = ({
 
           <div className={`camera-view ${isActive ? 'active' : ''}`}>
             {/* Показываем сообщение если нет соединения с сервером */}
-            {connectionStatus !== 'connected' ? (
-                <div className="camera-offline">
-                  <div className="camera-offline-message">
-                    Нет соединения с сервером SentryShot
-                  </div>
-                  <div className="camera-offline-details">
-                    Статус: {connectionStatus}
-                  </div>
+            {camerasConnectionStatus !== 'connected' ? (
+              <div className="camera-offline">
+                <div className="camera-offline-message">
+                  Нет соединения с сервером SentryShot
                 </div>
+                <div className="camera-offline-details">
+                  Статус: {camerasConnectionStatus}
+                </div>
+                <button 
+                  className="camera-reconnect-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const { loadCameras } = useStore.getState();
+                    loadCameras();
+                  }}
+                >
+                  Переподключиться
+                </button>
+              </div>
             ) : !isCameraEnabled ? (
                 <div className="camera-offline">
                   <div className="camera-offline-message">
@@ -316,8 +326,8 @@ const CameraView: React.FC<CameraViewProps> = ({
             {isCameraEnabled && showControls && (
                 <div className="stream-quality-indicator">
                   <div className="quality-bars">
-                    <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>
-                    <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>
+                    <div className={`quality-bar ${camerasConnectionStatus === 'connected' ? 'active' : ''}`}></div>
+                    <div className={`quality-bar ${camerasConnectionStatus === 'connected' ? 'active' : ''}`}></div>
                     <div className="quality-bar"></div>
                     <div className="quality-bar"></div>
                   </div>
