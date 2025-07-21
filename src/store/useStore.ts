@@ -157,6 +157,9 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   isGridView: boolean;
   getLocationForMonitor: (monitorId: string) => LocationType;
 
+  setupCameraHealthCheck: () => void;
+  stopCameraHealthCheck: () => void;
+
   playlist: {
     items: RecordingInfo[];
     events: ArchiveEvent[];
