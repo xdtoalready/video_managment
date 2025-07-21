@@ -138,7 +138,9 @@ interface SystemState {
   isOnline: boolean;
   lastSync: Date | null;
   systemInfo: any;
-  connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
+  connectionStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
+  camerasConnectionStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
+  archiveConnectionStatus: 'connecting' | 'connected' | 'error' | 'disconnected';
 
   // Методы системного мониторинга
   checkSystemHealth: () => Promise<boolean>;
@@ -220,6 +222,10 @@ interface AppState extends AuthState, AccountsState, ArchiveState, SystemState {
   toggleObjectDetection: (monitorId: string, enable: boolean) => Promise<boolean>;
   updateCameraSettings: (monitorId: string, settings: Partial<Camera>) => Promise<boolean>;
 
+  // Методы автопереподключения камер
+  setupCameraHealthCheck: () => void;
+  stopCameraHealthCheck: () => void;
+
   // Методы для работы с категориями
   addLocationCategory: (name: string) => string;
   removeLocationCategory: (categoryId: string) => boolean;
@@ -270,6 +276,9 @@ export const useStore = create<AppState>((set, get) => ({
   lastSync: null,
   systemInfo: null,
   connectionStatus: 'disconnected',
+  camerasConnectionStatus: 'disconnected', 
+  archiveConnectionStatus: 'disconnected',
+  cameraHealthCheckInterval: null,
 
   // Основные данные
   timelineEvents: [],
@@ -573,7 +582,8 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (error) {
       set({
         isOnline: false,
-        connectionStatus: 'error'
+        connectionStatus: 'error',
+        camerasConnectionStatus: 'error'
       });
       return false;
     }
@@ -592,19 +602,19 @@ export const useStore = create<AppState>((set, get) => ({
 
   loadCameras: async () => {
     try {
-      set({ connectionStatus: 'connecting' });
+      set({ camerasConnectionStatus: 'connecting' });
 
       const cameras = await sentryshotAPI.getCameras();
 
-      // Убираем архивные поля при создании камер
       const enhancedCameras = cameras.map(camera => ({
         ...camera
       }));
-
+      
       set({
         cameras: enhancedCameras,
-        activeCamera: enhancedCameras.length > 0 ? enhancedCameras[0] : null,
+        activeCamera: null, // НЕ выбираем автоматически первую камеру
         connectionStatus: 'connected',
+        camerasConnectionStatus: 'connected',
         isOnline: true,
         lastSync: new Date()
       });
@@ -612,6 +622,7 @@ export const useStore = create<AppState>((set, get) => ({
       console.error('Ошибка при загрузке камер:', error);
       set({
         connectionStatus: 'error',
+        camerasConnectionStatus: 'error',
         isOnline: false
       });
     }
@@ -749,7 +760,7 @@ export const useStore = create<AppState>((set, get) => ({
     console.log('🏪 [STORE] Доступные камеры:', cameras.map(c => ({id: c.id, name: c.name})));
     
     // Показываем статус загрузки
-    set({ connectionStatus: 'connecting' });
+    set({ archiveConnectionStatus: 'connecting' });
 
     // Определяем мониторы для запроса
     let monitorIds: string[] = [];
@@ -777,7 +788,7 @@ export const useStore = create<AppState>((set, get) => ({
       console.log('⚠️ [STORE] Нет камер для запроса записей');
       set({ 
         recordings: [], 
-        connectionStatus: 'connected' 
+        archiveConnectionStatus: 'connected' 
       });
       return;
     }
@@ -891,12 +902,17 @@ export const useStore = create<AppState>((set, get) => ({
       archiveViewMode: get().archiveViewMode
     });
 
+        set({
+      recordings: recordings,
+      archiveConnectionStatus: 'connected'
+    });
+
   } catch (error) {
     console.error('💥 [STORE] Ошибка при загрузке записей:', error);
     
     set({ 
       recordings: [], 
-      connectionStatus: 'error' 
+      archiveConnectionStatus: 'error'
     });
     
     // Детальная информация об ошибке
@@ -981,15 +997,9 @@ export const useStore = create<AppState>((set, get) => ({
 
   setActiveCamera: (monitorId: string) => {
     set(state => {
-      const updatedCameras = state.cameras.map(camera => ({
-        ...camera,
-        isActive: camera.id === monitorId
-      }));
-
-      const newActiveCamera = updatedCameras.find(camera => camera.id === monitorId) || null;
+      const newActiveCamera = state.cameras.find(camera => camera.id === monitorId) || null;
 
       return {
-        cameras: updatedCameras,
         activeCamera: newActiveCamera
       };
     });
@@ -1409,6 +1419,37 @@ export const useStore = create<AppState>((set, get) => ({
   getLocationCategoryName: (categoryId: string) => {
     const category = get().locationCategories.find(cat => cat.id === categoryId);
     return category ? category.name : 'Не определена';
+  },
+
+   // === АВТОПЕРЕПОДКЛЮЧЕНИЕ КАМЕР ===
+  
+  setupCameraHealthCheck: () => {
+    // Проверяем состояние камер каждые 30 секунд
+    const checkInterval = setInterval(async () => {
+      const { camerasConnectionStatus, loadCameras } = get();
+      
+      // Если статус камер не в порядке, пытаемся переподключиться
+      if (camerasConnectionStatus !== 'connected') {
+        console.log('🔄 Автопереподключение камер...');
+        try {
+          await loadCameras();
+          console.log('✅ Переподключение камер успешно');
+        } catch (error) {
+          console.error('❌ Ошибка автопереподключения камер:', error);
+        }
+      }
+    }, 30000); // 30 секунд
+
+    // Сохраняем интервал для возможности его отключения
+    set({ cameraHealthCheckInterval: checkInterval });
+  },
+
+  stopCameraHealthCheck: () => {
+    const { cameraHealthCheckInterval } = get();
+    if (cameraHealthCheckInterval) {
+      clearInterval(cameraHealthCheckInterval);
+      set({ cameraHealthCheckInterval: null });
+    }
   },
 
 }));

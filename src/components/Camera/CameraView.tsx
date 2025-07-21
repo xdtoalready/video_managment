@@ -21,15 +21,16 @@ const CameraView: React.FC<CameraViewProps> = ({
    isActive = false,
    onClick
  }) => {
-  const {
-    openCalendar,
-    isGridView,
-    isAuthenticated,
-    connectionStatus,
-    cameras,
-    removeCamera,
-    hasAdminRights
-  } = useStore();
+const {
+  openCalendar,
+  isGridView,
+  isAuthenticated,
+  connectionStatus,
+  camerasConnectionStatus,
+  cameras,
+  removeCamera,
+  hasAdminRights
+} = useStore();
 
   const location = getLocationForMonitor(monitorId);
 
@@ -182,7 +183,7 @@ const CameraView: React.FC<CameraViewProps> = ({
   }
 
   // Определяем состояние камеры
-  const isCameraOffline = connectionStatus !== 'connected' || !camera?.isActive;
+  const isCameraOffline = camerasConnectionStatus !== 'connected' || !camera?.isActive;
   const isCameraEnabled = camera?.isActive || false;
 
   return (
@@ -200,19 +201,19 @@ const CameraView: React.FC<CameraViewProps> = ({
 
               {/* Индикаторы состояния */}
               <div className="camera-status-indicators">
-                {connectionStatus !== 'connected' && (
+                {camerasConnectionStatus !== 'connected' && (
                     <span className="status-indicator server-offline badge-sticker" title="Нет соединения с сервером">
                   🔴 Сервер
                 </span>
                 )}
-                
-                {connectionStatus === 'connected' && !isCameraEnabled && (
+
+                {camerasConnectionStatus === 'connected' && !isCameraEnabled && (
                     <span className="status-indicator camera-disabled badge-sticker" title="Камера отключена">
                   ⭕ Отключена
                 </span>
                 )}
-                
-                {connectionStatus === 'connected' && isCameraEnabled && (
+
+                {camerasConnectionStatus === 'connected' && isCameraEnabled && (
                     <span className="status-indicator camera-online badge-sticker" title="Камера работает">
                   🟢 Онлайн
                 </span>
@@ -262,14 +263,24 @@ const CameraView: React.FC<CameraViewProps> = ({
 
           <div className={`camera-view ${isActive ? 'active' : ''}`}>
             {/* Показываем сообщение если нет соединения с сервером */}
-            {connectionStatus !== 'connected' ? (
+            {camerasConnectionStatus !== 'connected' ? (
                 <div className="camera-offline">
                   <div className="camera-offline-message">
                     Нет соединения с сервером SentryShot
                   </div>
                   <div className="camera-offline-details">
-                    Статус: {connectionStatus}
+                    Статус: {camerasConnectionStatus}
                   </div>
+                  <button 
+                    className="camera-reconnect-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const { loadCameras } = useStore.getState();
+                      loadCameras();
+                    }}
+                  >
+                    Переподключиться
+                  </button>
                 </div>
             ) : !isCameraEnabled ? (
                 <div className="camera-offline">
@@ -316,8 +327,8 @@ const CameraView: React.FC<CameraViewProps> = ({
             {isCameraEnabled && showControls && (
                 <div className="stream-quality-indicator">
                   <div className="quality-bars">
-                    <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>
-                    <div className={`quality-bar ${connectionStatus === 'connected' ? 'active' : ''}`}></div>
+                    <div className={`quality-bar ${camerasConnectionStatus === 'connected' ? 'active' : ''}`}></div>
+                    <div className={`quality-bar ${camerasConnectionStatus === 'connected' ? 'active' : ''}`}></div>
                     <div className="quality-bar"></div>
                     <div className="quality-bar"></div>
                   </div>
