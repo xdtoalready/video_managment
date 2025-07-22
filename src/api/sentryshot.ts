@@ -1,4 +1,6 @@
 // src/api/sentryshot.ts
+import { Camera } from '../store/useStore';
+
 
 // Базовая конфигурация
 const API_BASE_URL = '';  // Базовый URL (пустой, т.к. используем относительные пути)
@@ -112,12 +114,12 @@ export interface CreateMonitorRequest {
   videoLength: number;
 }
 
-export interface Camera {
-  id: string;
-  name: string;
-  url: string;
-  isActive: boolean;
-}
+// export interface Camera {
+//   id: string;
+//   name: string;
+//   url: string;
+//   isActive: boolean;
+// }
 
 export interface RecordingInfo {
   id: string;
@@ -365,8 +367,8 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
   }
 },
 
-  // Преобразование мониторов в формат камер для совместимости с фронтендом
-  async getCameras(): Promise<Camera[]> {
+    // Преобразование мониторов в формат камер для совместимости с фронтендом
+    async getCameras(): Promise<Camera[]> {
     try {
       const monitors = await this.getMonitors();
       console.log('Преобразование мониторов в камеры, количество мониторов:', monitors.length);
@@ -386,7 +388,7 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
           streamUrl = `/stream/${monitor.id}/index.m3u8`;
         }
 
-        // Определяем наличие субпотока на основе данных монитора
+        // ИСПРАВЛЕНО: Определяем наличие субпотока на основе данных монитора
         const hasSubStream = !!(monitor.sourcertsp?.subStream && monitor.sourcertsp.subStream.trim());
 
         const camera: Camera = {
@@ -397,7 +399,7 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
           enable: monitor.enable,
           alwaysRecord: monitor.alwaysRecord,
           videoLength: monitor.videoLength,
-          hasSubStream: hasSubStream // ДОБАВЛЕНО: правильно устанавливаем hasSubStream
+          hasSubStream: hasSubStream
         };
 
         console.log(`Создана камера: ${camera.name} (${camera.id}) - активна: ${camera.isActive}, есть субпоток: ${camera.hasSubStream}`);

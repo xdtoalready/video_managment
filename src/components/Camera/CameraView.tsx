@@ -249,26 +249,7 @@ const isCameraEnabled = camera?.isActive || false;
 
           <div className={`camera-view ${isActive ? 'active' : ''}`}>
             {/* Показываем сообщение если нет соединения с сервером */}
-            {camerasConnectionStatus !== 'connected' ? (
-                <div className="camera-offline">
-                  <div className="camera-offline-message">
-                    Нет соединения с сервером SentryShot
-                  </div>
-                  <div className="camera-offline-details">
-                    Статус: {camerasConnectionStatus}
-                  </div>
-                  <button 
-                    className="camera-reconnect-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const { loadCameras } = useStore.getState();
-                      loadCameras();
-                    }}
-                  >
-                    Переподключиться
-                  </button>
-                </div>
-            ) : !isCameraEnabled ? (
+            {!isCameraEnabled ? (
                 <div className="camera-offline">
                   <div className="camera-offline-message">
                     Камера отключена
