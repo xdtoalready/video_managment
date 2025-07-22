@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { sentryshotAPI } from '../api/sentryshot';
+import { cameraStatusManager, CameraStatus } from './cameraStatusManager';
 
 // Типы данных для работы со стримером
 export interface StreamerOptions {
@@ -42,6 +43,10 @@ export function useStreamer(
     reconnectDelay = 3000
   } = options;
 
+  const [cameraStatus, setCameraStatus] = useState<CameraStatus>(() => 
+    cameraStatusManager.getStatus(monitorId)
+  );
+
   // Состояние подключения
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     active: false,
@@ -63,8 +68,20 @@ export function useStreamer(
   // Рефы для отслеживания состояния
   const hlsRef = useRef<any>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
+  const currentStreamTypeRef = useRef<'main' | 'sub' | null>(null);
+
+    useEffect(() => {
+    const unsubscribe = cameraStatusManager.subscribe((statuses) => {
+      const status = statuses.get(monitorId);
+      if (status) {
+        setCameraStatus(status);
+      }
+    });
+
+    return unsubscribe;
+  }, [monitorId]);
 
   // Функция для обновления состояния подключения
   const updateConnectionState = (updates: Partial<ConnectionState>) => {
@@ -74,15 +91,62 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
   };
 
   // Функция для инициализации HLS плеера
+  const handleVideoError = (event: Event | any) => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+
+    const errorCode = videoElement.error?.code;
+    const errorMessage = videoElement.error?.message || 'Неизвестная ошибка видео';
+
+    console.error('Ошибка видеоэлемента:', { errorCode, errorMessage, event });
+    setError(`Ошибка воспроизведения: ${errorMessage}`);
+
+    if (autoReconnect && cameraStatus.reconnectAttempts < maxReconnectAttempts) {
+      scheduleReconnect();
+    }
+  };
+
+  // Планирование переподключения
+  const scheduleReconnect = () => {
+    if (!mountedRef.current || reconnectTimeoutRef.current) return;
+
+    const attempts = cameraStatus.reconnectAttempts;
+    if (attempts >= maxReconnectAttempts) {
+      console.error(`Максимальное количество попыток переподключения достигнуто для камеры ${monitorId}`);
+      return;
+    }
+
+    const delay = reconnectDelay * Math.pow(1.5, Math.min(attempts, 4)); // Exponential backoff
+    console.log(`Переподключение через ${delay}ms (попытка ${attempts + 1}/${maxReconnectAttempts})`);
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) {
+        reconnectTimeoutRef.current = null;
+        initializeHlsPlayer();
+      }
+    }, delay);
+  };
+
+  // ИСПРАВЛЕНО: Функция инициализации с улучшенным fallback
   const initializeHlsPlayer = async () => {
     if (!videoRef.current || !monitorId) return;
 
     try {
+      setConnecting();
+
       // Динамический импорт HLS.js
       const { default: Hls } = await import('hls.js');
 
       const videoElement = videoRef.current;
-      const streamUrl = sentryshotAPI.getStreamUrl(monitorId, preferLowRes);
+      
+      // Определяем, можно ли использовать субпоток
+      const shouldTrySubStream = preferLowRes && !cameraStatus.hasSubStreamSupport === false;
+      
+      // Получаем URL потока
+      let streamUrl = sentryshotAPI.getStreamUrl(monitorId, shouldTrySubStream);
+      let isUsingSubStream = shouldTrySubStream;
+
+      console.log(`Инициализация HLS для камеры ${monitorId}, субпоток: ${isUsingSubStream}`);
 
       // Очищаем предыдущий инстанс HLS
       if (hlsRef.current) {
@@ -90,26 +154,31 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
         hlsRef.current = null;
       }
 
-      updateConnectionState({
-        error: null,
-        reconnecting: false
-      });
-
       // Проверяем нативную поддержку HLS (Safari)
       if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
         console.log('Используется нативная поддержка HLS');
 
+        // Создаем обработчик ошибок с fallback
+        const handleNativeError = async (e: Event) => {
+          console.error('Ошибка нативного HLS:', e);
+          
+          // Если используем субпоток и получили ошибку, пробуем основной поток
+          if (isUsingSubStream) {
+            console.log('Fallback: переключение на основной поток');
+            cameraStatusManager.setSubStreamSupport(monitorId, false);
+            isUsingSubStream = false;
+            streamUrl = sentryshotAPI.getStreamUrl(monitorId, false);
+            videoElement.src = streamUrl;
+            return;
+          }
+          
+          // Иначе обрабатываем как обычную ошибку
+          handleVideoError(e);
+        };
+
         videoElement.src = streamUrl;
-
-        videoElement.addEventListener('canplay', () => {
-          updateConnectionState({
-            active: true,
-            lastConnectedAt: new Date(),
-            reconnectAttempts: 0
-          });
-        });
-
-        videoElement.addEventListener('error', handleVideoError);
+        videoElement.addEventListener('canplay', () => setConnected(isUsingSubStream));
+        videoElement.addEventListener('error', handleNativeError);
 
         return;
       }
@@ -121,39 +190,43 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
       console.log('Используется HLS.js');
 
-      // Создаем новый инстанс HLS с оптимизированными настройками для SentryShot
+      // Создаем новый инстанс HLS
       const hls = new Hls({
-      debug: false,
-      enableWorker: true,
-      lowLatencyMode: false,
-
-      maxBufferLength: 30,
-      maxMaxBufferLength: 60,
-      maxBufferSize: 60 * 1000 * 1000,
-      maxBufferHole: 2,
-
-      liveSyncDurationCount: 3,
-      liveMaxLatencyDurationCount: 5,
-
-      manifestLoadingTimeOut: 20000,
-      manifestLoadingMaxRetry: 5,
-      fragLoadingTimeOut: 15000,
-      fragLoadingMaxRetry: 5,
-
-      startLevel: preferLowRes ? 0 : -1,
-      capLevelToPlayerSize: false,
-      
-      levelLoadingTimeOut: 10000,
-      levelLoadingMaxRetry: 4,
-      abrEwmaDefaultEstimate: 5000000,
-      abrBandWidthFactor: 0.95,
-      abrBandWidthUpFactor: 0.7,
+        debug: false,
+        enableWorker: true,
+        lowLatencyMode: false,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+        maxBufferSize: 60 * 1000 * 1000,
+        maxBufferHole: 2,
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 5,
+        manifestLoadingTimeOut: 20000,
+        manifestLoadingMaxRetry: 5,
+        fragLoadingTimeOut: 15000,
+        fragLoadingMaxRetry: 5,
+        startLevel: preferLowRes ? 0 : -1,
+        capLevelToPlayerSize: false,
+        levelLoadingTimeOut: 10000,
+        levelLoadingMaxRetry: 4,
+        abrEwmaDefaultEstimate: 5000000,
+        abrBandWidthFactor: 0.95,
+        abrBandWidthUpFactor: 0.7,
       });
 
       hlsRef.current = hls;
 
-      // Настройка обработчиков событий HLS
-      setupHlsEventHandlers(hls, videoElement);
+      // Настройка обработчиков событий HLS с fallback логикой
+      setupHlsEventHandlers(hls, videoElement, () => {
+        // Callback для fallback на основной поток
+        if (isUsingSubStream) {
+          console.log('HLS Fallback: переключение на основной поток');
+          cameraStatusManager.setSubStreamSupport(monitorId, false);
+          isUsingSubStream = false;
+          const mainStreamUrl = sentryshotAPI.getStreamUrl(monitorId, false);
+          hls.loadSource(mainStreamUrl);
+        }
+      });
 
       // Загружаем источник и привязываем к видеоэлементу
       hls.loadSource(streamUrl);
@@ -161,16 +234,12 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     } catch (error) {
       console.error('Ошибка при инициализации HLS плеера:', error);
-      updateConnectionState({
-        active: false,
-        error: `Ошибка инициализации: ${error}`,
-        reconnecting: false
-      });
+      setError(`Ошибка инициализации: ${error}`);
     }
   };
 
   // Настройка обработчиков событий HLS
-  const setupHlsEventHandlers = (hls: any, videoElement: HTMLVideoElement) => {
+  const setupHlsEventHandlers = (hls: any, videoElement: HTMLVideoElement, fallbackCallback: () => void) => {
     // Успешная загрузка манифеста
     hls.on(hls.constructor.Events.MANIFEST_PARSED, () => {
       console.log('HLS манифест загружен');
@@ -193,7 +262,7 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
       updateStreamStats(data);
     });
 
-    // Обработка ошибок HLS
+    // Обработка ошибок HLS с fallback логикой
     hls.on(hls.constructor.Events.ERROR, (event: any, data: any) => {
       console.error('HLS ошибка:', data);
 
@@ -206,6 +275,14 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
         switch (data.type) {
           case hls.constructor.ErrorTypes.NETWORK_ERROR:
             console.log('Попытка восстановления сетевого подключения...');
+            
+            // Проверяем, является ли это 404 ошибкой для субпотока
+            if (data.details === 'manifestLoadError' && data.response?.code === 404) {
+              console.log('404 ошибка для манифеста - пробуем fallback');
+              fallbackCallback();
+              return;
+            }
+            
             if (autoReconnect) {
               scheduleReconnect();
             } else {
@@ -293,101 +370,79 @@ const statsIntervalRef = useRef<NodeJS.Timeout | null>(null);
     };
   };
 
-  // Обработчик ошибок видеоэлемента
-  const handleVideoError = (event: Event) => {
-    const videoElement = event.target as HTMLVideoElement;
-    const error = videoElement.error;
-
-    let errorMessage = 'Ошибка воспроизведения видео';
-
-    if (error) {
-      switch (error.code) {
-        case error.MEDIA_ERR_ABORTED:
-          errorMessage = 'Воспроизведение прервано';
-          break;
-        case error.MEDIA_ERR_NETWORK:
-          errorMessage = 'Ошибка сети';
-          break;
-        case error.MEDIA_ERR_DECODE:
-          errorMessage = 'Ошибка декодирования';
-          break;
-        case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          errorMessage = 'Формат не поддерживается';
-          break;
-        default:
-          errorMessage = `Неизвестная ошибка: ${error.code}`;
-      }
-    }
-
-    console.error('Ошибка видеоэлемента:', errorMessage);
-
-    updateConnectionState({
-      active: false,
-      error: errorMessage
-    });
-
-if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
-      scheduleReconnect();
-    }
+  // Обновление статистики стрима
+  const updateStreamStats = (updates: Partial<StreamStats>) => {
+    if (!mountedRef.current) return;
+    setStreamStats(prev => ({ ...prev, ...updates }));
   };
 
-  // Планирование переподключения
-  const scheduleReconnect = () => {
-    if (!autoReconnect || !mountedRef.current) return;
-
-    const currentAttempts = connectionState.reconnectAttempts;
-
-    if (currentAttempts >= maxReconnectAttempts) {
-      updateConnectionState({
-        error: `Превышено максимальное количество попыток переподключения (${maxReconnectAttempts})`,
-        reconnecting: false
-      });
-      return;
-    }
-
-    updateConnectionState({
-      reconnecting: true,
-      reconnectAttempts: currentAttempts + 1
-    });
-
-    const delay = reconnectDelay * Math.pow(1.5, currentAttempts); // Экспоненциальная задержка
-
-    console.log(`Переподключение через ${delay}ms (попытка ${currentAttempts + 1}/${maxReconnectAttempts})`);
-
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-    }
-
-    reconnectTimeoutRef.current = setTimeout(() => {
-      if (mountedRef.current) {
-        initializeHlsPlayer();
-      }
-    }, delay);
+  const setConnecting = () => cameraStatusManager.setConnecting(monitorId);
+  const setConnected = (usingSubStream: boolean = false) => {
+    cameraStatusManager.setConnected(monitorId, usingSubStream);
+    currentStreamTypeRef.current = usingSubStream ? 'sub' : 'main';
   };
+  const setError = (error: string, increaseAttempts: boolean = true) => 
+  cameraStatusManager.setError(monitorId, error, increaseAttempts);
+  const setDisconnected = () => cameraStatusManager.setDisconnected(monitorId);
 
-  // Мониторинг статистики
+  // Мониторинг статистики видеоэлемента
   const startStatsMonitoring = (videoElement: HTMLVideoElement) => {
     if (statsIntervalRef.current) {
       clearInterval(statsIntervalRef.current);
     }
 
     statsIntervalRef.current = setInterval(() => {
-      if (!mountedRef.current || !videoElement) return;
+      if (!mountedRef.current) return;
 
-      const stats = {
-        resolution: getVideoResolution(videoElement),
-        frameRate: getVideoFrameRate(videoElement)
-      };
+      try {
+        const buffered = videoElement.buffered;
+        const bufferedEnd = buffered.length > 0 ? buffered.end(buffered.length - 1) : 0;
+        const currentTime = videoElement.currentTime;
 
-      updateStreamStats(stats);
-    }, 2000);
+        updateStreamStats({
+          frameRate: videoElement.getVideoPlaybackQuality?.().totalVideoFrames || 0
+        });
+      } catch (error) {
+        // Игнорируем ошибки получения статистики
+      }
+    }, 1000);
   };
 
-  // Обновление статистики стрима
-  const updateStreamStats = (updates: Partial<StreamStats>) => {
-    if (!mountedRef.current) return;
+  // Обработка ошибок видеоэлемента
+  const handleVideoError = (event: Event | any) => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
 
-    setStreamStats(prev => ({ ...prev, ...updates }));
+    const errorCode = videoElement.error?.code;
+    const errorMessage = videoElement.error?.message || 'Неизвестная ошибка видео';
+
+    console.error('Ошибка видеоэлемента:', { errorCode, errorMessage, event });
+    setError(`Ошибка воспроизведения: ${errorMessage}`);
+
+    if (autoReconnect && cameraStatus.reconnectAttempts < maxReconnectAttempts) {
+      scheduleReconnect();
+    }
+  };
+
+  // Планирование переподключения
+  const scheduleReconnect = () => {
+    if (!mountedRef.current || reconnectTimeoutRef.current) return;
+
+    const attempts = cameraStatus.reconnectAttempts;
+    if (attempts >= maxReconnectAttempts) {
+      console.error(`Максимальное количество попыток переподключения достигнуто для камеры ${monitorId}`);
+      return;
+    }
+
+    const delay = reconnectDelay * Math.pow(1.5, Math.min(attempts, 4)); // Exponential backoff
+    console.log(`Переподключение через ${delay}ms (попытка ${attempts + 1}/${maxReconnectAttempts})`);
+
+    reconnectTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) {
+        reconnectTimeoutRef.current = null;
+        initializeHlsPlayer();
+      }
+    }, delay);
   };
 
   // Вспомогательные функции для статистики
@@ -415,10 +470,7 @@ if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
 
   // Принудительное переподключение
   const forceReconnect = () => {
-    updateConnectionState({
-      reconnectAttempts: 0,
-      error: null
-    });
+    cameraStatusManager.resetReconnectAttempts(monitorId);
     initializeHlsPlayer();
   };
 
@@ -427,12 +479,7 @@ if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
     if (!videoRef.current || !monitorId) return;
 
     mountedRef.current = true;
-
-    // Инициализируем плеер
     initializeHlsPlayer();
-
-    // Настраиваем обработчики видеоэлемента
-    const cleanupVideoHandlers = setupVideoEventHandlers(videoRef.current);
 
     // Функция очистки
     return () => {
@@ -462,8 +509,8 @@ if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
         videoRef.current.load();
       }
 
-      // Очищаем обработчики
-      cleanupVideoHandlers();
+      // Устанавливаем статус отключения
+      setDisconnected();
     };
   }, [monitorId, preferLowRes]);
 
@@ -476,6 +523,8 @@ if (autoReconnect && error && error.code === error.MEDIA_ERR_NETWORK) {
     hasError: !!connectionState.error,
     isReconnecting: connectionState.reconnecting,
     isConnecting: connectionState.reconnecting,
-    error: connectionState.error
+    error: connectionState.error,
+    streamType: currentStreamTypeRef.current,
+    hasSubStreamSupport: cameraStatus.hasSubStreamSupport
   };
 }

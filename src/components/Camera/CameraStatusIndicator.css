@@ -1,0 +1,82 @@
+/* src/components/Camera/CameraStatusIndicator.css */
+.camera-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.status-dot.pulsing {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.status-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.status-text {
+  font-weight: 500;
+  color: var(--text-primary, #1f2937);
+}
+
+.stream-type {
+  font-size: 10px;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.error-message {
+  font-size: 10px;
+  color: #ef4444;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reconnect-attempts {
+  font-size: 10px;
+  color: #f59e0b;
+}
+
+/* Варианты размеров */
+.camera-status-indicator.small .status-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.camera-status-indicator.large .status-dot {
+  width: 12px;
+  height: 12px;
+}
+
+/* Для темной темы */
+.dark .status-text {
+  color: #f9fafb;
+}
+
+.dark .stream-type {
+  color: #9ca3af;
+}

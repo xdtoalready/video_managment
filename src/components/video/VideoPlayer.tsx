@@ -10,6 +10,10 @@ interface VideoPlayerProps {
   isFullscreen?: boolean;
   isArchiveMode?: boolean;
   onVideoClick?: () => void;
+  camera?: {
+    hasSubStream?: boolean;
+    [key: string]: any;
+  };
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -19,10 +23,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
    className = '',
    isFullscreen = false,
    isArchiveMode = false,
-   onVideoClick
+   onVideoClick,
+   camera
  }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+
+  const shouldUseSubStream = !isFullscreen && camera?.hasSubStream === true;
 
   // Используем обновленный streamer adapter
   const {
@@ -33,7 +40,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     error
   } = useStreamer(videoRef as RefObject<HTMLVideoElement>, {
     monitorId,
-    preferLowRes: !isFullscreen,
+    preferLowRes: shouldUseSubStream,
   });
 
   const [isPlaying, setIsPlaying] = useState(true);

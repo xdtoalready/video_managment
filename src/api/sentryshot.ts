@@ -90,11 +90,11 @@ export interface Monitor {
   id: string;
   name: string;
   enable: boolean;
-  source: string; // ИСПРАВЛЕНО: просто строка "rtsp"
-  sourcertsp: {   // ИСПРАВЛЕНО: отдельное поле для RTSP настроек
-    protocol: 'tcp' | 'udp'; // ИСПРАВЛЕНО: в нижнем регистре
-    mainStream: string;      // ИСПРАВЛЕНО: правильное название поля
-    subStream?: string;      // ИСПРАВЛЕНО: правильное название поля
+  source: string; // просто строка "rtsp"
+  sourcertsp: {   // отдельное поле для RTSP настроек
+    protocol: 'tcp' | 'udp'; // в нижнем регистре
+    mainStream: string;      // правильное название поля
+    subStream?: string;      // правильное название поля
   };
   alwaysRecord: boolean;
   videoLength: number; // в минутах
@@ -386,18 +386,26 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
           streamUrl = `/stream/${monitor.id}/index.m3u8`;
         }
 
+        // Определяем наличие субпотока на основе данных монитора
+        const hasSubStream = !!(monitor.sourcertsp?.subStream && monitor.sourcertsp.subStream.trim());
+
         const camera: Camera = {
           id: monitor.id,
           name: monitor.name,
           url: streamUrl,
-          isActive: monitor.enable
+          isActive: monitor.enable,
+          enable: monitor.enable,
+          alwaysRecord: monitor.alwaysRecord,
+          videoLength: monitor.videoLength,
+          hasSubStream: hasSubStream // ДОБАВЛЕНО: правильно устанавливаем hasSubStream
         };
 
-        console.log(`Создана камера: ${camera.name} (${camera.id}) - ${camera.isActive ? 'активна' : 'неактивна'}`);
+        console.log(`Создана камера: ${camera.name} (${camera.id}) - активна: ${camera.isActive}, есть субпоток: ${camera.hasSubStream}`);
+
         return camera;
       });
 
-      console.log(`Успешно преобразовано ${cameras.length} мониторов в камеры`);
+      console.log('Камеры созданы:', cameras.length);
       return cameras;
     } catch (error) {
       console.error('Ошибка при получении камер:', error);
@@ -405,22 +413,22 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
     }
   },
 
-  // ИСПРАВЛЕННЫЙ метод создания/обновления монитора
+  // метод создания/обновления монитора
   async createOrUpdateMonitor(requestData: CreateMonitorRequest): Promise<boolean> {
     try {
       console.log('API: Создание/обновление монитора с запросом:', requestData);
       
-      // ИСПРАВЛЕНО: Преобразуем данные в формат, который ожидает SentryShot
+      // Преобразуем данные в формат, который ожидает SentryShot
       const monitorData = {
         [requestData.id]: {
           id: requestData.id,
           name: requestData.name,
           enable: requestData.enable,
-          source: "rtsp",  // ИСПРАВЛЕНО: всегда "rtsp"
-          sourcertsp: {    // ИСПРАВЛЕНО: отдельное поле для RTSP
-            protocol: requestData.protocol.toLowerCase(), // ИСПРАВЛЕНО: в нижнем регистре
-            mainStream: requestData.rtspUrl,              // ИСПРАВЛЕНО: правильное поле
-            subStream: requestData.rtspSubUrl || undefined // ИСПРАВЛЕНО: правильное поле
+          source: "rtsp",  // всегда "rtsp"
+          sourcertsp: {    // отдельное поле для RTSP
+            protocol: requestData.protocol.toLowerCase(), // в нижнем регистре
+            mainStream: requestData.rtspUrl,              // правильное поле
+            subStream: requestData.rtspSubUrl || undefined // правильное поле
           },
           alwaysRecord: requestData.alwaysRecord,
           videoLength: requestData.videoLength
@@ -435,7 +443,7 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
       const response = await fetch(`${API_BASE_URL}/api/monitor`, {
         method: 'PUT',
         headers: headers,
-        body: JSON.stringify(monitorData[requestData.id]) // ИСПРАВЛЕНО: отправляем только объект монитора, не обертку
+        body: JSON.stringify(monitorData[requestData.id]) // отправляем только объект монитора, не обертку
       });
 
       console.log('API: Ответ сервера:', response.status, response.statusText);
@@ -575,12 +583,12 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
         return vodUrl;
       } else {
         console.warn(`⚠️ [SENTRYSHOT] VOD URL недоступен (${response.status})`);
-        // ✅ ИСПРАВЛЕНО: НЕ переключаемся на HLS, а возвращаем тот же URL
+        // ✅ НЕ переключаемся на HLS, а возвращаем тот же URL
         return vodUrl;
       }
     } catch (error) {
       console.error('❌ [SENTRYSHOT] Ошибка проверки VOD URL:', error);
-      // ✅ ИСПРАВЛЕНО: возвращаем тот же URL вместо HLS
+      // ✅ возвращаем тот же URL вместо HLS
       return vodUrl;
     }
   },
@@ -753,7 +761,7 @@ async getRecordingsFromId(startRecordingId: string, limit: number = 50, monitorI
           return null;
         }
 
-        // ✅ ИСПРАВЛЕНО: ищем monitorId в разных полях
+        // ✅ ищем monitorId в разных полях
         let monitorId = 'unknown';
         
         // Попробуем разные варианты
@@ -1138,7 +1146,7 @@ async getRecordingsInRange(monitorIds: string[], startDate: Date, endDate: Date,
         console.log('API: Длина JSON:', jsonString.length);
         console.log('API: Символ на позиции 24:', jsonString.charAt(23), 'код:', jsonString.charCodeAt(23));
         
-        // ИСПРАВЛЕНО: Используем новый метод для получения заголовков
+        // Используем новый метод для получения заголовков
         const headers = await this.getEnhancedModifyHeaders();
         
         console.log('API: Заголовки запроса (Content-Type):', headers['Content-Type']);

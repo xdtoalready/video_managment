@@ -5,6 +5,7 @@ import { useStore } from '../../store/useStore.ts';
 import { sentryshotAPI } from '../../api/sentryshot';
 import { getLocationForMonitor } from '../../constants/locationMapping';
 import './Camera.css';
+import CameraStatusIndicator from './CameraStatusIndicator.tsx';
 
 interface CameraViewProps {
   streamUrl: string;
@@ -25,8 +26,6 @@ const {
   openCalendar,
   isGridView,
   isAuthenticated,
-  connectionStatus,
-  camerasConnectionStatus,
   cameras,
   removeCamera,
   hasAdminRights
@@ -183,8 +182,7 @@ const {
   }
 
   // Определяем состояние камеры
-  const isCameraOffline = camerasConnectionStatus !== 'connected' || !camera?.isActive;
-  const isCameraEnabled = camera?.isActive || false;
+const isCameraEnabled = camera?.isActive || false;
 
   return (
       <>
@@ -201,23 +199,11 @@ const {
 
               {/* Индикаторы состояния */}
               <div className="camera-status-indicators">
-                {camerasConnectionStatus !== 'connected' && (
-                    <span className="status-indicator server-offline badge-sticker" title="Нет соединения с сервером">
-                  🔴 Сервер
-                </span>
-                )}
-
-                {camerasConnectionStatus === 'connected' && !isCameraEnabled && (
-                    <span className="status-indicator camera-disabled badge-sticker" title="Камера отключена">
-                  ⭕ Отключена
-                </span>
-                )}
-
-                {camerasConnectionStatus === 'connected' && isCameraEnabled && (
-                    <span className="status-indicator camera-online badge-sticker" title="Камера работает">
-                  🟢 Онлайн
-                </span>
-                )}
+  <CameraStatusIndicator 
+    cameraId={monitorId} 
+    showDetails={showControls}
+    className="small"
+  />
                 
                 {camera?.alwaysRecord && isCameraEnabled && (
                     <span className="status-indicator recording badge-sticker" title="Идет запись">
@@ -317,23 +303,14 @@ const {
                     onError={handleVideoError}
                     className="camera-video"
                     isFullscreen={isActiveView}
-                    isArchiveMode={false} // Всегда false для live stream
+                    isArchiveMode={false}
                     onVideoClick={handleVideoClick}
                     monitorId={monitorId}
+                    camera={camera}
                 />
             )}
 
-            {/* Индикатор качества соединения (только для онлайн режима) */}
-            {isCameraEnabled && showControls && (
-                <div className="stream-quality-indicator">
-                  <div className="quality-bars">
-                    <div className={`quality-bar ${camerasConnectionStatus === 'connected' ? 'active' : ''}`}></div>
-                    <div className={`quality-bar ${camerasConnectionStatus === 'connected' ? 'active' : ''}`}></div>
-                    <div className="quality-bar"></div>
-                    <div className="quality-bar"></div>
-                  </div>
-                </div>
-            )}
+
           </div>
         </div>
 
